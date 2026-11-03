@@ -63,6 +63,10 @@ function love.conf(t)
     t.window.resizable = true
     t.window.vsync = 1
     t.window.highdpi = true
+
+    if love._version_major >= 12 then
+        t.graphics.lowpower = true
+    end
     
     t.modules.thread = false
     t.modules.video = false

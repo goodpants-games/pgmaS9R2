@@ -6,4 +6,6 @@ python tools\assetexport.py
 if ($LASTEXITCODE -ne 0) {
     exit
 }
-love\lovec_l52.exe app --debug $args
+
+$LOVEC_L52 = if ($env:LOVEC_L52) { $env:LOVEC_L52 } else { "love\lovec_l52.exe" }
+& $LOVEC_L52 app --debug $args

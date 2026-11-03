@@ -6,15 +6,24 @@ import sys
 
 ASEPRITE = os.environ.get('ASEPRITE', 'aseprite')
 TILED = os.environ.get('TILED', 'tiled')
-
 BASE_DIRECTORY = os.path.join(os.curdir, 'assets')
 
-ASEPRITE_ARGS = ['--sheet-pack', '--shape-padding', '1', '--trim',
-                 '--merge-duplicates', '--format', 'json-array', '--list-tags']
+ASEPRITE_ARGS = [
+    '--sheet-pack',
+    '--shape-padding', '1',
+    '--trim',
+    '--merge-duplicates',
+    '--format', 'json-array',
+    '--list-tags',
+]
+IGNORED_EXTENSIONS = [
+    '.tiled-project',
+    '.tiled-session',
+]
 
 artifacts: list[str] = []
+ignored_artifacts: list[str] = []
 dry_run: bool = False
-
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, *kwargs)
@@ -33,11 +42,17 @@ def needs_update(src_path: str, dst_path: str) -> bool:
         return True
 
 
+def register_artifact(path: str, ignore: bool = True):
+    artifacts.append(path)
+    if ignore:
+        ignored_artifacts.append(path)
+
+
 def copy_file(src_path: str, dst_path: str) -> bool:
     src_path = os.path.normpath(src_path)
     dst_path = os.path.normpath(dst_path)
 
-    artifacts.append(dst_path)
+    register_artifact(dst_path)
     if not dry_run and needs_update(src_path, dst_path):
         eprint(f"[CPY] {src_path} => {dst_path}")
         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
@@ -50,8 +65,8 @@ def process_tmx(src_path: str, dst_path: str) -> bool:
     (filename, _) = os.path.splitext(os.path.basename(src_path))
     intermediate_path = os.path.join(os.path.dirname(src_path), filename + '.lua')
     dst_path = os.path.splitext(dst_path)[0] + '.lua'
-    
-    artifacts.append(dst_path)
+
+    register_artifact(dst_path, ignore=False)
     if dry_run or not needs_update(src_path, dst_path): return True
 
     src_path = os.path.normpath(src_path)
@@ -72,7 +87,7 @@ def process_tsx(src_path: str, dst_path: str) -> bool:
     intermediate_path = os.path.join(os.path.dirname(src_path), filename + '.lua')
     dst_path = os.path.splitext(dst_path)[0] + '.lua'
 
-    artifacts.append(dst_path)
+    register_artifact(dst_path, ignore=False)
     if dry_run or not needs_update(src_path, dst_path): return True
 
     src_path = os.path.normpath(src_path)
@@ -93,8 +108,9 @@ def process_ase(src_path: str, dst_path: str) -> bool:
     dst_json_path = os.path.splitext(dst_path)[0] + '.json'
     dst_png_path = os.path.splitext(dst_path)[0] + '.png'
 
-    artifacts.append(dst_json_path)
-    artifacts.append(dst_png_path)
+    register_artifact(dst_json_path)
+    register_artifact(dst_png_path)
+
     if dry_run or not needs_update(src_path, dst_json_path): return True
 
     src_path = os.path.normpath(src_path)
@@ -133,21 +149,64 @@ def scan_directory(dirpath: str) -> bool:
             dst_path = os.path.join(dst_dir, basename)
             (_, fileext) = os.path.splitext(basename)
 
-            match fileext:
-                case '.ase' | '.aseprite':
-                    if not process_ase(path, dst_path):
-                        succ = False
-                case '.tmx':
-                    if not process_tmx(path, dst_path):
-                        succ = False
-                case '.tsx':
-                    if not process_tsx(path, dst_path):
-                        succ = False
-                case _:
-                    if not copy_file(path, dst_path):
-                        succ = False
+            if not fileext in IGNORED_EXTENSIONS:
+                match fileext:
+                    case '.ase' | '.aseprite':
+                        if not process_ase(path, dst_path):
+                            succ = False
+                    case '.tmx':
+                        if not process_tmx(path, dst_path):
+                            succ = False
+                    case '.tsx':
+                        if not process_tsx(path, dst_path):
+                            succ = False
+                    case _:
+                        if not copy_file(path, dst_path):
+                            succ = False
 
     return succ
+
+
+def update_index() -> bool:
+    index_path = 'app/res/.index'
+    
+    # collect list of artifact paths relative to app/res
+    new_files: list[str] = []
+    for artifact in artifacts:
+        rel_path = os.path.normpath(os.path.relpath(artifact, 'app/res'))
+        new_files.append(rel_path.replace('\\', '/'))
+
+    # parse pre-existing .index
+    if os.path.exists(index_path):
+        with open(index_path, 'r') as f:
+            while True:
+                line = f.readline()
+                if not line: # EOF
+                    break
+                
+                line = line.strip()
+
+                # skip if line is empty
+                if not line:
+                    continue
+                # skip if line is a comment
+                if line[0] == '#':
+                    continue
+                
+                # if a file will no longer exist in the .index, it will be
+                # deleted.
+                if not line in new_files:
+                    eprint(f"Prune {line}", file=sys.stderr)
+                    os.remove(os.path.join('app/res', line))
+
+    # create .index for artifacts
+    with open(index_path, 'w') as f:
+        f.write("# this is autogenerated. do not edit!\n")
+        for path in new_files:
+            f.write(path)
+            f.write('\n')
+    
+    return True
 
 
 def update_gitignore() -> bool:
@@ -155,7 +214,7 @@ def update_gitignore() -> bool:
     
     # collect list of artifact paths relative to app/res
     new_files: list[str] = []
-    for artifact in artifacts:
+    for artifact in ignored_artifacts:
         rel_path = os.path.normpath(os.path.relpath(artifact, 'app/res'))
         new_files.append(rel_path.replace('\\', '/'))
 
@@ -183,16 +242,11 @@ def update_gitignore() -> bool:
                 if line == '.gitignore':
                     continue
 
-                # if a file will no longer exist in the .gitignore, it will be
-                # deleted.
-                if not line in new_files:
-                    eprint(f"Prune {line}", file=sys.stderr)
-                    os.remove(os.path.join('app/res', line))
-
     # create .gitignore for artifacts
     with open(gitignore_path, 'w') as f:
         f.write("# this is autogenerated. do not edit!\n")
         f.write(".gitignore\n")
+        f.write(".index\n")
         for path in new_files:
             f.write(path)
             f.write('\n')
@@ -221,6 +275,8 @@ def main():
             sys.stdout.write(rel_path.replace('\\', '/'))
             sys.stdout.write('\n')
     else:
+        if not update_index():
+            s = False
         if not update_gitignore():
             s = False
 

@@ -1,0 +1,9 @@
+.DS_Store
+desktop.ini
+*.tiled-session
+
+*.blend[0-9]
+
+/love
+/exports
+/ignore

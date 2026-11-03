@@ -1,0 +1,28 @@
+- maybe a practice mode would be nice idk. (no, too much work i have to make the whole UI)
+- load all assets for games at start
+
+Points system (maybe??):
+there is a points system. you get points based off how well you do in microgames.
+
+Boss rounds:
+every 20 rounds is a boss round, which is a longer more complex minigame. jf you lose you are forced to replay it. completing a boss round slows down the speed. also gives you a 1UP.
+
+-------microgame ideas--------
+- think of references to other pgma games
+- spotlight that eventually shines light on thing and you need to press space to hide it the moment you see it
+  like maybe you're a ghost. make sure to punish the player for pressing space too early.
+  does this even make sense idk
+- found this juniper dev game jam entry called "death spiral" if yk what i mean...
+  steal its mechanics. maybe could be a boss stage?
+- minigame concerning mashing a button quick enough
+
+-----------item ideas---------------
+- reroll the microgame and reset
+- reset the timer
+- slow down the current microgame and the timer
+- adds a shield to your life (essentially a 1UP) at the cost of increased speed until you take damage (also stacks)
+- remember current microgame. item then turns into another item which upon use will force the next microgame to be the stored one.
+
+items are bound to the 1,2,3,4 keys (dpad on controller). you can only hold four items at a time.
+
+cannot be used + effects don't apply during boss rounds

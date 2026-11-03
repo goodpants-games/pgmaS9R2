@@ -7,6 +7,7 @@ Lg = love.graphics
 
 require("batteries"):export()
 Lg.setDefaultFilter("nearest")
+Lg.setLineStyle("rough")
 
 Sceneman = require("sceneman")
 Sceneman.scenePrefix = "scenes."

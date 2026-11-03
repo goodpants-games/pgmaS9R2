@@ -9,6 +9,8 @@ local base_controls = {
     right = {'axis:leftx+', 'button:dpright'},
     up = {'axis:lefty-', 'button:dpup'},
     down = {'axis:lefty+', 'button:dpdown'},
+
+    fire = {"mouse:1", "button:a"}
 }
 
 local function get_new_baton_config()

@@ -5,6 +5,37 @@ local Input = require("input")
 local self
 
 local TILE_SIZE = 16
+local BUTTON_INPUTS = {"left", "right", "down", "up", "fire"}
+local entityTypeInit = {}
+
+local function createEnt(type, x, y, ...)
+    local ent = {
+        x = x,
+        y = y,
+        w = 0,
+        h = 0,
+        xVel = 0,
+        yVel = 0,
+
+        color = {
+            r = 1,
+            g = 1,
+            b = 1,
+        }
+    }
+
+    if type ~= nil then
+        local init = entityTypeInit[type]
+        if not init then
+            softerror(("unknown entity type '%s'"):format(type))
+            return nil
+        end
+
+        init(ent, x, y, ...)
+    end
+
+    return ent
+end
 
 function scene.load()
     self = {}
@@ -16,15 +47,46 @@ function scene.load()
 
     self.ents = {}
 
-    local plr = {
-        x = 2 * TILE_SIZE,
-        y = 2 * TILE_SIZE,
-        w = 14,
-        h = 14,
-        xVel = 0,
-        yVel = 0,
-    }
-    table.insert(self.ents, plr)
+    -- TODO: store button inputs using the BUTTON_INPUTS set for the current
+    --       and previous frame. updating is done in rawUpdate
+    -- self.buttonInputs = {}
+    -- for i=1, 2 do
+    --     local t = {}
+    --     for _, v in pairs(buttonInputs) do
+    --         t[v] = false
+    --     end
+    --     self.buttonInputs[i] = t
+    -- end
+
+    -- load entities from map
+    for _, layer in ipairs(self.map.layers) do
+        if layer.type == "objectgroup" then
+            ---@cast layer pklove.tiled.ObjectLayer
+            for _, obj in ipairs(layer.objects) do
+                if obj.shape ~= "rectangle" then
+                    softerror("tiled object shape should be a rectangle!")
+                    goto continue
+                end
+
+                local cx = obj.x + obj.width / 2
+                local cy = obj.y + obj.height / 2
+
+                local ent = createEnt(obj.type, cx, cy)
+                if not ent then
+                    print("error: could not load entity")
+                    goto continue
+                end
+
+                if obj.type == "player" then
+                    table.insert(self.ents, 1, ent)
+                else
+                    table.insert(self.ents, ent)
+                end
+                
+                ::continue::
+            end
+        end
+    end
 end
 
 function scene.unload()
@@ -105,12 +167,18 @@ local function bool2int(v)
     return v and 1 or 0
 end
 
+function scene.rawUpdate(dt)
+    local device = Input.players[1]
+end
+
 function scene.update()
     local player = self.ents[1]
-    local device = Input.players[1]
-    
-    player.xVel = 2 * (bool2int(device:down("right")) - bool2int(device:down("left")))
-    player.yVel = 2 * (bool2int(device:down("down")) - bool2int(device:down("up")))
+
+    for _, ent in ipairs(self.ents) do
+        if ent.update then
+            ent:update()
+        end
+    end
 
     moveEnts()
 
@@ -119,18 +187,76 @@ function scene.update()
 end
 
 function scene.draw()
-    Lg.push("all")
+    Lg.push()
     Lg.translate(-math.round(self.camX), -math.round(self.camY))
 
     self.map:draw(0, 0)
 
     for _, ent in ipairs(self.ents) do
-        Lg.setColor(1, 0, 0)
+        local color = ent.color
+        Lg.setColor(color.r, color.g, color.b)
         Lg.rectangle("fill", ent.x, ent.y, ent.w, ent.h)
     end
 
     Lg.pop()
+
+    Lg.setColor(1, 1, 1)
+    Lg.setLineWidth(1.0)
+    Lg.rectangle("line", App.mouseX - 4, App.mouseY - 4, 8, 8)
 end
 
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- ENTITY TYPES
+--------------------------------------------------------------------------------
+
+local scndat = self
+
+local function centeredRect(x, y, w, h)
+    return x - w/2, y - h/2, w, h
+end
+
+--------------------------------------------------------------------------------
+-- PLAYER
+local function playerUpdate(self)
+    local device = Input.players[1]
+
+    self.xVel = 2 * (bool2int(device:down("right")) - bool2int(device:down("left")))
+    self.yVel = 2 * (bool2int(device:down("down")) - bool2int(device:down("up")))
+end
+
+function entityTypeInit.player(ent, x, y)
+    ent.x, ent.y, ent.w, ent.h = centeredRect(x, y, 14, 14)
+    local col = ent.color
+    col.r, col.g, col.b = 0, 1, 0
+
+    ent.update = playerUpdate
+end
+
+--------------------------------------------------------------------------------
+-- ENEMY
+function entityTypeInit.enemy(ent, x, y)
+    ent.x, ent.y, ent.w, ent.h = centeredRect(x, y, 14, 14)
+    local col = ent.color
+    col.r, col.g, col.b = 1, 0, 0
+end
+
+--------------------------------------------------------------------------------
+-- PROJECTILE
+function entityTypeInit.projectile(self, x, y)
+    self.x, self.y, self.w, self.h = centeredRect(x, y, 4, 4)
+    local col = self.color
+    col.r, col.g, col.b = 0.1, 0.1, 0.1
+end
+
+--------------------------------------------------------------------------------
 
 return scene

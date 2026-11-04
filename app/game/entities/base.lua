@@ -1,0 +1,48 @@
+---@class game.entities.Entity: batteries.Class
+---@overload fun(x:number?, y:number?, w:number?, h:number?):game.entities.Entity
+---@field msg any
+---@field update fun(self:game.entities.Entity)?
+---@field render fun(self:game.entities.Entity)|table
+local Entity = batteries.class {
+    name = "game.entities.Entity"
+}
+
+function Entity:new(x, y, w, h)
+    ---@type game.World
+    self.world = nil
+
+    -- base properties --
+    self._removeOnFrameEnd = false
+
+    self.x = x or 0.0
+    self.y = y or 0.0
+
+    self.xVel = 0.0
+    self.yVel = 0.0
+
+    -- collision properties --
+
+    self.collision = false
+    self.width = w or 0.0
+    self.height = h or 0.0
+    self.restitution = 0.0
+
+    self.msg = batteries.pubsub()
+end
+
+function Entity:destroy()
+    self._removeOnFrameEnd = true
+end
+
+function Entity:draw()
+    local renderer = self.render
+    if renderer then
+        if type(renderer) == "function" then
+            renderer(self)
+        else
+            renderer:draw(self)
+        end
+    end
+end
+
+return Entity

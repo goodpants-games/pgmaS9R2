@@ -20,7 +20,7 @@ end
 function Projectile:_touched(oent, nx, ny)
     self.bouncesLeft = self.bouncesLeft - 1
     if self.bouncesLeft <= 0 then
-        self:destroy()
+        self:remove()
     end
 end
 

@@ -1,6 +1,8 @@
 local Tiled = require("tiled")
 local Input = require("input")
 local Consts = require("game.consts")
+local Collision = require("game.collision")
+local Util = require("game.util")
 
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire"}
@@ -14,11 +16,16 @@ function World:new()
 
     self.camX = 0.0
     self.camY = 0.0
+    self.mouseX = 0.0
+    self.mouseY = 0.0
 
     ---@type game.entities.Entity[]
     self.entities = {}
     ---@type game.entities.Entity?
     self.player = nil
+    
+    ---@private
+    self._needEntityRemoval = false
 
      -- store button input states for the current and last frame
     -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
@@ -33,10 +40,32 @@ function World:new()
     end
 
     self:_loadMap()
+
+    -- collision map is the first found tile layer
+    local colMap
+    for _, layer in ipairs(self.map.layers) do
+        if layer.type == "tilelayer" then
+            colMap = layer
+            break
+        end
+    end
+
+    if softassert(colMap, "map had no collision layer!") then
+        local colMapGet = colMap.get
+        ---@private
+        self._getCol = function(tx, ty)
+            return colMapGet(colMap, tx, ty)
+        end
+    else
+        self._getCol = function() return nil end
+    end
 end
 
 function World:update()
     local player = self.player
+
+    self.mouseX = App.mouseX + self.camX
+    self.mouseY = App.mouseY + self.camY
 
     for _, ent in ipairs(self.entities) do
         if ent.update then
@@ -46,18 +75,32 @@ function World:update()
 
     self:_moveEntities()
 
-    for i=#self.entities, 1, -1 do
-        local ent = self.entities[i]
-        if ent._removeOnFrameEnd then
-            ent.msg:publish("removingFromWorld", ent)
-            ent.world = nil
-            table.remove(self.entities, i)
+    while self._needEntityRemoval do
+        self._needEntityRemoval = false
+
+        for i=#self.entities, 1, -1 do
+            local ent = self.entities[i]
+            if ent._removeOnFrameEnd then
+                ent._removeOnFrameEnd = false
+                ent.msg:publish("removingFromWorld", ent)
+                ent.world = nil
+                table.remove(self.entities, i)
+            end
         end
     end
 
     if player then
         self.camX = (player.x + player.width / 2) - App.scrW / 2
         self.camY = (player.y + player.height / 2) - App.scrH / 2
+    end
+
+    self.mouseX = App.mouseX + self.camX
+    self.mouseY = App.mouseY + self.camY
+
+    for _, ent in ipairs(self.entities) do
+        if ent.postUpdate then
+            ent:postUpdate()
+        end
     end
 
     for _, btn in ipairs(BUTTON_INPUTS) do
@@ -101,13 +144,7 @@ end
 ---@param ... any
 ---@return game.entities.Entity?
 function World:newEntity(entType, x, y, ...)
-    local s, ctor = pcall(require, "game.entities." .. entType)
-    if not s then
-        softerror(("could not create entity '%s'\n%s"):format(entType, ctor))
-        return nil
-    end
-
-    return ctor(x, y, ...)
+    return Util.newEntity(entType, x, y, ...)
 end
 
 ---@param ent game.entities.Entity
@@ -124,16 +161,10 @@ function World:addEntity(ent)
 end
 
 ---@param ent game.entities.Entity
----@return boolean wasRemoved
 function World:removeEntity(ent)
-    local idx = table.index_of(self.entities, ent)
-    if idx then
-        ent.msg:publish("removingFromWorld", ent)
-        ent.world = nil
-        table.remove(self.entities, idx)
-        return true
-    else
-        return false
+    if ent.world == self then
+        ent._removeOnFrameEnd = true
+        self._needEntityRemoval = true
     end
 end
 
@@ -153,6 +184,28 @@ end
 ---@return boolean
 function World:isInputDown(btn)
     return self.buttonInputs[1][btn]
+end
+
+---Perform a raycast on the world. The length of the given direction vector
+---dictates the maximum length the raycast will search for.
+---@param x number X component of raycast origin.
+---@param y number Y component of raycast origin.
+---@param dx number X component of raycast direction.
+---@param dy number Y component of raycast direction.
+---@param colFlags integer? Collision group filter bitmask. If not given, nothing will be filtered.
+---@return number? distance, number? nx, number? ny, game.entities.Enemy? entity
+function World:raycast(x, y, dx, dy, colFlags)
+    if not colFlags then
+        colFlags = Consts.COLGROUP_ALL
+    end
+
+    -- check collisions with tiles
+    if bit.band(colFlags, 0x1) then
+        local dist, nx, ny = Collision.tileRaycast(x, y, dx, dy, self._getCol)
+        if dist then
+            return dist, nx, ny
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -184,61 +237,7 @@ function World:_loadMap()
     end
 end
 
----@param x number
----@param y number
----@param w number
----@param h number
----@param map pklove.tiled.Map
----@return integer? colX, integer? colY, integer? colW, integer? colH, any? colEnt
-local function gameCollision(x, y, w, h, map)
-    local layer = map.layers[1] --[[@as pklove.tiled.TileLayer]]
-    
-    local sx = math.floor(x / TILE_SIZE)
-    local sy = math.floor(y / TILE_SIZE)
-    local ex = math.ceil((x + w) / TILE_SIZE) - 1
-    local ey = math.ceil((y + h) / TILE_SIZE) - 1
-    local cx = x + w / 2
-    local cy = y + h / 2
-
-    local collideX, collideY, collideW, collideH
-    local minDist = math.huge
-
-    -- first, check tile collisions
-    for ty=sy, ey do
-        for tx=sx, ex do
-            local t = layer:get(tx, ty)
-            if t ~= nil and t ~= 0 then
-                local tcx = (tx + 0.5) * TILE_SIZE
-                local tcy = (ty + 0.5) * TILE_SIZE
-                local dx = tcx - cx
-                local dy = tcy - cy
-                local distsq = dx * dx + dy * dy
-                if distsq < minDist then
-                    collideX = tx * TILE_SIZE
-                    collideY = ty * TILE_SIZE
-                    collideW = TILE_SIZE
-                    collideH = TILE_SIZE
-                end
-            end
-        end
-    end
-
-    -- then, check entity collisions
-    -- for _, ent in ipairs(ents) do
-    --     if ent == entToIgnore or not ent.collide then
-    --         goto continue
-    --     end
-        
-
-    --     ::continue::
-    -- end
-
-    return collideX, collideY, collideW, collideH, nil
-end
-
 function World:_moveEntities()
-    local map = self.map
-
     -- first, move all X
     for _, ent in ipairs(self.entities) do
         ent.x = ent.x + ent.xVel
@@ -248,8 +247,8 @@ function World:_moveEntities()
     for _, ent in ipairs(self.entities) do
         if ent.collision then
             local colX, colY, colW, colH, colEnt =
-                gameCollision(ent.x, ent.y, ent.width, ent.height,
-                              map)
+                Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
+                                        self._getCol)
             if colX then
                 local dir
                 if ent.xVel > 0 then
@@ -275,8 +274,8 @@ function World:_moveEntities()
     for _, ent in ipairs(self.entities) do
         if ent.collision then
             local colX, colY, colW, colH, colEnt =
-                gameCollision(ent.x, ent.y, ent.width, ent.height,
-                              map)
+                Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
+                                        self._getCol)
             if colY then
                 local dir
                 if ent.yVel > 0 then

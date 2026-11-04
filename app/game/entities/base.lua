@@ -1,7 +1,10 @@
+local Consts = require("game.consts")
+
 ---@class game.entities.Entity: batteries.Class
 ---@overload fun(x:number?, y:number?, w:number?, h:number?):game.entities.Entity
 ---@field msg any
 ---@field update fun(self:game.entities.Entity)?
+---@field postUpdate fun(self:game.entities.Entity)?
 ---@field render fun(self:game.entities.Entity)|table
 local Entity = batteries.class {
     name = "game.entities.Entity"
@@ -26,12 +29,17 @@ function Entity:new(x, y, w, h)
     self.width = w or 0.0
     self.height = h or 0.0
     self.restitution = 0.0
+    self.colGroup = Consts.COLGROUP_DEFAULT
+    self.colMask = Consts.COLGROUP_ALL
 
     self.msg = batteries.pubsub()
 end
 
-function Entity:destroy()
-    self._removeOnFrameEnd = true
+---Remove this entity from its world.
+function Entity:remove()
+    if self.world then
+        self.world:removeEntity(self)
+    end
 end
 
 function Entity:draw()

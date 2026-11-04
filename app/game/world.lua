@@ -147,7 +147,14 @@ function World:draw()
     self.map:draw(0, 0)
 
     for _, ent in ipairs(self._renderOrder) do
-        ent:draw()
+        local renderer = ent.render
+        if renderer then
+            if type(renderer) == "function" then
+                renderer(ent)
+            else
+                renderer:draw(ent)
+            end
+        end
     end
 
     Lg.pop()
@@ -247,7 +254,7 @@ function World:raycast(x, y, dx, dy, colFlags)
     if bit.band(colFlags, 0x1) then
         local dist, nx, ny = Collision.tileRaycast(x, y, dx, dy, self._getCol)
         if dist then
-            return dist, nx, ny
+            return dist, -nx, -ny
         end
     end
 end

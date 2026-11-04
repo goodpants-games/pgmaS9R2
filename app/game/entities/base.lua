@@ -46,15 +46,4 @@ function Entity:remove()
     end
 end
 
-function Entity:draw()
-    local renderer = self.render
-    if renderer then
-        if type(renderer) == "function" then
-            renderer(self)
-        else
-            renderer:draw(self)
-        end
-    end
-end
-
 return Entity

@@ -7,9 +7,8 @@ local Projectile = batteries.class {
 }
 
 function Projectile:new(x, y)
-    self:super(centeredRect(x, y, 4, 4))
+    self:super(centeredRect(x, y, 1, 1))
     self.collision = true
-    self.render = RectRenderer(0.0, 0.0, 0.0)
 
     self.restitution = 1.0
     self.bouncesLeft = 4
@@ -22,6 +21,14 @@ function Projectile:_touched(oent, nx, ny)
     if self.bouncesLeft <= 0 then
         self:remove()
     end
+end
+
+function Projectile:render()
+    local cx = self.x + self.width / 2
+    local cy = self.y + self.height / 2
+
+    Lg.setColor(0, 0, 0)
+    Lg.circle("fill", cx, cy, 2)
 end
 
 return Projectile

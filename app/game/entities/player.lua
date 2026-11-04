@@ -19,11 +19,15 @@ function Player:new(x, y)
     -- create test entity
     self.testEnt = newEntity("base", 0, 0, 6, 6)
     self.testEnt.render = RectRenderer(1.0, 1.0, 1.0)
+
+    -- create gun sight
+    self.gunSight = newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
 end
 
 function Player:_addedToWorld()
     self.world.player = self
     self.world:addEntity(self.testEnt)
+    self.world:addEntity(self.gunSight)
 end
 
 function Player:_removingFromWorld()
@@ -32,6 +36,7 @@ function Player:_removingFromWorld()
     end
 
     self.testEnt:remove()
+    self.gunSight:remove()
 end
 
 function Player:update()
@@ -58,14 +63,22 @@ function Player:update()
 
         local proj = world:newEntity("projectile", self.x + self.width/2, self.y + self.height/2)
         if proj then
-            proj.xVel = fireDx * 4
-            proj.yVel = fireDy * 4
+            proj.xVel = fireDx * 10
+            proj.yVel = fireDy * 10
             world:addEntity(proj)
         end
     end
 
     local rayDx = world.mouseX - centerX
     local rayDy = world.mouseY - centerY
+    local rayLen = math.length(rayDx, rayDy)
+
+    if rayLen > 0 then
+        self.gunSight:updateSight(
+            centerX, centerY,
+            rayDx / rayLen, rayDy / rayLen)
+    end
+    --[[
     local dist, nx, ny =
         self.world:raycast(centerX, centerY,
                            rayDx, rayDy)
@@ -77,6 +90,7 @@ function Player:update()
         self.testEnt.x = px - self.testEnt.width / 2
         self.testEnt.y = py - self.testEnt.height / 2
     end
+    --]]
 end
 
 return Player

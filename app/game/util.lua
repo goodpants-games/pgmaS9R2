@@ -26,7 +26,7 @@ local entityTypes
 local function loadEntityTypes()
     entityTypes = {}
     for _, f in ipairs(love.filesystem.getDirectoryItems("/game/entities/")) do
-        local name = string.match(f, "^(%w+)%.lua$")
+        local name = string.match(f, "^([%w_]+)%.lua$")
         if name then
             entityTypes[name] = require("game.entities." .. name)
         end

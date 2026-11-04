@@ -62,4 +62,14 @@ function Util.bool2int(v)
     return v and 1 or 0
 end
 
+---unordered pairing function of two unsigned integers
+---@param a integer
+---@param b integer
+function Util.upair2u(a, b)
+    if a > b then
+        a, b = b, a
+    end
+    return (a * a + a) / 2 + b
+end
+
 return Util

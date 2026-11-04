@@ -1,5 +1,6 @@
 local RectRenderer = require("game.util").RectRenderer
 local centeredRect = require("game.util").centeredRect
+local Const = require("game.consts")
 
 ---@class game.entities.Projectile: game.entities.Entity
 local Projectile = batteries.class {
@@ -9,6 +10,8 @@ local Projectile = batteries.class {
 function Projectile:new(x, y)
     self:super(centeredRect(x, y, 1, 1))
     self.collision = true
+    self.touchMonitor = true
+    self.colMask = bit.bor(Const.COLGROUP_NPC)
 
     self.restitution = 1.0
     self.bouncesLeft = 4
@@ -17,9 +20,13 @@ function Projectile:new(x, y)
 end
 
 function Projectile:_touched(oent, nx, ny)
-    self.bouncesLeft = self.bouncesLeft - 1
-    if self.bouncesLeft <= 0 then
-        self:remove()
+    if oent then
+        oent:remove()
+    else
+        self.bouncesLeft = self.bouncesLeft - 1
+        if self.bouncesLeft <= 0 then
+            self:remove()
+        end
     end
 end
 

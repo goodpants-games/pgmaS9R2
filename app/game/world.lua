@@ -79,6 +79,7 @@ function World:update()
     end
 
     self:_moveEntities()
+    self:_entityCollisions()
 
     while self._needEntityRemoval do
         self._needEntityRemoval = false
@@ -343,6 +344,76 @@ function World:_moveEntities()
     
                 ent.yVel = ent.yVel * -ent.restitution
                 ent.msg:publish("touched", ent, colEnt, 0, dir)
+            end
+        end
+    end
+end
+
+function World:_entityCollisions()
+    -- collect entity contacts
+    local contacts = {}
+    for _, ent1 in ipairs(self.entities) do
+        if ent1.collision and ent1.touchMonitor then            
+            -- allocate tables if not exists
+            ent1._touching = ent1._touching or {}
+            ent1._prevTouching = ent1._prevTouching or {}
+
+            -- set up prevTouching and touching lists for this frame
+            table.clear(ent1._prevTouching)
+            table.append_inplace(ent1._prevTouching, ent1._touching)
+            table.clear(ent1._touching)
+
+            for _, ent2 in ipairs(self.entities) do
+                if not ent2.collision then
+                    goto continue
+                end
+                if bit.band(ent1.colMask, ent2.colGroup) == 0 then
+                    goto continue
+                end
+
+                local did_collide = Collision.rectRectCollision(
+                    ent1.x, ent1.y, ent1.width, ent1.height,
+                    ent2.x, ent2.y, ent2.width, ent2.height)
+                if did_collide then
+                    local key = Util.upair2u(ent1.id, ent2.id)
+                    if not contacts[key] then
+                        contacts[key] = { ent1, ent2 }
+                    end
+                end
+
+                ::continue::
+            end
+        else
+            ent1._touching = nil
+            ent1._prevTouching = nil
+        end
+    end
+
+    -- act on contacts
+    for _, contact in pairs(contacts) do
+        local ea, eb = contact[1], contact[2]
+
+        if ea.touchMonitor then
+            table.insert(ea._touching, eb)
+        end
+        if eb.touchMonitor then
+            table.insert(eb._touching, ea)
+        end
+    end
+
+    -- dispatch touching/touchEnded events
+    for _, ent in ipairs(self.entities) do
+        if ent.collision and ent.touchMonitor then
+            for _, oent in ipairs(ent._touching) do
+                if not table.index_of(ent._prevTouching, oent) then
+                    ent.msg:publish("touched", ent, oent, 0, 0)
+                end
+            end
+
+            for _, oent in ipairs(ent._prevTouching) do
+                if not table.index_of(ent._touching, oent) then
+                    ent.msg:publish("touchEnded", ent, oent, 0, 0)
+                end
             end
         end
     end

@@ -10,13 +10,19 @@ local Entity = batteries.class {
     name = "game.entities.Entity"
 }
 
+local nextEntityId = 0
+
 function Entity:new(x, y, w, h)
     ---@type game.World
     self.world = nil
     self._removeOnFrameEnd = false
     
     -- base properties --
+
     self.name = ""
+    --- unique numeric id
+    self.id = nextEntityId
+    nextEntityId = nextEntityId + 1
 
     self.x = x or 0.0
     self.y = y or 0.0
@@ -32,8 +38,16 @@ function Entity:new(x, y, w, h)
     self.restitution = 0.0
     self.colGroup = Consts.COLGROUP_DEFAULT
     self.colMask = Consts.COLGROUP_ALL
+    -- touch monitor properties --
+
+    self.touchMonitor = false
+    ---@type game.entities.Entity[]?
+    self._touching = nil
+    ---@type game.entities.Entity[]?
+    self._prevTouching = nil
 
     -- render properties --
+
     self.zIndex = 0
 
     self.msg = batteries.pubsub()
@@ -44,6 +58,11 @@ function Entity:remove()
     if self.world then
         self.world:removeEntity(self)
     end
+end
+
+---@return game.entities.Entity[]
+function Entity:getOverlappingEntities()
+    return self._touching or {}
 end
 
 return Entity

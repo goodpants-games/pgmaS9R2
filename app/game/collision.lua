@@ -2,6 +2,22 @@ local collision = {}
 
 local TILE_SIZE = require("game.consts").TILE_SIZE
 
+---@param x0 number
+---@param y0 number
+---@param w0 number
+---@param h0 number
+---@param x1 number
+---@param y1 number
+---@param w1 number
+---@param h1 number
+---@return boolean
+function collision.rectRectCollision(x0, y0, w0, h0, x1, y1, w1, h1)
+    return x0 < x1 + w1 and
+           y0 < y1 + h1 and
+           x0 + w0 > x1 and
+           y0 + h0 > y1
+end
+
 ---@param ray_x number
 ---@param ray_y number
 ---@param ray_dx number

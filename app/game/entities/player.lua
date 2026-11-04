@@ -3,6 +3,8 @@ local centeredRect = require("game.util").centeredRect
 local bool2int     = require("game.util").bool2int
 local newEntity    = require("game.util").newEntity
 
+local Const = require("game.consts")
+
 ---@class game.entities.Player: game.entities.Entity
 local Player = batteries.class {
     extends = require("game.entities.base")
@@ -11,6 +13,7 @@ local Player = batteries.class {
 function Player:new(x, y)
     self:super(centeredRect(x, y, 14, 14))
     self.collision = true
+    self.colGroup = Const.COLGROUP_PLAYER
     self.render = RectRenderer(0.0, 1.0, 0.0)
 
     self.msg:subscribe("addedToWorld", self._addedToWorld)
@@ -68,7 +71,17 @@ function Player:update()
             world:addEntity(proj)
         end
     end
+end
 
+function Player:postUpdate()
+    local world = softassert(self.world)
+    if not world then return end
+
+    local centerX = self.x + self.width/2
+    local centerY = self.y + self.height/2
+
+    -- update sights. this is in post-update so that the mouse position reading
+    -- doesn't lag behind the camera update.
     local rayDx = world.mouseX - centerX
     local rayDy = world.mouseY - centerY
     local rayLen = math.length(rayDx, rayDy)
@@ -78,19 +91,6 @@ function Player:update()
             centerX, centerY,
             rayDx / rayLen, rayDy / rayLen)
     end
-    --[[
-    local dist, nx, ny =
-        self.world:raycast(centerX, centerY,
-                           rayDx, rayDy)
-    if dist then
-        local rayLen = math.length(rayDx, rayDy)
-        local px = centerX + (rayDx / rayLen) * dist
-        local py = centerY + (rayDy / rayLen) * dist
-
-        self.testEnt.x = px - self.testEnt.width / 2
-        self.testEnt.y = py - self.testEnt.height / 2
-    end
-    --]]
 end
 
 return Player

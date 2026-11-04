@@ -37,10 +37,10 @@ function GunSight:updateSight(x, y, dx, dy)
         local endX = x + dx * rd + rnx * 0.001
         local endY = y + dy * rd + rny * 0.001
 
-        table.insert(self.lines, x)
-        table.insert(self.lines, y)
-        table.insert(self.lines, endX)
-        table.insert(self.lines, endY)
+        table.insert(self.lines, math.round(x) + 0.5)
+        table.insert(self.lines, math.round(y) + 0.5)
+        table.insert(self.lines, math.round(endX) + 0.5)
+        table.insert(self.lines, math.round(endY) + 0.5)
 
         bounces = bounces + 1
         if bounces >= self.maxBounces then
@@ -60,6 +60,7 @@ end
 function GunSight:render()
     Lg.setColor(1, 0, 0)
     Lg.setLineWidth(1.0)
+    Lg.setLineJoin("none")
     Lg.line(self.lines)
 end
 

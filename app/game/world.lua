@@ -168,6 +168,18 @@ function World:removeEntity(ent)
     end
 end
 
+---@param name string
+---@return game.entities.Entity?
+function World:findEntity(name)
+    for _, ent in ipairs(self.entities) do
+        if ent.name == name then
+            return ent
+        end
+    end
+
+    return nil
+end
+
 ---@param btn string
 ---@return boolean
 function World:isInputPressed(btn)
@@ -227,6 +239,10 @@ function World:_loadMap()
                 if not ent then
                     print("error: could not load entity")
                     goto continue
+                end
+
+                if obj.name then
+                    ent.name = obj.name
                 end
 
                 self:addEntity(ent)

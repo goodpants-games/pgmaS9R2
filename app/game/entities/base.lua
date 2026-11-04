@@ -13,9 +13,10 @@ local Entity = batteries.class {
 function Entity:new(x, y, w, h)
     ---@type game.World
     self.world = nil
-
-    -- base properties --
     self._removeOnFrameEnd = false
+    
+    -- base properties --
+    self.name = ""
 
     self.x = x or 0.0
     self.y = y or 0.0

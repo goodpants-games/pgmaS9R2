@@ -1,4 +1,5 @@
-- it is incredibly easy for you to die by going into an enemy sight line.
+- it should be incredibly easy for you to die by going into an enemy sight line.
+  (although enemies currently can't shoot back or anything)
 - maybe when you kill or otherwise damage an enemy, enemies were nearby will be
   alerted. if they saw the death, they will know the general direction the
   bullet come from and move towards it.

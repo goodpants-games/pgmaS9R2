@@ -13,14 +13,15 @@ function Enemy:new(x, y)
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)
 
-    self.cooldown = 0.2
+    self.cooldown = 12 -- in frames
     self.lastFire = 0
 end
 
 function Enemy:update()
     --cooldown
-    local howLong = os.clock() - self.lastFire
-    if howLong < self.cooldown then
+    self.lastFire = self.lastFire + 1
+
+    if self.lastFire < self.cooldown then
         return
     end
 
@@ -42,7 +43,7 @@ function Enemy:update()
         e.yVel = dirY * 4
         world:addEntity(e)
 
-        self.lastFire = os.clock()
+        self.lastFire = 0
     end
 end
 

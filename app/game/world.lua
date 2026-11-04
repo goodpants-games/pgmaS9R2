@@ -6,6 +6,7 @@ local Util = require("game.util")
 
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire"}
+local ENTITY_RENDER_TAG = "__gtag_render"
 
 ---@class game.World: batteries.Class
 ---@overload fun():game.World
@@ -23,6 +24,10 @@ function World:new()
     self.entities = {}
     ---@type game.entities.Entity?
     self.player = nil
+
+    ---@private
+    ---@type game.entities.Entity[]
+    self._renderOrder = {}
     
     ---@private
     self._needEntityRemoval = false
@@ -84,6 +89,11 @@ function World:update()
                 ent._removeOnFrameEnd = false
                 ent.msg:publish("removingFromWorld", ent)
                 ent.world = nil
+
+                if ent[ENTITY_RENDER_TAG] then
+                    ent[ENTITY_RENDER_TAG] = nil
+                    table.remove_value(self._renderOrder, ent)
+                end
                 table.remove(self.entities, i)
             end
         end
@@ -103,6 +113,28 @@ function World:update()
         end
     end
 
+    -- update render list
+    for _, ent in ipairs(self.entities) do
+        if ent.render then
+            if not ent[ENTITY_RENDER_TAG] then
+                ent[ENTITY_RENDER_TAG] = true
+                table.insert(self._renderOrder, ent)
+            end
+        else
+            if ent[ENTITY_RENDER_TAG] then
+                ent[ENTITY_RENDER_TAG] = nil
+                table.remove_value(self._renderOrder, ent)
+            end
+        end
+    end
+
+    -- sort render list
+    -- uses a Lua implementation of sort since i want it to be stable
+    -- although i suppose that property isn't too important.
+    table.insertion_sort(self._renderOrder, function(a, b)
+        return a.zIndex < b.zIndex
+    end)
+
     for _, btn in ipairs(BUTTON_INPUTS) do
         self.buttonInputs[2][btn] = self.buttonInputs[1][btn]
     end
@@ -114,7 +146,7 @@ function World:draw()
 
     self.map:draw(0, 0)
 
-    for _, ent in ipairs(self.entities) do
+    for _, ent in ipairs(self._renderOrder) do
         ent:draw()
     end
 

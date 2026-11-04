@@ -33,6 +33,9 @@ function Entity:new(x, y, w, h)
     self.colGroup = Consts.COLGROUP_DEFAULT
     self.colMask = Consts.COLGROUP_ALL
 
+    -- render properties --
+    self.zIndex = 0
+
     self.msg = batteries.pubsub()
 end
 

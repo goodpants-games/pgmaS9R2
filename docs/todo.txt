@@ -1,5 +1,4 @@
 - it should be incredibly easy for you to die by going into an enemy sight line.
-  (although enemies currently can't shoot back or anything)
 - maybe when you kill or otherwise damage an enemy, enemies were nearby will be
   alerted. if they saw the death, they will know the general direction the
   bullet come from and move towards it.
@@ -7,6 +6,8 @@
   kill.
 - bullets can phase through enemies making it so you can kill multiple in one
   shot...
+- player could have items that give them useful temporary effects, such as becoming
+invisible for 5 seconds or shooting two bullets instead of one
 
 name idea:
  <something Evil> billiards

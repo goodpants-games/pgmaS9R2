@@ -12,6 +12,38 @@ function Enemy:new(x, y)
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)
+
+    self.cooldown = 0.2
+    self.lastFire = 0
+end
+
+function Enemy:update()
+    --cooldown
+    local howLong = os.clock() - self.lastFire
+    if howLong < self.cooldown then
+        return
+    end
+
+    local world = self.world
+    if not world["player"] then
+        return
+    end
+
+    local distX = (world.player.x - self.x)
+    local distY = (world.player.y - self.y)
+    local dirX = distX / math.length(distX, distY)
+    local dirY = distY / math.length(distX, distY)
+
+    --local raycastDist = world:raycast(self.x, self.y, distX*100, distY*100)
+    local sightRaycast = world:raycast(self.x, self.y, dirX*distX, dirY*distY)
+    if not sightRaycast then
+        local e = world:newEntity("enemyProjectile", self.x + (self.width/2), self.y + (self.height/2))
+        e.xVel = dirX * 4
+        e.yVel = dirY * 4
+        world:addEntity(e)
+
+        self.lastFire = os.clock()
+    end
 end
 
 return Enemy

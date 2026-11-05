@@ -24,6 +24,10 @@ function Enemy:new(x, y)
     self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight.maxBounces = 1
 
+    self._hasMoveTarget = false
+    self._moveTargetX = 0
+    self._moveTargetY = 0
+
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
 end
@@ -35,25 +39,44 @@ end
 function Enemy:_hit(hitVx, hitVy)
     hitVx, hitVy = math.normalize(hitVx, hitVy)
 
+    -- Die . Now.
+    self.dead = true
+    self.msg:unsubscribe("hit", self._hit)
     self:removeTag("enemy")
 
-    -- Die . Now.
+    -- alert any enemies in sight line to perceived origin of bullet
+    for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
+        if self:_hasSightLineTo(ent) then
+            ent._moveTargetX = self.x
+            ent._moveTargetY = self.y
+            ent._hasMoveTarget = true
+
+            -- make enemy yellow for debug purposes
+            ent.render.g = 1.0
+        end
+    end
+
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
-    self.dead = true
     self.zIndex = -10
+
     self.gunSight:remove()
     self.gunSight = nil
-    self.msg:unsubscribe("hit", self._hit)
+
+    -- darken color
     self.render.r = self.render.r * 0.5
     self.render.g = self.render.g * 0.5
     self.render.b = self.render.b * 0.5
+end
 
+function Enemy:_hasSightLineTo(oent)
     local cx, cy = self:getCenterPos()
-    for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
-        local ocx, ocy = ent:getCenterPos()
-        local dist = math.distance(cx, cy, ocx, ocy)
-    end
+    local ocx, ocy = oent:getCenterPos()
+    local dx = ocx - cx
+    local dy = ocy - cy
+
+    local hit = not self.world:raycast(cx, cy, dx, dy, Const.COLGROUP_DEFAULT)
+    return hit, dx, dy
 end
 
 function Enemy:update()
@@ -68,19 +91,32 @@ function Enemy:update()
         return
     end
 
-    local centerX, centerY = self:getCenterPos()
-    local playerCenterX, playerCenterY = world.player:getCenterPos()
-    local playerDx = playerCenterX - centerX
-    local playerDy = playerCenterY - centerY
+    if self._hasMoveTarget then
+        local dx,dy = self._moveTargetX - self.x, self._moveTargetY - self.y
+        if math.length(dx, dy) < 10 then
+            print("STOP IT")
+            self._hasMoveTarget = false
+        else
+            dx, dy = math.normalize(dx, dy)
+            self.xVel = dx
+            self.yVel = dy
+        end
+    else
+        self.xVel = 0
+        self.yVel = 0
+    end
 
-    local sightRaycast = world:raycast(centerX, centerY, playerDx, playerDy, Const.COLGROUP_DEFAULT)
-    if not sightRaycast then
+    local sightRaycast, playerDx, playerDy =
+        self:_hasSightLineTo(world.player)
+
+    if sightRaycast then
         if not self.gunSight.world then
             self.world:addEntity(self.gunSight)
         end
 
+        local cx, cy = self:getCenterPos()
         local dx, dy = math.normalize(playerDx, playerDy)
-        self.gunSight:updateSight(centerX, centerY, dx, dy)
+        self.gunSight:updateSight(cx, cy, dx, dy)
 
         self.fireTimer = self.fireTimer + 1
         if self.fireTimer >= self.fireWait then

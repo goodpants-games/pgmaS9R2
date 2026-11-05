@@ -22,7 +22,7 @@ end
 
 function Projectile:_touched(oent, nx, ny)
     if oent then
-        oent:remove()
+        oent:publish("hit", self.xVel, self.yVel)
     else
         self.bouncesLeft = self.bouncesLeft - 1
         if self.bouncesLeft <= 0 then

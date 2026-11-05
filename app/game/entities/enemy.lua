@@ -19,19 +19,52 @@ function Enemy:new(x, y)
     self.fireWait = 40 -- in frames
     self.fireTimer = 0
 
+    self.dead = false
+
     self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight.maxBounces = 1
 
     self.msg:subscribe("removingFromWorld", self._removing)
+    self.msg:subscribe("hit", self._hit)
 end
 
 function Enemy:_removing()
     self.gunSight:remove()
 end
 
+function Enemy:_hit(hitVx, hitVy)
+    hitVx, hitVy = math.normalize(hitVx, hitVy)
+
+    self:removeTag("enemy")
+
+    -- Die . Now.
+    self.xVel = hitVx * 3
+    self.yVel = hitVy * 3
+    self.dead = true
+    self.zIndex = -10
+    self.gunSight:remove()
+    self.gunSight = nil
+    self.msg:unsubscribe("hit", self._hit)
+    self.render.r = self.render.r * 0.5
+    self.render.g = self.render.g * 0.5
+    self.render.b = self.render.b * 0.5
+
+    local cx, cy = self:getCenterPos()
+    for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
+        local ocx, ocy = ent:getCenterPos()
+        local dist = math.distance(cx, cy, ocx, ocy)
+    end
+end
+
 function Enemy:update()
     local world = self.world
     if not world.player then
+        return
+    end
+    
+    if self.dead then
+        self.xVel = self.xVel * 0.9
+        self.yVel = self.yVel * 0.9
         return
     end
 

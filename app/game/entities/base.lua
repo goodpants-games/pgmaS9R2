@@ -5,7 +5,6 @@ local Consts = require("game.consts")
 ---@field msg any
 ---@field update fun(self:game.entities.Entity)?
 ---@field postUpdate fun(self:game.entities.Entity)?
----@field render fun(self:game.entities.Entity)|table
 local Entity = batteries.class {
     name = "game.entities.Entity"
 }
@@ -16,6 +15,8 @@ function Entity:new(x, y, w, h)
     ---@type game.World
     self.world = nil
     self._removeOnFrameEnd = false
+
+    self.msg = batteries.pubsub()
     
     -- base properties --
 
@@ -47,10 +48,10 @@ function Entity:new(x, y, w, h)
     self._prevTouching = nil
 
     -- render properties --
-
     self.zIndex = 0
-
-    self.msg = batteries.pubsub()
+    self.visible = true
+    ---@type (fun(self:game.entities.Entity)|table)?
+    self.render = nil
 end
 
 ---Remove this entity from its world.
@@ -58,6 +59,25 @@ function Entity:remove()
     if self.world then
         self.world:removeEntity(self)
     end
+end
+
+---@param msg string
+---@param ... any
+function Entity:publish(msg, ...)
+    self.msg:publish(msg, self, ...)
+end
+
+function Entity:getCenterX()
+    return self.x + self.width / 2
+end
+
+function Entity:getCenterY()
+    return self.y + self.height / 2
+end
+
+function Entity:getCenterPos()
+    return self.x + self.width / 2,
+           self.y + self.height / 2
 end
 
 ---@return game.entities.Entity[]

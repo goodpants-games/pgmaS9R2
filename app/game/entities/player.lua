@@ -19,17 +19,13 @@ function Player:new(x, y)
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
 
-    -- create test entity
-    self.testEnt = newEntity("base", 0, 0, 6, 6)
-    self.testEnt.render = RectRenderer(1.0, 1.0, 1.0)
-
     -- create gun sight
     self.gunSight = newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
+    self.gunSight:setColor(1, 1, 0)
 end
 
 function Player:_addedToWorld()
     self.world.player = self
-    self.world:addEntity(self.testEnt)
     self.world:addEntity(self.gunSight)
 end
 
@@ -38,7 +34,6 @@ function Player:_removingFromWorld()
         self.world.player = nil
     end
 
-    self.testEnt:remove()
     self.gunSight:remove()
 end
 
@@ -71,6 +66,8 @@ function Player:update()
             world:addEntity(proj)
         end
     end
+
+    self.gunSight.visible = world.curFrame % 3 == 0
 end
 
 function Player:postUpdate()

@@ -37,12 +37,10 @@ function collision.rayRectIntersection(ray_x, ray_y, ray_dx, ray_dy,
     ray_dx = ray_dx / ray_len
     ray_dy = ray_dy / ray_len
 
-    local rxe = rw / 2.0
-    local rye = rh / 2.0
-    local rl = rx - rxe
-    local rr = rx + rxe
-    local rt = ry - rye
-    local rb = ry + rye
+    local rl = rx
+    local rr = rx + rw
+    local rt = ry
+    local rb = ry + rh
 
     -- get ray distances for all four rect sides
     local d_left  = (rl - ray_x) / ray_dx

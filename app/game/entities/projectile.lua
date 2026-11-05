@@ -11,6 +11,7 @@ function Projectile:new(x, y)
     self:super(centeredRect(x, y, 1, 1))
     self.collision = true
     self.touchMonitor = true
+    self.colGroup = 0
     self.colMask = bit.bor(Const.COLGROUP_NPC)
 
     self.restitution = 1.0

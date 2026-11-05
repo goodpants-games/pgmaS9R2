@@ -15,6 +15,7 @@ local World = batteries.class()
 function World:new()
     self.map = Tiled.loadMap("/res/maps/test.lua")
 
+    self.curFrame = 0
     self.camX = 0.0
     self.camY = 0.0
     self.mouseX = 0.0
@@ -136,6 +137,7 @@ function World:update()
         return a.zIndex < b.zIndex
     end)
 
+    self.curFrame = self.curFrame + 1
     for _, btn in ipairs(BUTTON_INPUTS) do
         self.buttonInputs[2][btn] = self.buttonInputs[1][btn]
     end
@@ -148,12 +150,14 @@ function World:draw()
     self.map:draw(0, 0)
 
     for _, ent in ipairs(self._renderOrder) do
-        local renderer = ent.render
-        if renderer then
-            if type(renderer) == "function" then
-                renderer(ent)
-            else
-                renderer:draw(ent)
+        if ent.visible then
+            local renderer = ent.render
+            if renderer then
+                if type(renderer) == "function" then
+                    renderer(ent)
+                else
+                    renderer:draw(ent)
+                end
             end
         end
     end
@@ -251,13 +255,30 @@ function World:raycast(x, y, dx, dy, colFlags)
         colFlags = Consts.COLGROUP_ALL
     end
 
-    -- check collisions with tiles
-    if bit.band(colFlags, 0x1) then
-        local dist, nx, ny = Collision.tileRaycast(x, y, dx, dy, self._getCol)
-        if dist then
-            return dist, -nx, -ny
+    local resultDist, resultNx, resultNy
+
+    -- check collisions with tiles (the tilemap is on collision layer 1)
+    if bit.band(colFlags, 0x1) ~= 0 then
+        local hd, hdx, hdy = Collision.tileRaycast(x, y, dx, dy, self._getCol)
+        if hd then
+            resultDist, resultNx, resultNy = hd, -hdx, -hdy
         end
     end
+
+    -- check collisions with entities
+    for _, ent in ipairs(self.entities) do
+        if ent.collision and bit.band(ent.colGroup, colFlags) ~= 0 then
+            local hd, hnx, hny = Collision.rayRectIntersection(
+                x, y, dx, dy,
+                ent.x, ent.y, ent.width, ent.height
+            )
+            if hd and (not resultDist or hd < resultDist) then
+                resultDist, resultNx, resultNy = hd, hnx, hny
+            end
+        end
+    end
+
+    return resultDist, resultNx, resultNy
 end
 
 --------------------------------------------------------------------------------

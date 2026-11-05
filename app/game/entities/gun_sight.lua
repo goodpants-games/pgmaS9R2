@@ -1,3 +1,5 @@
+local const = require("game.consts")
+
 ---@class game.entities.GunSight: game.entities.Entity
 local GunSight = batteries.class {
     extends = require("game.entities.base")
@@ -6,10 +8,26 @@ local GunSight = batteries.class {
 function GunSight:new(x, y)
     self:super(0, 0, 0, 0)
 
+    self.zIndex = -100
+
     self.maxLength = 400
     self.maxBounces = 4
+    self.r = 1
+    self.g = 1
+    self.b = 1
 
     ---@type number[]
+    self.lines = {}
+end
+
+---@param r number
+---@param g number
+---@param b number
+function GunSight:setColor(r, g, b)
+    self.r, self.g, self.b = r, g, b
+end
+
+function GunSight:clearSight()
     self.lines = {}
 end
 
@@ -22,7 +40,9 @@ function GunSight:updateSight(x, y, dx, dy)
     local len = self.maxLength
     local bounces = 0
     while len > 0 do
-        local rd, rnx, rny = self.world:raycast(x, y, dx * len, dy * len)
+        local rd, rnx, rny = self.world:raycast(
+            x, y, dx * len, dy * len,
+            const.COLGROUP_DEFAULT)
         if rd == 0 then
             warn("rd was zero")
             break
@@ -58,10 +78,12 @@ function GunSight:updateSight(x, y, dx, dy)
 end
 
 function GunSight:render()
-    Lg.setColor(1, 0, 0)
-    Lg.setLineWidth(1.0)
-    Lg.setLineJoin("none")
-    Lg.line(self.lines)
+    if self.lines[1] then
+        Lg.setColor(self.r, self.g, self.b)
+        Lg.setLineWidth(1.0)
+        Lg.setLineJoin("none")
+        Lg.line(self.lines)
+    end
 end
 
 return GunSight

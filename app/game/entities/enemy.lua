@@ -1,6 +1,7 @@
 local RectRenderer = require("game.util").RectRenderer
 local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
+local Util = require("game.util")
 
 ---@class game.entities.Enemy: game.entities.Entity
 local Enemy = batteries.class {
@@ -13,38 +14,63 @@ function Enemy:new(x, y)
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)
 
-    self.cooldown = 12 -- in frames
-    self.lastFire = 0
+    self.fireWait = 40 -- in frames
+    self.fireTimer = 0
+
+    self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
+    self.gunSight.maxBounces = 1
+
+    self.msg:subscribe("removingFromWorld", self._removing)
+end
+
+function Enemy:_removing()
+    self.gunSight:remove()
 end
 
 function Enemy:update()
-    --cooldown
-    self.lastFire = self.lastFire + 1
-
-    if self.lastFire < self.cooldown then
-        return
-    end
-
     local world = self.world
-    if not world["player"] then
+    if not world.player then
         return
     end
 
-    local distX = (world.player.x - self.x)
-    local distY = (world.player.y - self.y)
-    local dirX = distX / math.length(distX, distY)
-    local dirY = distY / math.length(distX, distY)
+    local centerX, centerY = self:getCenterPos()
+    local playerCenterX, playerCenterY = world.player:getCenterPos()
+    local playerDx = playerCenterX - centerX
+    local playerDy = playerCenterY - centerY
 
-    --local raycastDist = world:raycast(self.x, self.y, distX*100, distY*100)
-    local sightRaycast = world:raycast(self.x, self.y, dirX*distX, dirY*distY)
+    local sightRaycast = world:raycast(centerX, centerY, playerDx, playerDy, Const.COLGROUP_DEFAULT)
     if not sightRaycast then
-        local e = world:newEntity("enemyProjectile", self.x + (self.width/2), self.y + (self.height/2))
-        e.xVel = dirX * 4
-        e.yVel = dirY * 4
-        world:addEntity(e)
+        if not self.gunSight.world then
+            self.world:addEntity(self.gunSight)
+        end
 
-        self.lastFire = 0
+        local dx, dy = math.normalize(playerDx, playerDy)
+        self.gunSight:updateSight(centerX, centerY, dx, dy)
+
+        self.fireTimer = self.fireTimer + 1
+        if self.fireTimer >= self.fireWait then
+            print("fire the weapon")
+            self.fireTimer = 0
+            Sceneman.switchScene("entry")
+        end
+    else
+        if self.gunSight.world then
+            self.gunSight:remove()
+            self.gunSight:clearSight()
+        end
+
+        self.fireTimer = 0
     end
+    -- if not sightRaycast then
+    --     local e = world:newEntity("enemyProjectile", self.x + (self.width/2), self.y + (self.height/2))
+    --     if e then
+    --         e.xVel = dirX * 4
+    --         e.yVel = dirY * 4
+    --         world:addEntity(e)
+
+    --         self.lastFire = 0
+    --     end
+    -- end
 end
 
 return Enemy

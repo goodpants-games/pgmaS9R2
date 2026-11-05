@@ -3,15 +3,31 @@
 
 require("compat.love")
 
+-- love.graphics initial setup --
 Lg = love.graphics
-
-require("batteries"):export()
 Lg.setDefaultFilter("nearest")
 Lg.setLineStyle("rough")
+
+-- extra math functions --
+
+---Normalize a 2D vector.
+---@param x number
+---@param y number
+---@return number x, number y
+function math.normalize(x, y)
+    local len = math.sqrt(x * x + y * y)
+    return x / len, y / len
+end
+
+-- library setup --
+require("batteries"):export()
 
 Sceneman = require("sceneman")
 Sceneman.scenePrefix = "scenes."
 Sceneman.setCallbackMode("manual")
+
+local sprite = require("sprite")
+sprite.fallbackAlignment = "center"
 
 local has_tiled, tiled = pcall(require, "tiled")
 if has_tiled then
@@ -27,9 +43,7 @@ if has_tiled then
     end
 end
 
-local sprite = require("sprite")
-sprite.fallbackAlignment = "center"
-
+-- set up jprof --
 if Debug.enabled then
     local args = love.parsedGameArguments
     for i=1, #args do

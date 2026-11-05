@@ -46,6 +46,7 @@ function Enemy:_hit(hitVx, hitVy)
 
     -- alert any enemies in sight line to perceived origin of bullet
     for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
+        ---@cast ent game.entities.Enemy
         if self:_hasSightLineTo(ent) then
             ent._moveTargetX = self.x
             ent._moveTargetY = self.y

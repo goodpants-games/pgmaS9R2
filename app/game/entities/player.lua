@@ -14,11 +14,14 @@ local Player = batteries.class {
 
 function Player:new(x, y)
     self:super(centeredRect(x, y, 14, 14))
+    self:addTag("player")
+    
     self.collision = true
     self.colGroup = Const.COLGROUP_PLAYER
     self.render = RectRenderer(0.0, 1.0, 0.0)
 
     self.fireCharge = 0
+    self.ammo = 1
 
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
@@ -48,6 +51,17 @@ function Player:update()
     self.xVel = 2 * (bool2int(world:isInputDown("right")) - bool2int(world:isInputDown("left")))
     self.yVel = 2 * (bool2int(world:isInputDown("down")) - bool2int(world:isInputDown("up")))
 
+    self:_weaponUpdate()
+    self:_pickupUpdate()
+end
+
+function Player:_weaponUpdate()
+    local world = assert(self.world)
+
+    if self.ammo == 0 then
+        return
+    end
+
     local centerX = self.x + self.width/2
     local centerY = self.y + self.height/2
 
@@ -67,6 +81,7 @@ function Player:update()
         self.gunSight.r, self.gunSight.g, self.gunSight.b = r, g, b
     else
         if self.fireCharge > FIRE_CHARGE_MIN then
+            -- fire!!!!
             local mouseX = world.camX + App.mouseX
             local mouseY = world.camY + App.mouseY
         
@@ -84,10 +99,33 @@ function Player:update()
                 proj.yVel = fireDy * 10
                 world:addEntity(proj)
             end
+
+            self.ammo = self.ammo - 1
         end
 
         self.fireCharge = 0
         self.gunSight.visible = false
+    end
+end
+
+function Player:_pickupUpdate()
+    local nearestPickup = nil
+    local nearestPickupDist = 10
+
+    local cx, cy = self:getCenterPos()
+    for _, ent in ipairs(self.world:findEntitiesWithTag("playerPickup")) do
+        local ecx, ecy = ent:getCenterPos()
+        local dist = math.distance(cx, cy, ecx, ecy)
+        if dist < nearestPickupDist then
+            nearestPickup = ent
+            nearestPickupDist = dist
+        end
+    end
+
+    if nearestPickup then
+        if self.world:isInputPressed("pickUp") then
+            nearestPickup:publish("pickUp", self)
+        end
     end
 end
 

@@ -17,17 +17,52 @@ function Projectile:new(x, y)
     self.restitution = 1.0
     self.bouncesLeft = 4
 
-    self.msg:subscribe("touched", self._touched)
+    self.isAttached = false
+    ---@type game.entities.Entity?
+    self.entAttachedTo = nil
+
+    self._touchEv = function(...) self._touched(...) end
+    self._pickupEv = function(...) self._pickUp(...) end
+    self.msg:subscribe("touched", self._touchEv)
 end
 
 function Projectile:_touched(oent, nx, ny)
     if oent then
         oent:publish("hit", self.xVel, self.yVel)
+        self.entAttachedTo = oent
+        self:_enterAttachedMode()
     else
         self.bouncesLeft = self.bouncesLeft - 1
         if self.bouncesLeft <= 0 then
-            self:remove()
+            self:_enterAttachedMode()
+            
+            -- self:remove()
         end
+    end
+end
+
+function Projectile:_pickUp(ent)
+    if ent:hasTag("player") then
+        ent.ammo = ent.ammo + 1
+    end
+
+    self:remove()
+end
+
+function Projectile:_enterAttachedMode()
+    self.xVel = 0
+    self.yVel = 0
+    self.isAttached = true
+
+    self.msg:unsubscribe("touched", self._touchEv)
+    self.msg:subscribe("pickUp", self._pickupEv)
+    self:addTag("playerPickup")
+end
+
+function Projectile:postUpdate()
+    local ent = self.entAttachedTo
+    if ent then
+        self.x, self.y = ent:getCenterPos()
     end
 end
 

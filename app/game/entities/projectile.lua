@@ -20,10 +20,14 @@ function Projectile:new(x, y)
     self.isAttached = false
     ---@type game.entities.Entity?
     self.entAttachedTo = nil
+    self.hasPickupFocus = false
 
-    self._touchEv = function(...) self._touched(...) end
-    self._pickupEv = function(...) self._pickUp(...) end
-    self.msg:subscribe("touched", self._touchEv)
+    self.msg:subscribe("touched", self._touched)
+    self.msg:subscribe("pickupFocusChanged", self._pickupFocusChanged)
+end
+
+function Projectile:_pickupFocusChanged(v)
+    self.hasPickupFocus = v
 end
 
 function Projectile:_touched(oent, nx, ny)
@@ -54,8 +58,8 @@ function Projectile:_enterAttachedMode()
     self.yVel = 0
     self.isAttached = true
 
-    self.msg:unsubscribe("touched", self._touchEv)
-    self.msg:subscribe("pickUp", self._pickupEv)
+    self.msg:unsubscribe("touched", self._touched)
+    self.msg:subscribe("pickUp", self._pickUp)
     self:addTag("playerPickup")
 end
 
@@ -70,7 +74,12 @@ function Projectile:render()
     local cx = self.x + self.width / 2
     local cy = self.y + self.height / 2
 
-    Lg.setColor(0, 0, 0)
+    if self.hasPickupFocus then
+        Lg.setColor(1, 1, 0)
+    else
+        Lg.setColor(0, 0, 0)
+    end
+    
     Lg.circle("fill", cx, cy, 2)
 end
 

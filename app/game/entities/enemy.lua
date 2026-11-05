@@ -15,7 +15,9 @@ function Enemy:new(x, y)
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)
+    self.moveSpeed = 2.0
 
+    self.noticeWait = 20
     self.fireWait = 40 -- in frames
     self.fireTimer = 0
 
@@ -99,8 +101,8 @@ function Enemy:update()
             self._hasMoveTarget = false
         else
             dx, dy = math.normalize(dx, dy)
-            self.xVel = dx
-            self.yVel = dy
+            self.xVel = dx * self.moveSpeed
+            self.yVel = dy * self.moveSpeed
         end
     else
         self.xVel = 0
@@ -120,6 +122,12 @@ function Enemy:update()
         self.gunSight:updateSight(cx, cy, dx, dy)
 
         self.fireTimer = self.fireTimer + 1
+        if self.fireTimer == self.noticeWait then
+            print("notice")
+            self._hasMoveTarget = true
+            self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
+        end
+
         if self.fireTimer >= self.fireWait then
             print("fire the weapon")
             self.fireTimer = 0

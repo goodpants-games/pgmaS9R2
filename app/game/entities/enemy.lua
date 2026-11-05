@@ -10,6 +10,8 @@ local Enemy = batteries.class {
 
 function Enemy:new(x, y)
     self:super(centeredRect(x, y, 14, 14))
+    self:addTag("enemy")
+
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)

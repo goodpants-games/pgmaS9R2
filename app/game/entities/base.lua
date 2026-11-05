@@ -17,6 +17,7 @@ function Entity:new(x, y, w, h)
     self._removeOnFrameEnd = false
 
     self.msg = batteries.pubsub()
+    self.tags = {}
     
     -- base properties --
 
@@ -59,6 +60,21 @@ function Entity:remove()
     if self.world then
         self.world:removeEntity(self)
     end
+end
+
+---@param tag string
+function Entity:addTag(tag)
+    self.tags[tag] = true
+end
+
+---@param tag any
+function Entity:removeTag(tag)
+    self.tags[tag] = nil
+end
+
+---@param tag string
+function Entity:hasTag(tag)
+    return not not self.tags[tag]
 end
 
 ---@param msg string

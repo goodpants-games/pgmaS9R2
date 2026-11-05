@@ -214,7 +214,7 @@ end
 
 ---@param name string
 ---@return game.entities.Entity?
-function World:findEntity(name)
+function World:findEntityByName(name)
     for _, ent in ipairs(self.entities) do
         if ent.name == name then
             return ent
@@ -222,6 +222,18 @@ function World:findEntity(name)
     end
 
     return nil
+end
+
+---@param tag string
+---@return game.entities.Entity[]
+function World:findEntitiesWithTag(tag)
+    local res = {}
+    for _, ent in ipairs(self.entities) do
+        if ent:hasTag(tag) then
+            table.insert(res, ent)
+        end
+    end
+    return res
 end
 
 ---@param btn string

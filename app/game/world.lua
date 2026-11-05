@@ -48,15 +48,17 @@ function World:new()
     self:_loadMap()
 
     -- collision map is the first found tile layer
-    local colMap
+    ---@type pklove.tiled.TileLayer
+    self.colMap = nil
     for _, layer in ipairs(self.map.layers) do
         if layer.type == "tilelayer" then
-            colMap = layer
+            self.colMap = layer --[[@as pklove.tiled.TileLayer]]
             break
         end
     end
 
-    if softassert(colMap, "map had no collision layer!") then
+    if softassert(self.colMap, "map had no collision layer!") then
+        local colMap = self.colMap
         local colMapGet = colMap.get
         ---@private
         self._getCol = function(tx, ty)

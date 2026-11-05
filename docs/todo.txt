@@ -4,8 +4,7 @@
   bullet come from and move towards it.
 - maybe you have limited ammo, and you need to pick them up from enemies you
   kill.
-- bullets can phase through enemies making it so you can kill multiple in one
-  shot...
+- make another weapon type which can phase through enemies
 - player could have items that give them useful temporary effects, such as becoming
 invisible for 5 seconds or shooting two bullets instead of one
 

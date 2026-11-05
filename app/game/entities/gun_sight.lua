@@ -72,8 +72,9 @@ function GunSight:updateSight(x, y, dx, dy)
 
         -- reflect:
         -- v' = v - 2r(v ⋅ r)
-        dx = dx - 2 * (dx * rnx) * rnx
-        dy = dy - 2 * (dy * rny) * rny
+        local dot = dx * rnx + dy * rny
+        dx = dx - 2 * rnx * dot
+        dy = dy - 2 * rny * dot
     end
 end
 

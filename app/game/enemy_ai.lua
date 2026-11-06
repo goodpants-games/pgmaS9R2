@@ -46,9 +46,10 @@ function EnemyAI:new(world)
     self._debugDraws = {}
 end
 
-local function tinsert2(t, x, y)
+local function tinsert3(t, x, y, z)
     table.insert(t, x)
     table.insert(t, y)
+    table.insert(t, z)
 end
 
 ---Plot a pixel for every pixel touching the line segment between the points
@@ -104,13 +105,13 @@ end
 ---the string "stop", the search will abort.
 ---@param origX integer
 ---@param origY integer
----@param processTile fun(x:integer, y:integer):boolean
-function EnemyAI:searchTiles(origX, origY, processTile)
+---@param processTile fun(x:integer, y:integer, depth:integer):boolean
+function EnemyAI:_searchTiles(origX, origY, processTile)
     local pair2u = Util.pair2u
     local tremove = table.remove
 
     ---@type number[]
-    local frontier = { origX, origY }
+    local frontier = { origX, origY, 0 }
     ---@type {[number]:boolean}
     local visited = {}
 
@@ -123,23 +124,25 @@ function EnemyAI:searchTiles(origX, origY, processTile)
     -- end
 
     while frontier[1] do
-        for _=1, #frontier, 2 do
-            local x, y = tremove(frontier, 1), tremove(frontier, 1)
+        for _=1, #frontier, 3 do
+            local x, y, depth =
+                tremove(frontier, 1), tremove(frontier, 1), tremove(frontier, 1)
             if self.mapAwareness[y+1][x+1] ~= 0 then
                 assert(x >= 0) assert(y >= 0)
                 local k = pair2u(x, y)
                 if not visited[k] then
                     visited[k] = true
-                    local status = processTile(x, y)
+                    local status = processTile(x, y, depth)
                     if status == "stop" then
                         return
                     end
 
                     if status then
-                        tinsert2(frontier, x+1, y)
-                        tinsert2(frontier, x-1, y)
-                        tinsert2(frontier, x, y-1)
-                        tinsert2(frontier, x, y+1)
+                        local nd = depth + 1
+                        tinsert3(frontier, x+1, y, nd)
+                        tinsert3(frontier, x-1, y, nd)
+                        tinsert3(frontier, x, y-1, nd)
+                        tinsert3(frontier, x, y+1, nd)
                     end
                 end
             end
@@ -168,7 +171,7 @@ function EnemyAI:raycast(x, y, dx, dy)
     end
 end
 
-function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy)
+function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy, markId)
     --[[
         p = (origX, origY) is the position of the dead enemy.
         d = (origDx, origDy) is the direction of the bullet, as a normalized
@@ -200,19 +203,21 @@ function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy)
     ---@cast r2ty integer
     self:_plotLine(r1tx, r1ty, r2tx, r2ty, function(tx, ty)
         forbidden[Util.pair2u(tx, ty)] = true
-        table.insert(self._debugDraws, { x = tx, y = ty, r=1,g=1,b=1 })
     end)
 
     local origTx = math.floor(origX / TILE_SIZE)
     local origTy = math.floor(origY / TILE_SIZE)
 
     forbidden[Util.pair2u(origTx, origTy)] = nil
-    self:searchTiles(origTx, origTy, function(x, y)
-        if forbidden[Util.pair2u(x, y)] then
+    self:_searchTiles(origTx, origTy, function(x, y, depth)
+        if depth > 20 then
             return false
         end
 
-        table.insert(self._debugDraws, { x = x, y = y, r=1,g=0,b=0 })
+        if forbidden[Util.pair2u(x, y)] then
+            return false
+        end
+        self.mapAwareness[y+1][x+1] = markId
         return true
     end)
 end
@@ -225,9 +230,49 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId)
         on each querying tile T, if a raycast between the center of tile T and
         O is obstructed, then do not process that tile.
     --]]
+    local origTx = math.floor(origX / TILE_SIZE)
+    local origTy = math.floor(origY / TILE_SIZE)
+    local colFlags = const.COLGROUP_DEFAULT
+
+    self:_searchTiles(origTx, origTy, function(tx, ty)
+        local x = (tx + 0.5) * TILE_SIZE
+        local y = (ty + 0.5) * TILE_SIZE
+        local dx = origX - x
+        local dy = origY - y
+        local hit = self.world:raycast(x, y, dx, dy, colFlags)
+
+        if hit then
+            return false
+        else
+            self.mapAwareness[ty+1][tx+1] = markId
+            return true
+        end
+    end)
+end
+
+function EnemyAI:fillAwareness(markId)
+    local w = #self.mapAwareness[0]
+    local h = #self.mapAwareness
+    for y=1, h do
+        local row = self.mapAwareness[y]
+        for x=1, w do
+            if row[x] ~= 0 then
+                row[x] = markId
+            end
+        end
+    end
 end
 
 function EnemyAI:update()
+    Debug.draw:color(1, 0, 0)
+    for y=1, #self.mapAwareness do
+        for x=1, #self.mapAwareness[1] do
+            if self.mapAwareness[y][x] >= 2 then
+                Debug.draw:rectLines((x-1) * TILE_SIZE, (y-1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            end
+        end
+    end
+
     for _, pos in ipairs(self._debugDraws) do
         Debug.draw:color(pos.r, pos.g, pos.b)
         Debug.draw:rectLines(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)

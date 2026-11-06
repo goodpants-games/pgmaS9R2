@@ -34,14 +34,9 @@ function Enemy:new(x, y)
     ---@type game.EnemyAi?
     self.ai = nil
 
-    self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
     self.msg:subscribe("alertDeath", self._alertDeath)
-end
-
-function Enemy:_added()
-    self.ai = EnemyAi(self.world)
 end
 
 function Enemy:_removing()
@@ -87,7 +82,9 @@ function Enemy:_alertDeath(victimX, victimY, hitVx, hitVy)
     self.render.g = 1.0
     print("it's yellow ??")
 
-    self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy)
+    self.ai = EnemyAi(self.world)
+    self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy, 2)
+    self.ai:markTilesInSightOf(self.x, self.y, 1)
 end
 
 function Enemy:_hasSightLineTo(oent)

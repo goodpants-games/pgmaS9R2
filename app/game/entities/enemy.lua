@@ -2,6 +2,7 @@ local RectRenderer = require("game.util").RectRenderer
 local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
 local Util = require("game.util")
+local EnemyAi = require "game.enemy_ai"
 
 ---@class game.entities.Enemy: game.entities.Entity
 local Enemy = batteries.class {
@@ -30,12 +31,22 @@ function Enemy:new(x, y)
     self._moveTargetX = 0
     self._moveTargetY = 0
 
+    ---@type game.EnemyAi?
+    self.ai = nil
+
+    self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
+    self.msg:subscribe("alertDeath", self._alertDeath)
+end
+
+function Enemy:_added()
+    self.ai = EnemyAi(self.world)
 end
 
 function Enemy:_removing()
     self.gunSight:remove()
+    self.ai = nil
 end
 
 function Enemy:_hit(hitVx, hitVy)
@@ -50,12 +61,7 @@ function Enemy:_hit(hitVx, hitVy)
     for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
         ---@cast ent game.entities.Enemy
         if self:_hasSightLineTo(ent) then
-            ent._moveTargetX = self.x
-            ent._moveTargetY = self.y
-            ent._hasMoveTarget = true
-
-            -- make enemy yellow for debug purposes
-            ent.render.g = 1.0
+            ent:publish("alertDeath", self.x, self.y, hitVx, hitVy)
         end
     end
 
@@ -70,6 +76,18 @@ function Enemy:_hit(hitVx, hitVy)
     self.render.r = self.render.r * 0.5
     self.render.g = self.render.g * 0.5
     self.render.b = self.render.b * 0.5
+end
+
+function Enemy:_alertDeath(victimX, victimY, hitVx, hitVy)
+    self._moveTargetX = victimX
+    self._moveTargetY = victimY
+    self._hasMoveTarget = true
+
+    -- make enemy yellow for debug purposes
+    self.render.g = 1.0
+    print("it's yellow ??")
+
+    self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy)
 end
 
 function Enemy:_hasSightLineTo(oent)
@@ -151,6 +169,9 @@ function Enemy:update()
     --         self.lastFire = 0
     --     end
     -- end
+    if self.ai then
+        self.ai:update()
+    end
 end
 
 return Enemy

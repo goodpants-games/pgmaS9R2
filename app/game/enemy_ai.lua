@@ -3,7 +3,8 @@ local Util = require("game.util")
 
 local TILE_SIZE = const.TILE_SIZE
 
----@class game.EnemyAI: batteries.Class
+---@class game.EnemyAi: batteries.Class
+---@overload fun(world:game.World):game.EnemyAi
 local EnemyAI = batteries.class()
 
 --[[
@@ -28,18 +29,21 @@ function EnemyAI:new(world)
     self.world = world
     local map = world.colMap
 
-    -- 0: N/A: this is a solid tile
-    -- 1: I did not check this tile
-    -- 2: I already checked this tile
+    -- 0: this is a solid tile
+    -- 1: Not relevant
+    -- 2: I did not check this tile
+    -- 3: I already checked this tile
     self.mapAwareness = {}
     for y=1, map.height do
         local row = {}
         for x=1, map.width do
-            local t = assert( map:get(x, y) )
-            row[x] = 0
+            local t = assert( map:get(x-1, y-1) )
+            row[x] = t ~= 0 and 0 or 1
         end
         self.mapAwareness[y] = row
     end
+
+    self._debugDraws = {}
 end
 
 local function tinsert2(t, x, y)
@@ -47,59 +51,62 @@ local function tinsert2(t, x, y)
     table.insert(t, y)
 end
 
+---Plot a pixel for every pixel touching the line segment between the points
+---(lx1, ly1) and (lx2, ly2).
 ---@param lx1 integer
 ---@param ly1 integer
 ---@param lx2 integer
 ---@param ly2 integer
----@param process fun(tx:integer, ty:integer)
-function EnemyAI:_line(lx1, ly1, lx2, ly2, process)
+---@param plot fun(tx:integer, ty:integer)
+function EnemyAI:_plotLine(lx1, ly1, lx2, ly2, plot)
     local lineLen = math.distance(lx1, ly1, lx2, ly2)
     if lineLen == 0.0 then return end
 
     local lineDx, lineDy = math.normalize(lx2 - lx1, ly2 - ly1)
 
-    local dir_sign_x = Util.sign2(lineDx)
-    local dir_sign_y = Util.sign2(lineDy)
+    local dir_sign_x = math.sign2(lineDx)
+    local dir_sign_y = math.sign2(lineDy)
     local tile_offset_x = (lineDx >= 0.0) and 1 or 0
     local tile_offset_y = (lineDy >= 0.0) and 1 or 0
 
     local cur_x = lx1
     local cur_y = ly1
-    local tile_x = math.floor(cur_x / TILE_SIZE)
-    local tile_y = math.floor(cur_y / TILE_SIZE)
+    local tile_x = math.floor(cur_x)
+    local tile_y = math.floor(cur_y)
     
     local t = 0.0
     local dt = 0.0
-    local dt_x = ((tile_x + tile_offset_x) * TILE_SIZE - cur_x) / lineDx
-    local dt_y = ((tile_y + tile_offset_y) * TILE_SIZE - cur_y) / lineDy
+    local dt_x = ((tile_x + tile_offset_x) - cur_x) / lineDx
+    local dt_y = ((tile_y + tile_offset_y) - cur_y) / lineDy
 
     while t < lineLen do
-        process(tile_x, tile_y)
+        plot(tile_x, tile_y)
 
         if dt_x < dt_y then
             tile_x = tile_x + dir_sign_x
             dt = dt_x
             t = t + dt
-            dt_x = dt_x + dir_sign_x * TILE_SIZE / lineDx - dt
+            dt_x = dt_x + dir_sign_x / lineDx - dt
             dt_y = dt_y - dt
         else
             tile_y = tile_y + dir_sign_y
             dt = dt_y
             t = t + dt
             dt_x = dt_x - dt
-            dt_y = dt_y + dir_sign_y * TILE_SIZE / lineDy - dt
+            dt_y = dt_y + dir_sign_y / lineDy - dt
         end
     end
 end
 
 ---Perform breadth-first search on neighboring tiles. Provide a callback
 ---function for each newly discovered tile. If this callback returns true, it
----will search the tiles around that tile.
+---will search the tiles around that tile. If false, it will not. If it returns
+---the string "stop", the search will abort.
 ---@param origX integer
 ---@param origY integer
 ---@param processTile fun(x:integer, y:integer):boolean
 function EnemyAI:searchTiles(origX, origY, processTile)
-    local upair2u = Util.upair2u
+    local pair2u = Util.pair2u
     local tremove = table.remove
 
     ---@type number[]
@@ -107,18 +114,33 @@ function EnemyAI:searchTiles(origX, origY, processTile)
     ---@type {[number]:boolean}
     local visited = {}
 
+    -- for y=1, #self.mapAwareness do
+    --     for x=1, #self.mapAwareness[1] do
+    --         if self.mapAwareness[y][x] ~= 0 then
+    --             processTile(x-1, y-1)
+    --         end
+    --     end
+    -- end
+
     while frontier[1] do
         for _=1, #frontier, 2 do
             local x, y = tremove(frontier, 1), tremove(frontier, 1)
+            if self.mapAwareness[y+1][x+1] ~= 0 then
+                assert(x >= 0) assert(y >= 0)
+                local k = pair2u(x, y)
+                if not visited[k] then
+                    visited[k] = true
+                    local status = processTile(x, y)
+                    if status == "stop" then
+                        return
+                    end
 
-            local k = upair2u(x, y)
-            if not visited[k] then
-                visited[k] = true
-                if processTile(x, y) then
-                    tinsert2(frontier, x+1, y)
-                    tinsert2(frontier, x-1, y)
-                    tinsert2(frontier, x, y-1)
-                    tinsert2(frontier, x, y+1)
+                    if status then
+                        tinsert2(frontier, x+1, y)
+                        tinsert2(frontier, x-1, y)
+                        tinsert2(frontier, x, y-1)
+                        tinsert2(frontier, x, y+1)
+                    end
                 end
             end
         end
@@ -131,15 +153,18 @@ end
 ---@param y number
 ---@param dx number
 ---@param dy number
----@return number? xHit
----@return number? yHit
+---@return number? xHit Tile X position of hit
+---@return number? yHit Tile Y position of hit
+---@return number? normalX
+---@return number? normalY
 function EnemyAI:raycast(x, y, dx, dy)
-    local dist = self.world:raycast(x, y, dx, dy, const.COLGROUP_DEFAULT)
+    local dist, nx, ny = self.world:raycast(x, y, dx, dy, const.COLGROUP_DEFAULT)
     if dist then
         dx, dy = math.normalize(dx, dy)
-        return x + dx * dist, y + dy * dist
-    else
-        return nil, nil
+        return
+            math.floor((x + dx * dist - nx) / TILE_SIZE),
+            math.floor((y + dy * dist - ny) / TILE_SIZE),
+            nx, ny
     end
 end
 
@@ -155,8 +180,41 @@ function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy)
         segment <c1, c2> as "forbidden". then, perform a breadth-first fill
         from p, killing the processing of any tiles marked as "forbidden".
     --]]
-    local f1x, f1y = self:raycast(origX, origY, -origDy * 1000, origDx * 1000)
-    local f2x, f2y = self:raycast(origX, origY, origDy * 1000, -origDx * 1000)
+    local r1tx, r1ty = self:raycast(origX, origY, -origDy * 1000, origDx * 1000)
+    local r2tx, r2ty = self:raycast(origX, origY, origDy * 1000, -origDx * 1000)
+
+    if not softassert(r1tx or r1ty) then
+        return
+    end
+
+    if not softassert(r2tx or r2ty) then
+        return
+    end
+
+    ---@type {[integer]:boolean}
+    local forbidden = {}
+    
+    ---@cast r1tx integer
+    ---@cast r2tx integer
+    ---@cast r1ty integer
+    ---@cast r2ty integer
+    self:_plotLine(r1tx, r1ty, r2tx, r2ty, function(tx, ty)
+        forbidden[Util.pair2u(tx, ty)] = true
+        table.insert(self._debugDraws, { x = tx, y = ty, r=1,g=1,b=1 })
+    end)
+
+    local origTx = math.floor(origX / TILE_SIZE)
+    local origTy = math.floor(origY / TILE_SIZE)
+
+    forbidden[Util.pair2u(origTx, origTy)] = nil
+    self:searchTiles(origTx, origTy, function(x, y)
+        if forbidden[Util.pair2u(x, y)] then
+            return false
+        end
+
+        table.insert(self._debugDraws, { x = x, y = y, r=1,g=0,b=0 })
+        return true
+    end)
 end
 
 function EnemyAI:markTilesInSightOf(origX, origY, markId)
@@ -167,6 +225,13 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId)
         on each querying tile T, if a raycast between the center of tile T and
         O is obstructed, then do not process that tile.
     --]]
+end
+
+function EnemyAI:update()
+    for _, pos in ipairs(self._debugDraws) do
+        Debug.draw:color(pos.r, pos.g, pos.b)
+        Debug.draw:rectLines(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    end
 end
 
 return EnemyAI

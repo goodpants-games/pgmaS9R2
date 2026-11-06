@@ -45,8 +45,6 @@ function World:new()
         self.buttonInputs[i] = t
     end
 
-    self:_loadMap()
-
     -- collision map is the first found tile layer
     ---@type pklove.tiled.TileLayer
     self.colMap = nil
@@ -67,9 +65,14 @@ function World:new()
     else
         self._getCol = function() return nil end
     end
+
+    self:_loadMap()
 end
 
 function World:update()
+    Debug.draw:push()
+    Debug.draw:translate(-math.round(self.camX), -math.round(self.camY))
+
     local player = self.player
 
     self.mouseX = App.mouseX + self.camX
@@ -143,6 +146,8 @@ function World:update()
     for _, btn in ipairs(BUTTON_INPUTS) do
         self.buttonInputs[2][btn] = self.buttonInputs[1][btn]
     end
+
+    Debug.draw:pop()
 end
 
 function World:draw()

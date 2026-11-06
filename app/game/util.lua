@@ -72,4 +72,11 @@ function Util.upair2u(a, b)
     return (a * a + a) / 2 + b
 end
 
+---pairing function of two unsigned integers
+---@param a integer
+---@param b integer
+function Util.pair2u(a, b)
+    return ((a + b) * (a + b + 1)) / 2 + b
+end
+
 return Util

@@ -19,6 +19,11 @@ function math.normalize(x, y)
     return x / len, y / len
 end
 
+---Returns the sign of the number, where 0 is considered positive.
+function math.sign2(v)
+    return v >= 0 and 1 or -1
+end
+
 -- library setup --
 require("batteries"):export()
 

@@ -3,6 +3,7 @@ local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
 local Util = require("game.util")
 local EnemyAi = require "game.enemy_ai"
+local Pathfinding = require "game.pathfind"
 
 ---@class game.entities.Enemy: game.entities.Entity
 local Enemy = batteries.class {
@@ -34,9 +35,45 @@ function Enemy:new(x, y)
     ---@type game.EnemyAi?
     self.ai = nil
 
+    self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
     self.msg:subscribe("alertDeath", self._alertDeath)
+end
+
+function Enemy:_added()
+    if self.name ~= "pathfind_test" then return end
+
+    local plr = softassert(self.world.player)
+    if not plr then return end
+
+    local sx = math.floor(self.x / Const.TILE_SIZE)
+    local sy = math.floor(self.y / Const.TILE_SIZE)
+    local ex = math.floor(plr.x / Const.TILE_SIZE)
+    local ey = math.floor(plr.y / Const.TILE_SIZE)
+    local path = Pathfinding.pathfind(self.world, sx, sy, ex, ey)
+    softassert(path)
+    if not path then return end
+
+    self.aiTask = coroutine.create(function()
+        for i=1, #path, 2 do
+            print("next path")
+            local tx, ty = path[i], path[i+1]
+
+            self._moveTargetX = (tx + 0.5) * Const.TILE_SIZE
+            self._moveTargetY = (ty + 0.5) * Const.TILE_SIZE
+            self._hasMoveTarget = true
+
+            while self._hasMoveTarget do
+                for i=1, #path, 2 do
+                    local tx, ty = path[i], path[i+1]
+                    Debug.draw:color(1, 0, 0)
+                    Debug.draw:rect((tx+0.5)*Const.TILE_SIZE, (ty+0.5)*Const.TILE_SIZE, 4, 4)
+                end
+                coroutine.yield()
+            end
+        end
+    end)
 end
 
 function Enemy:_removing()

@@ -83,7 +83,7 @@ return {
         },
         {
           id = 6,
-          name = "",
+          name = "pathfind_test",
           type = "enemy",
           shape = "rectangle",
           x = 32,

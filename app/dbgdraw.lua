@@ -49,6 +49,13 @@ function DebugDraw:point(x, y)
     end)
 end
 
+function DebugDraw:rect(x, y, w, h)
+    if not self.enabled then return end
+    table.insert(self._draw_list, function()
+        Lg.rectangle("fill", math.round(x) + 0.5, math.round(y) + 0.5, math.round(w), math.round(h))
+    end)
+end
+
 function DebugDraw:rectLines(x, y, w, h)
     if not self.enabled then return end
     table.insert(self._draw_list, function()

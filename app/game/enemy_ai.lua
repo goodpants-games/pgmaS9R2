@@ -44,6 +44,15 @@ function EnemyAI:new(world)
     end
 
     self._debugDraws = {}
+
+    self.yield = function() end
+end
+
+local function tappend(t, ...)
+    local tinsert = table.insert
+    for i=1, select("#", ...) do
+        tinsert(t, (select(i, ...)))
+    end
 end
 
 local function tinsert3(t, x, y, z)
@@ -114,7 +123,7 @@ function EnemyAI:_searchTiles(origX, origY, processTile)
     local tremove = table.remove
 
     ---@type number[]
-    local frontier = { origX, origY, 0 }
+    local frontier = { math.floor(origX), math.floor(origY), 0 }
     ---@type {[number]:boolean}
     local visited = {}
 
@@ -128,10 +137,11 @@ function EnemyAI:_searchTiles(origX, origY, processTile)
 
     while frontier[1] do
         for _=1, #frontier, 3 do
-            local x, y, depth =
-                tremove(frontier, 1), tremove(frontier, 1), tremove(frontier, 1)
+            local x = tremove(frontier, 1)
+            local y = tremove(frontier, 1)
+            local depth = tremove(frontier, 1)
+            
             if self.mapAwareness[y+1][x+1] ~= 0 then
-                assert(x >= 0) assert(y >= 0)
                 local k = pair2u(x, y)
                 if not visited[k] then
                     visited[k] = true
@@ -171,6 +181,14 @@ function EnemyAI:_raycast(x, y, dx, dy)
     end
 end
 
+function EnemyAI:_debugDrawTileRect(x, y)
+    self:_insDebugDraw("rectLines", x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+end
+
+function EnemyAI:_insDebugDraw(f, ...)
+    table.insert(self._debugDraws, { f, ... })
+end
+
 function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
     --[[
         p = (origX, origY) is the position of the dead enemy.
@@ -196,6 +214,9 @@ function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
         return
     end
 
+    self:_insDebugDraw("color", 0, 0, 1)
+    self:_insDebugDraw("line", r1x, r1y, r2x, r2y)
+
     local r1tx, r1ty = math.floor(r1x / TILE_SIZE), math.floor(r1y / TILE_SIZE)
     local r2tx, r2ty = math.floor(r2x / TILE_SIZE), math.floor(r2y / TILE_SIZE)
 
@@ -208,7 +229,9 @@ function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
     ---@cast r2ty integer
     for tx, ty in self:_plotLine(r1tx, r1ty, r2tx, r2ty) do
         forbidden[Util.pair2u(tx, ty)] = true
-        table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
+        self:_insDebugDraw("color", 1, 1, 1)
+        print(tx, ty)
+        self:_debugDrawTileRect(tx, ty)
     end
 
     local origTx = math.floor(origX / TILE_SIZE)
@@ -216,6 +239,7 @@ function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
 
     forbidden[Util.pair2u(origTx, origTy)] = nil
     self:_searchTiles(origTx, origTy, function(x, y, depth)
+        self.yield()
         if depth > 20 then
             return false
         end
@@ -252,11 +276,11 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
 
         local ofsHitX = hitX + normX * (TILE_SIZE/8)
         local ofsHitY = hitY + normY * (TILE_SIZE/8)
-        local ofsHitTx = math.floor(ofsHitX / TILE_SIZE)
-        local ofsHitTy = math.floor(ofsHitY / TILE_SIZE)
 
-        local origTx = math.floor(origX / TILE_SIZE)
-        local origTy = math.floor(origY / TILE_SIZE)
+        local origTx = origX / TILE_SIZE
+        local origTy = origY / TILE_SIZE
+        local ofsHitTx = ofsHitX / TILE_SIZE
+        local ofsHitTy = ofsHitY / TILE_SIZE
         for tx, ty in self:_plotLine(origTx, origTy, ofsHitTx, ofsHitTy) do
             local x = (tx + 0.5) * TILE_SIZE
             local y = (ty + 0.5) * TILE_SIZE
@@ -265,8 +289,27 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
                 print("Found one!!!!!!")
                 -- table.insert(self._debugDraws, { x=math.floor(hx/TILE_SIZE), y=math.floor(hy/TILE_SIZE), r=1,g=0,b=1 })
 
-                table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
-                self:_markTilesFromDirection(x, y, bulletDx, bulletDy, 2)
+                print(ofsHitTx, ofsHitTy)
+                self:_insDebugDraw("color", 1, 1, 0)
+                self:_insDebugDraw("rect", ofsHitX, ofsHitY, 8, 8)
+
+                self:_insDebugDraw("color", 0, 1, 0)
+                self:_debugDrawTileRect(tx, ty)
+
+                -- now, search for tiles in the direction of the unknown.
+                -- first, mark any tiles currently in sight as irrelevant. this
+                -- will make it so the AI will explore in the direction the
+                -- bullet came from
+                self:markTilesInSightOf(myself.x, myself.y, 0)
+                self:_searchTiles(tx, ty, function(x, y, depth)
+                    self.yield()
+                    if depth > 20 then
+                        return false
+                    end
+                    self.mapAwareness[y+1][x+1] = 2
+                    return true
+                end)
+                
                 return
             end
         end
@@ -277,14 +320,11 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
         bulletDx = bulletDx - 2 * normX * dot
         bulletDy = bulletDy - 2 * normY * dot
 
-        origX = hitX + normX * 0.001
-        origY = hitY + normY * 0.001
+        origX = hitX + normX * 1
+        origY = hitY + normY * 1
 
-        table.insert(self._debugDraws, {
-            x=math.floor(hitX / TILE_SIZE),
-            y=math.floor(hitY / TILE_SIZE),
-            r=0,g=0,b=0,
-        })
+        self:_insDebugDraw("color", 1, 0, 1)
+        self:_insDebugDraw("rect", origX, origY, 8, 8)
     end
 
     --[[
@@ -380,9 +420,8 @@ function EnemyAI:update()
         end
     end
 
-    for _, pos in ipairs(self._debugDraws) do
-        Debug.draw:color(pos.r, pos.g, pos.b)
-        Debug.draw:rectLines(pos.x * TILE_SIZE, pos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    for _, call in ipairs(self._debugDraws) do
+        Debug.draw[call[1]](Debug.draw, unpack(call, 2))
     end
 end
 

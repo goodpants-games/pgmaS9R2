@@ -83,9 +83,11 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
     print("it's yellow ??")
 
     self.ai = EnemyAi(self.world)
-    self.ai:beginKillerSearch(self, victim, hitVx, hitVy)
-    -- self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy, 2)
-    self.ai:markTilesInSightOf(self.x, self.y, 1)
+    self.aiTask = coroutine.create(function()
+        self.ai.yield = coroutine.yield
+        self.ai:beginKillerSearch(self, victim, hitVx, hitVy)
+        -- self.ai:markTilesInSightOf(self.x, self.y, 1)
+    end)
 end
 
 function Enemy:_hasSightLineTo(oent)
@@ -167,6 +169,17 @@ function Enemy:update()
     --         self.lastFire = 0
     --     end
     -- end
+
+    if self.aiTask then
+        local s, err = coroutine.resume(self.aiTask)
+        if not s then
+            error(debug.traceback(self.aiTask, err, 1))
+        end
+
+        if coroutine.status(self.aiTask) == "dead" then
+            self.aiTask = nil
+        end
+    end
     if self.ai then
         self.ai:update()
     end

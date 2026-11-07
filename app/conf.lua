@@ -132,7 +132,8 @@ function softerror(err, level)
         errstr = err
     end
 
-    print("[ERR] " .. errstr .. "\n" .. debug.traceback(nil, level + 1))
+    local tb = debug.traceback(nil, level + 1) or debug.traceback()
+    print("[ERR] " .. errstr .. "\n" .. (tb or ""))
 
     if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
         require("lldebugger").requestBreak()

@@ -261,6 +261,24 @@ function World:isInputDown(btn)
     return self.buttonInputs[1][btn]
 end
 
+---Perform a tile-only raycast on the world. The length of the given direction
+---vector dictates the maximum length the raycast will search for.
+---@param x number X component of raycast origin.
+---@param y number Y component of raycast origin.
+---@param dx number X component of raycast direction.
+---@param dy number Y component of raycast direction.
+---@return number? distance, number? nx, number? ny
+function World:tileRaycast(x, y, dx, dy)
+    local resultDist, resultNx, resultNy
+
+    local hd, hdx, hdy = Collision.tileRaycast(x, y, dx, dy, self._getCol)
+    if hd then
+        resultDist, resultNx, resultNy = hd, -hdx, -hdy
+    end
+
+    return resultDist, resultNx, resultNy
+end
+
 ---Perform a raycast on the world. The length of the given direction vector
 ---dictates the maximum length the raycast will search for.
 ---@param x number X component of raycast origin.

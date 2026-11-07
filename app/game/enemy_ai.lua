@@ -253,12 +253,18 @@ function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
     --]]
 end
 
-function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
+---@param myX number
+---@param myY number
+---@param victimX number
+---@param victimY number
+---@param bulletDx number
+---@param bulletDy number
+function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletDy)
     --[[
-    (origX, origY) is the position the victim was in. (origDx, origDy) is the
+    (victimX, victimY) is the position the victim was in. (origDx, origDy) is the
     velocity of the bullet.
 
-    trace the path of the bullet from (origX, origY), accounting for bullet
+    trace the path of the bullet from victim's position, accounting for bullet
     reflection. find the earliest tile within this path that is not within the
     perpretator's view. search all tiles from that point in that direction.
     (self:_markTilesFromDirection)
@@ -266,7 +272,8 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
     bulletDx, bulletDy = math.normalize(bulletDx, bulletDy)
     bulletDx, bulletDy = -bulletDx, -bulletDy
 
-    local origX, origY = victim.x, victim.y
+    local origX, origY = victimX, victimY
+
     while true do
         local hitX, hitY, normX, normY =
             self:_raycast(origX, origY, bulletDx * 1000, bulletDy * 1000)
@@ -285,7 +292,7 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
             local x = (tx + 0.5) * TILE_SIZE
             local y = (ty + 0.5) * TILE_SIZE
 
-            if self:_raycast(myself.x, myself.y, x - myself.x, y - myself.y) then
+            if self:_raycast(myX, myY, x - myX, y - myY) then
                 print("Found one!!!!!!")
                 -- table.insert(self._debugDraws, { x=math.floor(hx/TILE_SIZE), y=math.floor(hy/TILE_SIZE), r=1,g=0,b=1 })
 
@@ -302,13 +309,13 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
                 -- bullet came from
                 local iter = 0
 
-                self:markTilesInSightOf(myself.x, myself.y, 3)
+                self:markTilesInSightOf(myX, myY, 3)
                 self:_searchTiles(tx, ty, function(x, y, depth)
-                    if iter == 3 then
+                    iter = iter + 1
+                    if iter == 4 then
                         self.yield()
                         iter = 0
                     end
-                    iter = iter + 1
 
                     if self.mapAwareness[y+1][x+1] == 3 then
                         return false
@@ -380,7 +387,8 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
     --]]
 end
 
-function EnemyAI:markTilesInSightOf(origX, origY, markId)
+function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)
+    limitPerFrame = limitPerFrame or math.huge
     --[[
         perform a breadth-first search of each tile starting from O (origin
         position).
@@ -390,14 +398,20 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId)
     --]]
     local origTx = math.floor(origX / TILE_SIZE)
     local origTy = math.floor(origY / TILE_SIZE)
-    local colFlags = const.COLGROUP_DEFAULT
 
+    local limitCount = 0
     self:_searchTiles(origTx, origTy, function(tx, ty)
+        limitCount = limitCount + 1
+        if limitCount == limitPerFrame then
+            limitCount = 0
+            self.yield()
+        end
+
         local x = (tx + 0.5) * TILE_SIZE
         local y = (ty + 0.5) * TILE_SIZE
         local dx = origX - x
         local dy = origY - y
-        local hit = self.world:raycast(x, y, dx, dy, colFlags)
+        local hit = self.world:tileRaycast(x, y, dx, dy)
 
         if hit then
             return false
@@ -412,9 +426,16 @@ end
 ---@field beginMove fun(ent:game.entities.Entity, x:number, y:number)
 ---@field isCurrentlyMoving fun(ent:game.entities.Entity):boolean
 
+local function searchCoroSightCoro(self)
+    self:markTilesInSightOf( coroutine.yield() )
+end
+
 ---@param ent game.entities.Entity
 ---@param behavior game.EnemyAI.SearchBehavior
 function EnemyAI:searchCoroutine(ent, behavior)
+    local pathfindParams = {
+        limit = 20,
+    }
     while true do
         local startTx = math.floor(ent.x / TILE_SIZE)
         local startTy = math.floor(ent.y / TILE_SIZE)
@@ -422,7 +443,15 @@ function EnemyAI:searchCoroutine(ent, behavior)
         -- find closest unexplored tile
         local endTx, endTy
         print("start", startTx, startTy)
+
+        local limitCounter = 0
         self:_searchTiles(startTx, startTy, function(x, y, depth)
+            limitCounter = limitCounter + 1
+            if limitCounter == 40 then
+                coroutine.yield()
+                limitCounter = 0
+            end
+
             -- print("shduiahsdsiud 2")
             if self.mapAwareness[y+1][x+1] == 2 then
                 -- print("ahsduiahsdiuas")
@@ -439,13 +468,15 @@ function EnemyAI:searchCoroutine(ent, behavior)
 
         print("calculate path...")
         -- find path from here to that tile
-        local path = Pathfind.pathfind(ent.world, startTx, startTy, endTx, endTy)
+        local path = Pathfind.pathfind(ent.world, startTx, startTy, endTx, endTy, pathfindParams)
         if not path then
             softerror("could not find path?")
             return
         end
 
         print("begin path traversal...")
+
+        local sightCoro
         -- make entity traverse path
         for i=1, #path, 2 do
             local tx, ty = path[i], path[i+1]
@@ -454,8 +485,6 @@ function EnemyAI:searchCoroutine(ent, behavior)
 
             behavior.beginMove(ent, x, y)
             while behavior.isCurrentlyMoving(ent) do
-                self:markTilesInSightOf(ent.x, ent.y, 1)
-
                 for i=1, #path, 2 do
                     local tx, ty = path[i], path[i+1]
                     local x = (tx + 0.5) * TILE_SIZE
@@ -463,6 +492,27 @@ function EnemyAI:searchCoroutine(ent, behavior)
                     Debug.draw:color(0, 0, 0)
                     Debug.draw:rect(x, y, 4, 4)
                 end
+
+                if not sightCoro then
+                    sightCoro = coroutine.create(searchCoroSightCoro)
+                    coroutine.resume(sightCoro, self)
+                    coroutine.resume(sightCoro, ent.x, ent.y, 1, 20)
+                    if coroutine.status(sightCoro) == "dead" then
+                        sightCoro = nil
+                    end
+                end
+
+                if sightCoro then
+                    local s, err = coroutine.resume(sightCoro)
+                    if not s then
+                        error(debug.traceback(sightCoro, err))
+                    end
+
+                    if coroutine.status(sightCoro) == "dead" then
+                        sightCoro = nil
+                    end
+                end
+
                 coroutine.yield()
             end
         end
@@ -483,10 +533,16 @@ function EnemyAI:fillAwareness(markId)
 end
 
 function EnemyAI:update()
-    Debug.draw:color(1, 0, 0)
     for y=1, #self.mapAwareness do
         for x=1, #self.mapAwareness[1] do
-            if self.mapAwareness[y][x] >= 2 then
+            local cell = self.mapAwareness[y][x]
+            if cell >= 2 then
+                if cell == 2 then
+                    Debug.draw:color(1, 0, 0)
+                else
+                    Debug.draw:color(0.5, 0, 0)
+                end
+                
                 Debug.draw:rectLines((x-1) * TILE_SIZE, (y-1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             end
         end

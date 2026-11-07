@@ -15,11 +15,10 @@ end
 ---@param startY integer Tile start Y
 ---@param endX integer Tile end X
 ---@param endY integer Tile end Y
+---@param extraParams table?
 ---@return integer[]?
-local function pathfind(world, startX, startY, endX, endY)
-    -- TODO: this does not give the shortest path because the PriorityQueue impl
-    --       leaves node order undefined if two nodes have the same priority,
-    --       but it needs to be defined in respect to insertion order.
+local function pathfind(world, startX, startY, endX, endY, extraParams)
+    extraParams = extraParams or {}
     local pair2u = Util.pair2u
     local tremove = table.remove
     local map = world.colMap
@@ -45,6 +44,7 @@ local function pathfind(world, startX, startY, endX, endY)
 
     local found = false
     local i = 0
+    local limitCounter = 0
     while not frontier:is_empty() do
         local point = frontier:dequeue()
         local x, y = point.x, point.y
@@ -67,6 +67,14 @@ local function pathfind(world, startX, startY, endX, endY)
         if i > 10000000 then
             softerror("max time exceeded")
             break
+        end
+
+        if extraParams.limit then
+            limitCounter = limitCounter + 1
+            if limitCounter == extraParams.limit then
+                coroutine.yield()
+                limitCounter = 0
+            end
         end
     end
 

@@ -99,6 +99,9 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
 
     self.ai = EnemyAi(self.world)
     self.aiTask = coroutine.create(function()
+        local myOrigX, myOrigY = self:getCenterPos()
+        local victimOrigX, victimOrigY = victim:getCenterPos()
+
         -- first, move to victim...
         self:_beginMove(victim.x, victim.y)
         while self:_isCurrentlyMoving() do
@@ -106,7 +109,7 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
         end
         
         self.ai.yield = coroutine.yield
-        self.ai:beginKillerSearch(self, victim, hitVx, hitVy)
+        self.ai:beginKillerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
 
         local searchBehavior = {
             beginMove = self._beginMove,
@@ -129,6 +132,8 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
             coroutine.yield()
         end
         -- self.ai:markTilesInSightOf(self.x, self.y, 1)
+
+        self.ai = nil
     end)
 end
 
@@ -169,39 +174,37 @@ function Enemy:update()
         self.yVel = 0
     end
 
-    if false then
-        local sightRaycast, playerDx, playerDy =
-            self:_hasSightLineTo(world.player)
+    local sightRaycast, playerDx, playerDy =
+        self:_hasSightLineTo(world.player)
 
-        if sightRaycast then
-            if not self.gunSight.world then
-                self.world:addEntity(self.gunSight)
-            end
-
-            local cx, cy = self:getCenterPos()
-            local dx, dy = math.normalize(playerDx, playerDy)
-            self.gunSight:updateSight(cx, cy, dx, dy)
-
-            self.fireTimer = self.fireTimer + 1
-            if self.fireTimer == self.noticeWait then
-                print("notice")
-                self._hasMoveTarget = true
-                self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
-            end
-
-            if self.fireTimer >= self.fireWait then
-                print("fire the weapon")
-                self.fireTimer = 0
-                -- Sceneman.switchScene("entry")
-            end
-        else
-            if self.gunSight.world then
-                self.gunSight:remove()
-                self.gunSight:clearSight()
-            end
-
-            self.fireTimer = 0
+    if sightRaycast then
+        if not self.gunSight.world then
+            self.world:addEntity(self.gunSight)
         end
+
+        local cx, cy = self:getCenterPos()
+        local dx, dy = math.normalize(playerDx, playerDy)
+        self.gunSight:updateSight(cx, cy, dx, dy)
+
+        self.fireTimer = self.fireTimer + 1
+        if self.fireTimer == self.noticeWait then
+            print("notice")
+            self._hasMoveTarget = true
+            self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
+        end
+
+        if self.fireTimer >= self.fireWait then
+            print("fire the weapon")
+            self.fireTimer = 0
+            -- Sceneman.switchScene("entry")
+        end
+    else
+        if self.gunSight.world then
+            self.gunSight:remove()
+            self.gunSight:clearSight()
+        end
+
+        self.fireTimer = 0
     end
 
     if self.aiTask then

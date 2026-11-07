@@ -1,5 +1,6 @@
 local const = require("game.consts")
 local Util = require("game.util")
+local Pathfind = require("game.pathfind")
 
 local TILE_SIZE = const.TILE_SIZE
 
@@ -115,9 +116,9 @@ end
 ---function for each newly discovered tile. If this callback returns true, it
 ---will search the tiles around that tile. If false, it will not. If it returns
 ---the string "stop", the search will abort.
----@param origX integer
----@param origY integer
----@param processTile fun(x:integer, y:integer, depth:integer):boolean
+---@param origX number Tile X position
+---@param origY number Tile Y position
+---@param processTile fun(x:integer, y:integer, depth:integer):(boolean|"stop")
 function EnemyAI:_searchTiles(origX, origY, processTile)
     local pair2u = Util.pair2u
     local tremove = table.remove
@@ -239,7 +240,6 @@ function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
 
     forbidden[Util.pair2u(origTx, origTy)] = nil
     self:_searchTiles(origTx, origTy, function(x, y, depth)
-        self.yield()
         if depth > 20 then
             return false
         end
@@ -300,9 +300,20 @@ function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
                 -- first, mark any tiles currently in sight as irrelevant. this
                 -- will make it so the AI will explore in the direction the
                 -- bullet came from
-                self:markTilesInSightOf(myself.x, myself.y, 0)
+                local iter = 0
+
+                self:markTilesInSightOf(myself.x, myself.y, 3)
                 self:_searchTiles(tx, ty, function(x, y, depth)
-                    self.yield()
+                    if iter == 3 then
+                        self.yield()
+                        iter = 0
+                    end
+                    iter = iter + 1
+
+                    if self.mapAwareness[y+1][x+1] == 3 then
+                        return false
+                    end
+
                     if depth > 20 then
                         return false
                     end
@@ -395,6 +406,67 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId)
             return true
         end
     end)
+end
+
+---@class game.EnemyAI.SearchBehavior
+---@field beginMove fun(ent:game.entities.Entity, x:number, y:number)
+---@field isCurrentlyMoving fun(ent:game.entities.Entity):boolean
+
+---@param ent game.entities.Entity
+---@param behavior game.EnemyAI.SearchBehavior
+function EnemyAI:searchCoroutine(ent, behavior)
+    while true do
+        local startTx = math.floor(ent.x / TILE_SIZE)
+        local startTy = math.floor(ent.y / TILE_SIZE)
+
+        -- find closest unexplored tile
+        local endTx, endTy
+        print("start", startTx, startTy)
+        self:_searchTiles(startTx, startTy, function(x, y, depth)
+            -- print("shduiahsdsiud 2")
+            if self.mapAwareness[y+1][x+1] == 2 then
+                -- print("ahsduiahsdiuas")
+                endTx, endTy = x, y
+                return "stop"
+            end
+            return true
+        end)
+
+        if not endTx then
+            print("no more unexplored tiles")
+            break
+        end
+
+        print("calculate path...")
+        -- find path from here to that tile
+        local path = Pathfind.pathfind(ent.world, startTx, startTy, endTx, endTy)
+        if not path then
+            softerror("could not find path?")
+            return
+        end
+
+        print("begin path traversal...")
+        -- make entity traverse path
+        for i=1, #path, 2 do
+            local tx, ty = path[i], path[i+1]
+            local x = (tx + 0.5) * TILE_SIZE
+            local y = (ty + 0.5) * TILE_SIZE
+
+            behavior.beginMove(ent, x, y)
+            while behavior.isCurrentlyMoving(ent) do
+                self:markTilesInSightOf(ent.x, ent.y, 1)
+
+                for i=1, #path, 2 do
+                    local tx, ty = path[i], path[i+1]
+                    local x = (tx + 0.5) * TILE_SIZE
+                    local y = (ty + 0.5) * TILE_SIZE
+                    Debug.draw:color(0, 0, 0)
+                    Debug.draw:rect(x, y, 4, 4)
+                end
+                coroutine.yield()
+            end
+        end
+    end
 end
 
 function EnemyAI:fillAwareness(markId)

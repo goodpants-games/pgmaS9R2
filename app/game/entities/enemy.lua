@@ -56,7 +56,7 @@ function Enemy:_hit(hitVx, hitVy)
     for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
         ---@cast ent game.entities.Enemy
         if self:_hasSightLineTo(ent) then
-            ent:publish("alertDeath", self.x, self.y, hitVx, hitVy)
+            ent:publish("alertDeath", self, hitVx, hitVy)
         end
     end
 
@@ -73,9 +73,9 @@ function Enemy:_hit(hitVx, hitVy)
     self.render.b = self.render.b * 0.5
 end
 
-function Enemy:_alertDeath(victimX, victimY, hitVx, hitVy)
-    self._moveTargetX = victimX
-    self._moveTargetY = victimY
+function Enemy:_alertDeath(victim, hitVx, hitVy)
+    self._moveTargetX = victim.x
+    self._moveTargetY = victim.y
     self._hasMoveTarget = true
 
     -- make enemy yellow for debug purposes
@@ -83,7 +83,8 @@ function Enemy:_alertDeath(victimX, victimY, hitVx, hitVy)
     print("it's yellow ??")
 
     self.ai = EnemyAi(self.world)
-    self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy, 2)
+    self.ai:beginKillerSearch(self, victim, hitVx, hitVy)
+    -- self.ai:markTilesFromDirection(victimX, victimY, hitVx, hitVy, 2)
     self.ai:markTilesInSightOf(self.x, self.y, 1)
 end
 
@@ -146,7 +147,7 @@ function Enemy:update()
         if self.fireTimer >= self.fireWait then
             print("fire the weapon")
             self.fireTimer = 0
-            Sceneman.switchScene("entry")
+            -- Sceneman.switchScene("entry")
         end
     else
         if self.gunSight.world then

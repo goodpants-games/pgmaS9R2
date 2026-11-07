@@ -52,14 +52,16 @@ local function tinsert3(t, x, y, z)
     table.insert(t, z)
 end
 
----Plot a pixel for every pixel touching the line segment between the points
+---Returns a coroutine.wrap which plots a pixel for every pixel touching the 
+---line segment between the points
 ---(lx1, ly1) and (lx2, ly2).
 ---@param lx1 integer
 ---@param ly1 integer
 ---@param lx2 integer
 ---@param ly2 integer
----@param plot fun(tx:integer, ty:integer)
-function EnemyAI:_plotLine(lx1, ly1, lx2, ly2, plot)
+---@return fun():(number?, number?)
+function EnemyAI:_plotLine(lx1, ly1, lx2, ly2)
+return coroutine.wrap(function()
     local lineLen = math.distance(lx1, ly1, lx2, ly2)
     if lineLen == 0.0 then return end
 
@@ -81,7 +83,7 @@ function EnemyAI:_plotLine(lx1, ly1, lx2, ly2, plot)
     local dt_y = ((tile_y + tile_offset_y) - cur_y) / lineDy
 
     while t < lineLen do
-        plot(tile_x, tile_y)
+        coroutine.yield(tile_x, tile_y)
 
         if dt_x < dt_y then
             tile_x = tile_x + dir_sign_x
@@ -97,6 +99,7 @@ function EnemyAI:_plotLine(lx1, ly1, lx2, ly2, plot)
             dt_y = dt_y + dir_sign_y / lineDy - dt
         end
     end
+end)
 end
 
 ---Perform breadth-first search on neighboring tiles. Provide a callback
@@ -160,18 +163,15 @@ end
 ---@return number? yHit Tile Y position of hit
 ---@return number? normalX
 ---@return number? normalY
-function EnemyAI:raycast(x, y, dx, dy)
+function EnemyAI:_raycast(x, y, dx, dy)
     local dist, nx, ny = self.world:raycast(x, y, dx, dy, const.COLGROUP_DEFAULT)
     if dist then
         dx, dy = math.normalize(dx, dy)
-        return
-            math.floor((x + dx * dist - nx) / TILE_SIZE),
-            math.floor((y + dy * dist - ny) / TILE_SIZE),
-            nx, ny
+        return x + dx * dist, y + dy * dist, nx, ny
     end
 end
 
-function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy, markId)
+function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
     --[[
         p = (origX, origY) is the position of the dead enemy.
         d = (origDx, origDy) is the direction of the bullet, as a normalized
@@ -183,6 +183,111 @@ function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy, markId)
         segment <c1, c2> as "forbidden". then, perform a breadth-first fill
         from p, killing the processing of any tiles marked as "forbidden".
     --]]
+    local planeOx = origX - origDx * 20
+    local planeOy = origY - origDy * 20
+
+    local r1x, r1y = self:_raycast(planeOx, planeOy, -origDy * 1000, origDx * 1000)
+    local r2x, r2y = self:_raycast(planeOx, planeOy, origDy * 1000, -origDx * 1000)
+
+    if not softassert(r1x or r1y) then
+        return
+    end
+    if not softassert(r2x or r2y) then
+        return
+    end
+
+    local r1tx, r1ty = math.floor(r1x / TILE_SIZE), math.floor(r1y / TILE_SIZE)
+    local r2tx, r2ty = math.floor(r2x / TILE_SIZE), math.floor(r2y / TILE_SIZE)
+
+    ---@type {[integer]:boolean}
+    local forbidden = {}
+    
+    ---@cast r1tx integer
+    ---@cast r2tx integer
+    ---@cast r1ty integer
+    ---@cast r2ty integer
+    for tx, ty in self:_plotLine(r1tx, r1ty, r2tx, r2ty) do
+        forbidden[Util.pair2u(tx, ty)] = true
+        table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
+    end
+
+    local origTx = math.floor(origX / TILE_SIZE)
+    local origTy = math.floor(origY / TILE_SIZE)
+
+    forbidden[Util.pair2u(origTx, origTy)] = nil
+    self:_searchTiles(origTx, origTy, function(x, y, depth)
+        if depth > 20 then
+            return false
+        end
+
+        if forbidden[Util.pair2u(x, y)] then
+            return false
+        end
+        self.mapAwareness[y+1][x+1] = markId
+        return true
+    end)
+    --]]
+end
+
+function EnemyAI:beginKillerSearch(myself, victim, bulletDx, bulletDy)
+    --[[
+    (origX, origY) is the position the victim was in. (origDx, origDy) is the
+    velocity of the bullet.
+
+    trace the path of the bullet from (origX, origY), accounting for bullet
+    reflection. find the earliest tile within this path that is not within the
+    perpretator's view. search all tiles from that point in that direction.
+    (self:_markTilesFromDirection)
+    --]]
+    bulletDx, bulletDy = math.normalize(bulletDx, bulletDy)
+    bulletDx, bulletDy = -bulletDx, -bulletDy
+
+    local origX, origY = victim.x, victim.y
+    while true do
+        local hitX, hitY, normX, normY =
+            self:_raycast(origX, origY, bulletDx * 1000, bulletDy * 1000)
+        if not softassert(hitX) then
+            return
+        end
+
+        local ofsHitX = hitX + normX * (TILE_SIZE/8)
+        local ofsHitY = hitY + normY * (TILE_SIZE/8)
+        local ofsHitTx = math.floor(ofsHitX / TILE_SIZE)
+        local ofsHitTy = math.floor(ofsHitY / TILE_SIZE)
+
+        local origTx = math.floor(origX / TILE_SIZE)
+        local origTy = math.floor(origY / TILE_SIZE)
+        for tx, ty in self:_plotLine(origTx, origTy, ofsHitTx, ofsHitTy) do
+            local x = (tx + 0.5) * TILE_SIZE
+            local y = (ty + 0.5) * TILE_SIZE
+
+            if self:_raycast(myself.x, myself.y, x - myself.x, y - myself.y) then
+                print("Found one!!!!!!")
+                -- table.insert(self._debugDraws, { x=math.floor(hx/TILE_SIZE), y=math.floor(hy/TILE_SIZE), r=1,g=0,b=1 })
+
+                table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
+                self:_markTilesFromDirection(x, y, bulletDx, bulletDy, 2)
+                return
+            end
+        end
+
+        -- reflect:
+        -- v' = v - 2r(v ⋅ r)
+        local dot = bulletDx * normX + bulletDy * normY
+        bulletDx = bulletDx - 2 * normX * dot
+        bulletDy = bulletDy - 2 * normY * dot
+
+        origX = hitX + normX * 0.001
+        origY = hitY + normY * 0.001
+
+        table.insert(self._debugDraws, {
+            x=math.floor(hitX / TILE_SIZE),
+            y=math.floor(hitY / TILE_SIZE),
+            r=0,g=0,b=0,
+        })
+    end
+
+    --[[
     local r1tx, r1ty = self:raycast(origX, origY, -origDy * 1000, origDx * 1000)
     local r2tx, r2ty = self:raycast(origX, origY, origDy * 1000, -origDx * 1000)
 
@@ -203,6 +308,7 @@ function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy, markId)
     ---@cast r2ty integer
     self:_plotLine(r1tx, r1ty, r2tx, r2ty, function(tx, ty)
         forbidden[Util.pair2u(tx, ty)] = true
+        table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
     end)
 
     local origTx = math.floor(origX / TILE_SIZE)
@@ -220,6 +326,7 @@ function EnemyAI:markTilesFromDirection(origX, origY, origDx, origDy, markId)
         self.mapAwareness[y+1][x+1] = markId
         return true
     end)
+    --]]
 end
 
 function EnemyAI:markTilesInSightOf(origX, origY, markId)

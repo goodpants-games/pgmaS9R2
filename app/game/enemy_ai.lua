@@ -233,9 +233,11 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
                 -- will make it so the AI will explore in the direction the
                 -- bullet came from
                 local iter = 0
+                local startX = math.floor(tx + bulletDx * 2)
+                local startY = math.floor(ty + bulletDy * 2)
 
                 self:markTilesInSightOf(myX, myY, 3)
-                self:_searchTiles(tx, ty, function(x, y, depth)
+                self:_searchTiles(startX, startY, function(x, y, depth)
                     iter = iter + 1
                     if iter == 4 then
                         self.yield()
@@ -369,39 +371,7 @@ function EnemyAI:searchCoroutine(ent, behavior)
             softerror("could not find path?")
             return
         end
-
-        -- simplify diagonals/turns of path, since the pathfinder cannot emit
-        -- diagonal traversal.
-        local i = 3
-        while true do
-            local x1, y1 = path[i-2], path[i-1]
-            local x2, y2 = path[i], path[i+1]
-            local x3, y3 = path[i+2], path[i+3]
-            if not x3 then break end
-            
-            local prevDx = x2 - x1
-            local prevDy = y2 - y1
-            local nextDx = x3 - x2
-            local nextDy = y3 - y2
-
-            -- remove diagonal, but only if this is not a turn around a corner
-            if prevDx ~= nextDx or prevDy ~= nextDy then
-                local testX, testY
-                if prevDx == 0 then
-                    testX = x3
-                    testY = y1
-                else
-                    testX = x1
-                    testY = y3
-                end
-                if not world:isCol(testX, testY) then
-                    table.remove(path, i)
-                    table.remove(path, i)
-                end
-            end
-
-            i=i+2
-        end
+        Pathfind.simplifyPath(path, world)
 
         print("begin path traversal...")
 

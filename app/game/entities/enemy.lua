@@ -38,7 +38,7 @@ function Enemy:new(x, y)
     self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
-    self.msg:subscribe("alertDeath", self._alertDeath)
+    self.msg:subscribe("witnessedDeath", self._witnessedDeath)
 end
 
 function Enemy:_added()
@@ -57,14 +57,6 @@ function Enemy:_hit(hitVx, hitVy)
     self.msg:unsubscribe("hit", self._hit)
     self:removeTag("enemy")
 
-    -- alert any enemies in sight line to perceived origin of bullet
-    for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
-        ---@cast ent game.entities.Enemy
-        if self:_hasSightLineTo(ent) then
-            ent:publish("alertDeath", self, hitVx, hitVy)
-        end
-    end
-
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
     self.zIndex = -10
@@ -76,6 +68,8 @@ function Enemy:_hit(hitVx, hitVy)
     self.render.r = self.render.r * 0.5
     self.render.g = self.render.g * 0.5
     self.render.b = self.render.b * 0.5
+
+    self.world.enemyConductor:handleEnemyDeath(self, hitVx, hitVy)
 end
 
 function Enemy:_beginMove(x, y)
@@ -88,18 +82,29 @@ function Enemy:_isCurrentlyMoving()
     return self._hasMoveTarget
 end
 
-function Enemy:_alertDeath(victim, hitVx, hitVy)
+function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
+    if not isPerpretator then
+        return
+    end
+
     self.ai = EnemyAi(self.world)
     self.aiTask = coroutine.create(function()
         local myOrigX, myOrigY = self:getCenterPos()
         local victimOrigX, victimOrigY = victim:getCenterPos()
 
-        -- first, move to victim...
+        -- first, wait a bit...
+        local homeX, homeY = self:getCenterPos()
+        for _=1, love.math.random(20, 40) do
+            coroutine.yield()
+        end
+
+        -- then, move to victim...
         self:_beginMove(victim.x, victim.y)
         while self:_isCurrentlyMoving() do
             coroutine.yield()
         end
         
+        -- initialize search for the killer
         self.ai.yield = coroutine.yield
         self.ai:beginKillerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
 
@@ -124,11 +129,41 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
             coroutine.yield()
         end
 
+        -- search is done... return home.
         self.ai = nil
+
+        for _=1, 240 do
+            coroutine.yield()
+        end
+
+        -- create path
+        local startX, startY = self:getCenterPos()
+        startX = math.floor(startX / Const.TILE_SIZE)
+        startY = math.floor(startY / Const.TILE_SIZE)
+        local endX = math.floor(homeX / Const.TILE_SIZE)
+        local endY = math.floor(homeY / Const.TILE_SIZE)
+        local path = Pathfinding.pathfind(self.world, startX, startY, endX, endY)
+        if not path then
+            softerror("could not create path?")
+            return
+        end
+        Pathfinding.simplifyPath(path, self.world)
+
+        -- follow path
+        for i=3, #path, 2 do
+            local tx, ty = path[i], path[i+1]
+            local x = (tx + 0.5) * Const.TILE_SIZE
+            local y = (ty + 0.5) * Const.TILE_SIZE
+
+            self:_beginMove(x, y)
+            while self:_isCurrentlyMoving() do
+                coroutine.yield()
+            end
+        end
     end)
 end
 
-function Enemy:_hasSightLineTo(oent)
+function Enemy:hasSightLineTo(oent)
     local cx, cy = self:getCenterPos()
     local ocx, ocy = oent:getCenterPos()
     local dx = ocx - cx
@@ -165,39 +200,37 @@ function Enemy:update()
         self.yVel = 0
     end
 
-    if false then
-        local sightRaycast, playerDx, playerDy =
-            self:_hasSightLineTo(world.player)
+    local sightRaycast, playerDx, playerDy =
+        self:hasSightLineTo(world.player)
 
-        if sightRaycast then
-            if not self.gunSight.world then
-                self.world:addEntity(self.gunSight)
-            end
-
-            local cx, cy = self:getCenterPos()
-            local dx, dy = math.normalize(playerDx, playerDy)
-            self.gunSight:updateSight(cx, cy, dx, dy)
-
-            self.fireTimer = self.fireTimer + 1
-            if self.fireTimer == self.noticeWait then
-                print("notice")
-                self._hasMoveTarget = true
-                self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
-            end
-
-            if self.fireTimer >= self.fireWait then
-                print("fire the weapon")
-                self.fireTimer = 0
-                -- Sceneman.switchScene("entry")
-            end
-        else
-            if self.gunSight.world then
-                self.gunSight:remove()
-                self.gunSight:clearSight()
-            end
-
-            self.fireTimer = 0
+    if sightRaycast then
+        if not self.gunSight.world then
+            self.world:addEntity(self.gunSight)
         end
+
+        local cx, cy = self:getCenterPos()
+        local dx, dy = math.normalize(playerDx, playerDy)
+        self.gunSight:updateSight(cx, cy, dx, dy)
+
+        self.fireTimer = self.fireTimer + 1
+        if self.fireTimer == self.noticeWait then
+            print("notice")
+            self._hasMoveTarget = true
+            self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
+        end
+
+        if self.fireTimer >= self.fireWait then
+            print("fire the weapon")
+            self.fireTimer = 0
+            -- Sceneman.switchScene("entry")
+        end
+    else
+        if self.gunSight.world then
+            self.gunSight:remove()
+            self.gunSight:clearSight()
+        end
+
+        self.fireTimer = 0
     end
 
     if self.aiTask then

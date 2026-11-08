@@ -3,6 +3,7 @@ local Input = require("input")
 local Consts = require("game.consts")
 local Collision = require("game.collision")
 local Util = require("game.util")
+local EnemyConductor = require("game.enemy_conductor")
 
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "pickUp"}
@@ -14,8 +15,20 @@ local World = batteries.class()
 
 function World:new()
     self.map = Tiled.loadMap("/res/maps/test.lua")
-
     self.curFrame = 0
+    
+    -- store button input states for the current and last frame
+    -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
+    -- self.buttonInputs[2] = previous frame
+    self.buttonInputs = {}
+    for i=1, 2 do
+        local t = {}
+        for _, v in pairs(BUTTON_INPUTS) do
+            t[v] = false
+        end
+        self.buttonInputs[i] = t
+    end
+
     self.camX = 0.0
     self.camY = 0.0
     self.mouseX = 0.0
@@ -32,18 +45,6 @@ function World:new()
     
     ---@private
     self._needEntityRemoval = false
-
-     -- store button input states for the current and last frame
-    -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
-    -- self.buttonInputs[2] = previous frame
-    self.buttonInputs = {}
-    for i=1, 2 do
-        local t = {}
-        for _, v in pairs(BUTTON_INPUTS) do
-            t[v] = false
-        end
-        self.buttonInputs[i] = t
-    end
 
     -- collision map is the first found tile layer
     ---@type pklove.tiled.TileLayer
@@ -67,6 +68,7 @@ function World:new()
     end
 
     self:_loadMap()
+    self.enemyConductor = EnemyConductor(self)
 end
 
 function World:update()

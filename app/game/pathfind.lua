@@ -1,3 +1,5 @@
+local Pathfind = {}
+
 local Util = require "game.util"
 local Pqueue = require "ds.priority_queue"
 
@@ -29,7 +31,7 @@ end
 ---@param endY integer Tile end Y
 ---@param extraParams game.pathfind.ExtraParams?
 ---@return integer[]?
-local function pathfind(world, startX, startY, endX, endY, extraParams)
+function Pathfind.pathfind(world, startX, startY, endX, endY, extraParams)
     extraParams = extraParams or {}
 
     local cost = extraParams.cost or costIdentity
@@ -121,6 +123,41 @@ local function pathfind(world, startX, startY, endX, endY, extraParams)
     return table.reverse(out)
 end
 
-return {
-    pathfind = pathfind
-}
+---@param path integer[]
+---@param world game.World
+function Pathfind.simplifyPath(path, world)
+    -- simplify diagonals/turns of path, since the pathfinder cannot emit
+    -- diagonal traversal.
+    local i = 3
+    while true do
+        local x1, y1 = path[i-2], path[i-1]
+        local x2, y2 = path[i], path[i+1]
+        local x3, y3 = path[i+2], path[i+3]
+        if not x3 then break end
+        
+        local prevDx = x2 - x1
+        local prevDy = y2 - y1
+        local nextDx = x3 - x2
+        local nextDy = y3 - y2
+
+        -- remove diagonal, but only if this is not a turn around a corner
+        if prevDx ~= nextDx or prevDy ~= nextDy then
+            local testX, testY
+            if prevDx == 0 then
+                testX = x3
+                testY = y1
+            else
+                testX = x1
+                testY = y3
+            end
+            if not world:isCol(testX, testY) then
+                table.remove(path, i)
+                table.remove(path, i)
+            end
+        end
+
+        i=i+2
+    end
+end
+
+return Pathfind

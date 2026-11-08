@@ -243,6 +243,17 @@ function World:findEntitiesWithTag(tag)
     return res
 end
 
+---Returns true if the tile at (x, y) is collidable, false otherwise.
+---@param x any
+---@param y any
+---@return boolean
+function World:isCol(x, y)
+    if not self.colMap then return false end
+
+    local col = self.colMap:get(x, y)
+    return col ~= nil and col ~= 0
+end
+
 ---@param btn string
 ---@return boolean
 function World:isInputPressed(btn)

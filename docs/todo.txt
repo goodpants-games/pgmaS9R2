@@ -1,12 +1,19 @@
-- it should be incredibly easy for you to die by going into an enemy sight line.
-- maybe when you kill or otherwise damage an enemy, enemies were nearby will be
-  alerted. if they saw the death, they will know the general direction the
-  bullet come from and move towards it.
+=== ideas ===
 - maybe you have limited ammo, and you need to pick them up from enemies you
   kill.
 - make another weapon type which can phase through enemies
+- a melee weapon?
+- enemy type which does not investigate or chase the player, so you can't lure
+  it out to safely kill it.
+- buttons you have to press to open doors
 - player could have items that give them useful temporary effects, such as becoming
 invisible for 5 seconds or shooting two bullets instead of one
 
 name idea:
  <something Evil> billiards
+
+=== coding ===
+- i think depending on surroundings/player movement, when an enemy loses sight
+  of the player it may think the player has moved inside a wall (since it
+  offsets the known player position by its velocity). this causes the search
+  to abort.

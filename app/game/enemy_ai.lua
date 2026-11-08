@@ -128,18 +128,10 @@ function EnemyAI:_searchTiles(origX, origY, processTile)
     ---@type {[number]:boolean}
     local visited = {}
 
-    -- for y=1, #self.mapAwareness do
-    --     for x=1, #self.mapAwareness[1] do
-    --         if self.mapAwareness[y][x] ~= 0 then
-    --             processTile(x-1, y-1)
-    --         end
-    --     end
-    -- end
-
     while frontier[1] do
         for _=1, #frontier, 3 do
-            local x = tremove(frontier, 1)
-            local y = tremove(frontier, 1)
+            local x     = tremove(frontier, 1)
+            local y     = tremove(frontier, 1)
             local depth = tremove(frontier, 1)
             
             if self.mapAwareness[y+1][x+1] ~= 0 then
@@ -190,69 +182,6 @@ function EnemyAI:_insDebugDraw(f, ...)
     table.insert(self._debugDraws, { f, ... })
 end
 
-function EnemyAI:_markTilesFromDirection(origX, origY, origDx, origDy, markId)
-    --[[
-        p = (origX, origY) is the position of the dead enemy.
-        d = (origDx, origDy) is the direction of the bullet, as a normalized
-        vector.
-
-        obtain vector r, which is perpendicular to d. perform two raycasts
-        c1 = <p, 1000r> and c2 = <p, p - 1000r> (c1 and c2 are the intersection
-        points of the raycast). mark all tiles intersecting with the line
-        segment <c1, c2> as "forbidden". then, perform a breadth-first fill
-        from p, killing the processing of any tiles marked as "forbidden".
-    --]]
-    local planeOx = origX - origDx * 20
-    local planeOy = origY - origDy * 20
-
-    local r1x, r1y = self:_raycast(planeOx, planeOy, -origDy * 1000, origDx * 1000)
-    local r2x, r2y = self:_raycast(planeOx, planeOy, origDy * 1000, -origDx * 1000)
-
-    if not softassert(r1x or r1y) then
-        return
-    end
-    if not softassert(r2x or r2y) then
-        return
-    end
-
-    self:_insDebugDraw("color", 0, 0, 1)
-    self:_insDebugDraw("line", r1x, r1y, r2x, r2y)
-
-    local r1tx, r1ty = math.floor(r1x / TILE_SIZE), math.floor(r1y / TILE_SIZE)
-    local r2tx, r2ty = math.floor(r2x / TILE_SIZE), math.floor(r2y / TILE_SIZE)
-
-    ---@type {[integer]:boolean}
-    local forbidden = {}
-    
-    ---@cast r1tx integer
-    ---@cast r2tx integer
-    ---@cast r1ty integer
-    ---@cast r2ty integer
-    for tx, ty in self:_plotLine(r1tx, r1ty, r2tx, r2ty) do
-        forbidden[Util.pair2u(tx, ty)] = true
-        self:_insDebugDraw("color", 1, 1, 1)
-        print(tx, ty)
-        self:_debugDrawTileRect(tx, ty)
-    end
-
-    local origTx = math.floor(origX / TILE_SIZE)
-    local origTy = math.floor(origY / TILE_SIZE)
-
-    forbidden[Util.pair2u(origTx, origTy)] = nil
-    self:_searchTiles(origTx, origTy, function(x, y, depth)
-        if depth > 20 then
-            return false
-        end
-
-        if forbidden[Util.pair2u(x, y)] then
-            return false
-        end
-        self.mapAwareness[y+1][x+1] = markId
-        return true
-    end)
-    --]]
-end
-
 ---@param myX number
 ---@param myY number
 ---@param victimX number
@@ -261,13 +190,12 @@ end
 ---@param bulletDy number
 function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletDy)
     --[[
-    (victimX, victimY) is the position the victim was in. (origDx, origDy) is the
-    velocity of the bullet.
+    (victimX, victimY) is the position the victim was in. (bulletDx, bulletDy)
+    is the velocity of the bullet.
 
     trace the path of the bullet from victim's position, accounting for bullet
     reflection. find the earliest tile within this path that is not within the
     perpretator's view. search all tiles from that point in that direction.
-    (self:_markTilesFromDirection)
     --]]
     bulletDx, bulletDy = math.normalize(bulletDx, bulletDy)
     bulletDx, bulletDy = -bulletDx, -bulletDy
@@ -293,9 +221,6 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
             local y = (ty + 0.5) * TILE_SIZE
 
             if self:_raycast(myX, myY, x - myX, y - myY) then
-                print("Found one!!!!!!")
-                -- table.insert(self._debugDraws, { x=math.floor(hx/TILE_SIZE), y=math.floor(hy/TILE_SIZE), r=1,g=0,b=1 })
-
                 print(ofsHitTx, ofsHitTy)
                 self:_insDebugDraw("color", 1, 1, 0)
                 self:_insDebugDraw("rect", ofsHitX, ofsHitY, 8, 8)
@@ -344,47 +269,6 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
         self:_insDebugDraw("color", 1, 0, 1)
         self:_insDebugDraw("rect", origX, origY, 8, 8)
     end
-
-    --[[
-    local r1tx, r1ty = self:raycast(origX, origY, -origDy * 1000, origDx * 1000)
-    local r2tx, r2ty = self:raycast(origX, origY, origDy * 1000, -origDx * 1000)
-
-    if not softassert(r1tx or r1ty) then
-        return
-    end
-
-    if not softassert(r2tx or r2ty) then
-        return
-    end
-
-    ---@type {[integer]:boolean}
-    local forbidden = {}
-    
-    ---@cast r1tx integer
-    ---@cast r2tx integer
-    ---@cast r1ty integer
-    ---@cast r2ty integer
-    self:_plotLine(r1tx, r1ty, r2tx, r2ty, function(tx, ty)
-        forbidden[Util.pair2u(tx, ty)] = true
-        table.insert(self._debugDraws, { x=tx, y=ty, r=1,g=1,b=1 })
-    end)
-
-    local origTx = math.floor(origX / TILE_SIZE)
-    local origTy = math.floor(origY / TILE_SIZE)
-
-    forbidden[Util.pair2u(origTx, origTy)] = nil
-    self:_searchTiles(origTx, origTy, function(x, y, depth)
-        if depth > 20 then
-            return false
-        end
-
-        if forbidden[Util.pair2u(x, y)] then
-            return false
-        end
-        self.mapAwareness[y+1][x+1] = markId
-        return true
-    end)
-    --]]
 end
 
 function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)
@@ -433,28 +317,40 @@ end
 ---@param ent game.entities.Entity
 ---@param behavior game.EnemyAI.SearchBehavior
 function EnemyAI:searchCoroutine(ent, behavior)
+    local world = ent.world
+
+    ---@type game.pathfind.ExtraParams
     local pathfindParams = {
-        limit = 20,
+        coroutineLimit = 20,
+        cost = function(_,_, tx, ty)
+            -- discourage going too close to walls, to make it seem more natural
+            if world:isCol(tx-1, ty) or world:isCol(tx+1, ty) or
+               world:isCol(tx, ty-1) or world:isCol(tx, ty+1)
+            then
+                return 3
+            end
+
+            return 1
+        end
     }
+
     while true do
         local startTx = math.floor(ent.x / TILE_SIZE)
         local startTy = math.floor(ent.y / TILE_SIZE)
 
-        -- find closest unexplored tile
+        -- find closest unexplored tile (id 2)
         local endTx, endTy
-        print("start", startTx, startTy)
 
         local limitCounter = 0
         self:_searchTiles(startTx, startTy, function(x, y, depth)
+            -- only process 40 tiles per frame
             limitCounter = limitCounter + 1
             if limitCounter == 40 then
                 coroutine.yield()
                 limitCounter = 0
             end
 
-            -- print("shduiahsdsiud 2")
             if self.mapAwareness[y+1][x+1] == 2 then
-                -- print("ahsduiahsdiuas")
                 endTx, endTy = x, y
                 return "stop"
             end
@@ -474,6 +370,39 @@ function EnemyAI:searchCoroutine(ent, behavior)
             return
         end
 
+        -- simplify diagonals/turns of path, since the pathfinder cannot emit
+        -- diagonal traversal.
+        local i = 3
+        while true do
+            local x1, y1 = path[i-2], path[i-1]
+            local x2, y2 = path[i], path[i+1]
+            local x3, y3 = path[i+2], path[i+3]
+            if not x3 then break end
+            
+            local prevDx = x2 - x1
+            local prevDy = y2 - y1
+            local nextDx = x3 - x2
+            local nextDy = y3 - y2
+
+            -- remove diagonal, but only if this is not a turn around a corner
+            if prevDx ~= nextDx or prevDy ~= nextDy then
+                local testX, testY
+                if prevDx == 0 then
+                    testX = x3
+                    testY = y1
+                else
+                    testX = x1
+                    testY = y3
+                end
+                if not world:isCol(testX, testY) then
+                    table.remove(path, i)
+                    table.remove(path, i)
+                end
+            end
+
+            i=i+2
+        end
+
         print("begin path traversal...")
 
         local sightCoro
@@ -485,6 +414,7 @@ function EnemyAI:searchCoroutine(ent, behavior)
 
             behavior.beginMove(ent, x, y)
             while behavior.isCurrentlyMoving(ent) do
+                -- debug draw path
                 for i=1, #path, 2 do
                     local tx, ty = path[i], path[i+1]
                     local x = (tx + 0.5) * TILE_SIZE
@@ -493,6 +423,10 @@ function EnemyAI:searchCoroutine(ent, behavior)
                     Debug.draw:rect(x, y, 4, 4)
                 end
 
+                -- mark any unexplored tiles currently in view as explored. but
+                -- this is a coroutine so that it is limited to processing only
+                -- 20 tiles per frame, because it is very expensive due to the
+                -- raycasting.
                 if not sightCoro then
                     sightCoro = coroutine.create(searchCoroSightCoro)
                     coroutine.resume(sightCoro, self)
@@ -501,7 +435,6 @@ function EnemyAI:searchCoroutine(ent, behavior)
                         sightCoro = nil
                     end
                 end
-
                 if sightCoro then
                     local s, err = coroutine.resume(sightCoro)
                     if not s then

@@ -89,14 +89,6 @@ function Enemy:_isCurrentlyMoving()
 end
 
 function Enemy:_alertDeath(victim, hitVx, hitVy)
-    -- self._moveTargetX = victim.x
-    -- self._moveTargetY = victim.y
-    -- self._hasMoveTarget = true
-
-    -- make enemy yellow for debug purposes
-    self.render.g = 1.0
-    print("it's yellow ??")
-
     self.ai = EnemyAi(self.world)
     self.aiTask = coroutine.create(function()
         local myOrigX, myOrigY = self:getCenterPos()
@@ -131,7 +123,6 @@ function Enemy:_alertDeath(victim, hitVx, hitVy)
 
             coroutine.yield()
         end
-        -- self.ai:markTilesInSightOf(self.x, self.y, 1)
 
         self.ai = nil
     end)
@@ -174,37 +165,39 @@ function Enemy:update()
         self.yVel = 0
     end
 
-    local sightRaycast, playerDx, playerDy =
-        self:_hasSightLineTo(world.player)
+    if false then
+        local sightRaycast, playerDx, playerDy =
+            self:_hasSightLineTo(world.player)
 
-    if sightRaycast then
-        if not self.gunSight.world then
-            self.world:addEntity(self.gunSight)
-        end
+        if sightRaycast then
+            if not self.gunSight.world then
+                self.world:addEntity(self.gunSight)
+            end
 
-        local cx, cy = self:getCenterPos()
-        local dx, dy = math.normalize(playerDx, playerDy)
-        self.gunSight:updateSight(cx, cy, dx, dy)
+            local cx, cy = self:getCenterPos()
+            local dx, dy = math.normalize(playerDx, playerDy)
+            self.gunSight:updateSight(cx, cy, dx, dy)
 
-        self.fireTimer = self.fireTimer + 1
-        if self.fireTimer == self.noticeWait then
-            print("notice")
-            self._hasMoveTarget = true
-            self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
-        end
+            self.fireTimer = self.fireTimer + 1
+            if self.fireTimer == self.noticeWait then
+                print("notice")
+                self._hasMoveTarget = true
+                self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
+            end
 
-        if self.fireTimer >= self.fireWait then
-            print("fire the weapon")
+            if self.fireTimer >= self.fireWait then
+                print("fire the weapon")
+                self.fireTimer = 0
+                -- Sceneman.switchScene("entry")
+            end
+        else
+            if self.gunSight.world then
+                self.gunSight:remove()
+                self.gunSight:clearSight()
+            end
+
             self.fireTimer = 0
-            -- Sceneman.switchScene("entry")
         end
-    else
-        if self.gunSight.world then
-            self.gunSight:remove()
-            self.gunSight:clearSight()
-        end
-
-        self.fireTimer = 0
     end
 
     if self.aiTask then

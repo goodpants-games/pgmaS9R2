@@ -273,6 +273,31 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
     end
 end
 
+function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
+    local iter = 0
+    local startX = math.floor(lastKnownX / TILE_SIZE)
+    local startY = math.floor(lastKnownY / TILE_SIZE)
+
+    self:markTilesInSightOf(myX, myY, 3)
+    self:_searchTiles(startX, startY, function(x, y, depth)
+        iter = iter + 1
+        if iter == 4 then
+            self.yield()
+            iter = 0
+        end
+
+        if self.mapAwareness[y+1][x+1] == 3 then
+            return false
+        end
+
+        if depth > 20 then
+            return false
+        end
+        self.mapAwareness[y+1][x+1] = 2
+        return true
+    end)
+end
+
 function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)
     limitPerFrame = limitPerFrame or math.huge
     --[[
@@ -399,19 +424,14 @@ function EnemyAI:searchCoroutine(ent, behavior)
                 -- raycasting.
                 if not sightCoro then
                     sightCoro = coroutine.create(searchCoroSightCoro)
-                    coroutine.resume(sightCoro, self)
-                    coroutine.resume(sightCoro, ent.x, ent.y, 1, 20)
-                    if coroutine.status(sightCoro) == "dead" then
+                    coroutine.sresume(sightCoro, self)
+                    local stat = coroutine.sresume(sightCoro, ent.x, ent.y, 1, 20)
+                    if not stat then
                         sightCoro = nil
                     end
                 end
                 if sightCoro then
-                    local s, err = coroutine.resume(sightCoro)
-                    if not s then
-                        error(debug.traceback(sightCoro, err))
-                    end
-
-                    if coroutine.status(sightCoro) == "dead" then
+                    if not coroutine.sresume(sightCoro) then
                         sightCoro = nil
                     end
                 end

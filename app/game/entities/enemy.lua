@@ -18,12 +18,13 @@ function Enemy:new(x, y)
     self.colGroup = Const.COLGROUP_NPC
     self.render = RectRenderer(1.0, 0.0, 0.0)
     self.moveSpeed = 2.0
-
-    self.noticeWait = 20
-    self.fireWait = 40 -- in frames
-    self.fireTimer = 0
-
     self.dead = false
+
+    -- sight timer stuff --
+    self.sightTimer = 0
+    self.noticeWait = 20 -- how many frames until enemy actually notices/registers player
+    self.fireTimer = 0
+    self.fireWait = 30 -- how frames after notice until enemy shoots player
 
     self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight.maxBounces = 1
@@ -31,6 +32,9 @@ function Enemy:new(x, y)
     self._hasMoveTarget = false
     self._moveTargetX = 0
     self._moveTargetY = 0
+    self._homeX = 0.0
+    self._homeY = 0.0
+    self._isTrackingPlayer = false
 
     ---@type game.EnemyAi?
     self.ai = nil
@@ -42,10 +46,12 @@ function Enemy:new(x, y)
 end
 
 function Enemy:_added()
+    self._homeX, self._homeY = self:getCenterPos()
 end
 
 function Enemy:_removing()
     self.gunSight:remove()
+    self._sightCoro = nil
     self.ai = nil
 end
 
@@ -82,6 +88,33 @@ function Enemy:_isCurrentlyMoving()
     return self._hasMoveTarget
 end
 
+-- must be called within a coroutine...
+function Enemy:_moveToHome()
+    local startX, startY = self:getCenterPos()
+    startX = math.floor(startX / Const.TILE_SIZE)
+    startY = math.floor(startY / Const.TILE_SIZE)
+    local endX = math.floor(self._homeX / Const.TILE_SIZE)
+    local endY = math.floor(self._homeY / Const.TILE_SIZE)
+    local path = Pathfinding.pathfind(self.world, startX, startY, endX, endY)
+    if not path then
+        softerror("could not create path?")
+        return
+    end
+    Pathfinding.simplifyPath(path, self.world)
+
+    -- follow path
+    for i=3, #path, 2 do
+        local tx, ty = path[i], path[i+1]
+        local x = (tx + 0.5) * Const.TILE_SIZE
+        local y = (ty + 0.5) * Const.TILE_SIZE
+
+        self:_beginMove(x, y)
+        while self:_isCurrentlyMoving() do
+            coroutine.yield()
+        end
+    end
+end
+
 function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
     if not isPerpretator then
         return
@@ -93,7 +126,6 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         local victimOrigX, victimOrigY = victim:getCenterPos()
 
         -- first, wait a bit...
-        local homeX, homeY = self:getCenterPos()
         for _=1, love.math.random(20, 40) do
             coroutine.yield()
         end
@@ -117,15 +149,9 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end)
 
         while true do
-            local s, err = coroutine.resume(coro)
-            if not s then
-                error(debug.traceback(coro, err))
-            end
-
-            if coroutine.status(coro) == "dead" then
+            if not coroutine.sresume(coro) then
                 break
             end
-
             coroutine.yield()
         end
 
@@ -136,30 +162,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
             coroutine.yield()
         end
 
-        -- create path
-        local startX, startY = self:getCenterPos()
-        startX = math.floor(startX / Const.TILE_SIZE)
-        startY = math.floor(startY / Const.TILE_SIZE)
-        local endX = math.floor(homeX / Const.TILE_SIZE)
-        local endY = math.floor(homeY / Const.TILE_SIZE)
-        local path = Pathfinding.pathfind(self.world, startX, startY, endX, endY)
-        if not path then
-            softerror("could not create path?")
-            return
-        end
-        Pathfinding.simplifyPath(path, self.world)
-
-        -- follow path
-        for i=3, #path, 2 do
-            local tx, ty = path[i], path[i+1]
-            local x = (tx + 0.5) * Const.TILE_SIZE
-            local y = (ty + 0.5) * Const.TILE_SIZE
-
-            self:_beginMove(x, y)
-            while self:_isCurrentlyMoving() do
-                coroutine.yield()
-            end
-        end
+        self:_moveToHome()
     end)
 end
 
@@ -200,9 +203,128 @@ function Enemy:update()
         self.yVel = 0
     end
 
-    local sightRaycast, playerDx, playerDy =
-        self:hasSightLineTo(world.player)
+    -- update sight
+    if not self._sightCoro then
+        self._sightCoro = coroutine.create(self._sightRoutine)
+        coroutine.sresume(self._sightCoro, self)
+    end
 
+    if not coroutine.sresume(self._sightCoro) then
+        self._sightCoro = nil
+    end
+
+    if self.aiTask then
+        if not coroutine.sresume(self.aiTask) then
+            self.aiTask = nil
+        end
+    end
+
+    -- update sight
+    if world.player then
+        local hasSight = self:hasSightLineTo(world.player)
+        if hasSight then
+            self.sightTimer = self.sightTimer + 1
+        else
+            self.sightTimer = 0
+        end
+    end
+    -- self:_sightUpdate()
+
+    if self.ai then
+        self.ai:update()
+    end
+end
+
+function Enemy:_sightRoutine()
+    coroutine.yield()
+    local world = assert(self.world)
+
+    -- do nothing until enemy notices player
+    self.sightTimer = 0
+    while self.sightTimer < self.noticeWait do
+        coroutine.yield()
+    end
+
+    -- i see him!!
+    if self.ai then self.ai = nil end
+    if self.aiTask then self.aiTask = nil end
+
+    self._hasMoveTarget = false
+    self.xVel = 0.0
+    self.yVel = 0.0
+    self.world:addEntity(self.gunSight)
+    self.fireTimer = 0
+
+    local cx, cy
+    local playerCx, playerCy
+    local playerVx, playerVy
+    while self.sightTimer > 0 do
+        cx, cy = self:getCenterPos()
+        playerCx, playerCy = world.player:getCenterPos()
+        playerVx, playerVy = world.player.xVel, world.player.yVel
+
+        local playerDx = playerCx - cx
+        local playerDy = playerCy - cy
+        if playerDx * playerDx + playerDy * playerDy ~= 0 then
+            playerDx, playerDy = math.normalize(playerDx, playerDy)
+        end
+
+        self.gunSight:updateSight(cx, cy, playerDx, playerDy)
+        coroutine.yield()
+
+        self.fireTimer = self.fireTimer + 1
+        if self.fireTimer == self.fireWait then
+            print("fire the weapon!")
+            Sceneman.switchScene("entry")
+        end
+    end
+
+    -- no longer in sight...
+    for _=1, 5 do
+        coroutine.yield()
+    end
+
+    -- hey, come back here!
+    self.gunSight:remove()
+    self:_beginMove(playerCx, playerCy)
+
+    -- also, initiate the search...
+    cx, cy = self:getCenterPos()
+    playerVx, playerVy = math.normalize(playerVx, playerVy)
+    local knownPlayerX = playerCx + playerVx * 20
+    local knownPlayerY = playerCy + playerVy * 20
+
+    self.ai = EnemyAi(world)
+    self.ai.yield = coroutine.yield
+    self.ai:beginChaseSearch(cx, cy, knownPlayerX, knownPlayerY)
+
+    self.aiTask = coroutine.create(function()
+        local searchBehavior = {
+            beginMove = self._beginMove,
+            isCurrentlyMoving = self._isCurrentlyMoving
+        }
+        local coro = coroutine.create(function()
+            self.ai:searchCoroutine(self, searchBehavior)
+        end)
+
+        while true do
+            if not coroutine.sresume(coro) then
+                break
+            end
+            coroutine.yield()
+        end
+
+        -- search is done... return home.
+        self.ai = nil
+
+        for _=1, 240 do
+            coroutine.yield()
+        end
+
+        self:_moveToHome()
+    end)
+
+    --[[
     if sightRaycast then
         if not self.gunSight.world then
             self.world:addEntity(self.gunSight)
@@ -232,20 +354,7 @@ function Enemy:update()
 
         self.fireTimer = 0
     end
-
-    if self.aiTask then
-        local s, err = coroutine.resume(self.aiTask)
-        if not s then
-            error(debug.traceback(self.aiTask, err, 1))
-        end
-
-        if coroutine.status(self.aiTask) == "dead" then
-            self.aiTask = nil
-        end
-    end
-    if self.ai then
-        self.ai:update()
-    end
+    --]]
 end
 
 return Enemy

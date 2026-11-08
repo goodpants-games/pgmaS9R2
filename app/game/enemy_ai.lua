@@ -38,8 +38,7 @@ function EnemyAI:new(world)
     for y=1, map.height do
         local row = {}
         for x=1, map.width do
-            local t = assert( map:get(x-1, y-1) )
-            row[x] = t ~= 0 and 0 or 1
+            row[x] = world:isCol(x-1, y-1) and 0 or 1
         end
         self.mapAwareness[y] = row
     end

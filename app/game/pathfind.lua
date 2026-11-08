@@ -73,7 +73,7 @@ function Pathfind.pathfind(world, startX, startY, endX, endY, extraParams)
             goto endSearch
         end
         
-        if map:get(x, y) == 0 then
+        if not world:isCol(x, y) then
             local k = pair2u(x, y)
             procNeighbor(x,y,k, x+1, y)
             procNeighbor(x,y,k, x-1, y)

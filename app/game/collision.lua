@@ -111,8 +111,7 @@ function collision.gameCollision(x, y, w, h, tileCol)
     -- first, check tile collisions
     for ty=sy, ey do
         for tx=sx, ex do
-            local t = tileCol(tx, ty)
-            if t ~= nil and t ~= 0 then
+            if tileCol(tx, ty) then
                 local tcx = (tx + 0.5) * TILE_SIZE
                 local tcy = (ty + 0.5) * TILE_SIZE
                 local dx = tcx - cx
@@ -149,7 +148,7 @@ end
 ---@param ray_y number
 ---@param ray_dx number
 ---@param ray_dy number
----@param getCol fun(tx:integer, ty:integer)
+---@param getCol fun(tx:integer, ty:integer):boolean?
 ---@return number? distance, number? dx, number? dy
 function collision.tileRaycast(ray_x, ray_y, ray_dx, ray_dy, getCol)
     local ray_len = math.length(ray_dx, ray_dy)
@@ -178,11 +177,11 @@ function collision.tileRaycast(ray_x, ray_y, ray_dx, ray_dy, getCol)
         local col = getCol(tile_x, tile_y)
         
         -- nil means out of bounds!
-        if not col then
+        if col == nil then
             break
         end
         
-        if col > 0 --[[and not NONCOLLIDABLE_TILES[col])]] then
+        if col then
             local nx, ny
             if side == 0 then
                 nx = dir_sign_x

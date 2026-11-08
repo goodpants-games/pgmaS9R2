@@ -16,6 +16,18 @@ local World = batteries.class()
 function World:new()
     self.map = Tiled.loadMap("/res/maps/test.lua")
     self.curFrame = 0
+
+    self._nonCollidableTiles = {}
+    for _, tileset in ipairs(self.map.tilesets) do
+        local firstgid = tileset.firstgid
+        for _, tile in ipairs(tileset.tiles) do
+            local gid = firstgid + tile.id
+
+            if tile.type == "top" then
+                self._nonCollidableTiles[gid] = true
+            end
+        end
+    end
     
     -- store button input states for the current and last frame
     -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
@@ -46,22 +58,21 @@ function World:new()
     ---@private
     self._needEntityRemoval = false
 
-    -- collision map is the first found tile layer
+    -- collision map is the tile layer named "Main"
     ---@type pklove.tiled.TileLayer
     self.colMap = nil
-    for _, layer in ipairs(self.map.layers) do
-        if layer.type == "tilelayer" then
+    do
+        local layer = self.map:getLayerByName("Main")
+        if layer and layer.type == "tilelayer" then
             self.colMap = layer --[[@as pklove.tiled.TileLayer]]
-            break
         end
     end
 
     if softassert(self.colMap, "map had no collision layer!") then
-        local colMap = self.colMap
-        local colMapGet = colMap.get
+        local isCol = self.isCol
         ---@private
         self._getCol = function(tx, ty)
-            return colMapGet(colMap, tx, ty)
+            return isCol(self, tx, ty)
         end
     else
         self._getCol = function() return nil end
@@ -156,19 +167,24 @@ function World:draw()
     Lg.push()
     Lg.translate(-math.round(self.camX), -math.round(self.camY))
 
-    self.map:draw(0, 0)
-
-    for _, ent in ipairs(self._renderOrder) do
-        if ent.visible then
-            local renderer = ent.render
-            if renderer then
-                if type(renderer) == "function" then
-                    renderer(ent)
-                else
-                    renderer:draw(ent)
+    for _, layer in ipairs(self.map.layers) do
+        -- draw objects immediately before Main layer
+        if layer == self.colMap then
+            for _, ent in ipairs(self._renderOrder) do
+                if ent.visible then
+                    local renderer = ent.render
+                    if renderer then
+                        if type(renderer) == "function" then
+                            renderer(ent)
+                        else
+                            renderer:draw(ent)
+                        end
+                    end
                 end
             end
         end
+
+        layer:draw()
     end
 
     Lg.pop()
@@ -245,15 +261,14 @@ function World:findEntitiesWithTag(tag)
     return res
 end
 
----Returns true if the tile at (x, y) is collidable, false otherwise.
+---Returns `true` if the tile at (x, y) is collidable, `nil` if out of bounds,
+---or `false` otherwise.
 ---@param x any
 ---@param y any
----@return boolean
+---@return boolean?
 function World:isCol(x, y)
-    if not self.colMap then return false end
-
     local col = self.colMap:get(x, y)
-    return col ~= nil and col ~= 0
+    return col and (col ~= 0 and not self._nonCollidableTiles[col])
 end
 
 ---@param btn string
@@ -373,7 +388,7 @@ function World:_moveEntities()
     -- then, perform X collision
     for _, ent in ipairs(self.entities) do
         if ent.collision then
-            local colX, colY, colW, colH, colEnt =
+            local colX, _, colW, _, colEnt =
                 Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
                                         self._getCol)
             if colX then
@@ -400,7 +415,7 @@ function World:_moveEntities()
     -- then, perform Y collision
     for _, ent in ipairs(self.entities) do
         if ent.collision then
-            local colX, colY, colW, colH, colEnt =
+            local _, colY, _, colH, colEnt =
                 Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
                                         self._getCol)
             if colY then

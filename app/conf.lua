@@ -107,7 +107,7 @@ Debug = {
 
 
 --------------------------------------------------------------------------------
--- ADDITIONAL ERROR HANDLING
+-- ADDITIONAL BASE FUNCTIONS
 --------------------------------------------------------------------------------
 
 ---@diagnostic disable lowercase-global
@@ -173,4 +173,31 @@ function warn(msg1, ...)
         local msg = table.concat({msg1, ...})
         print("[WRN] " .. msg)
     end
+end
+
+local function coroHandleResumeReturn(thread, s, ...)
+    if not s then
+        local err = ...
+        if err then err = tostring(err) end
+        error(debug.traceback(thread, err, 1), 2)
+    end
+
+    return coroutine.status(thread) ~= "dead", ...
+end
+
+---"Simple" resume. It resumes the given thread, passing in the succeeding
+---arguments as either the initial function parameters or the return values of
+---`coroutine.yield`. If there was an error within the thread, the error is
+---propagated with a stack trace.
+---
+---The first return value indicates whether or not the coroutine is still alive
+---after it has yielded: false indicates that the coroutine has ended. The rest
+---of the return values are what was passed by `coroutine.yield` or the
+---concluding function return.
+---@param thread thread
+---@param ... any
+---@return boolean yielded True if the coroutine is still alive.
+---@return any... rest The values returned by the coroutine on either a yield or conclusion.
+function coroutine.sresume(thread, ...)
+    return coroHandleResumeReturn(thread, coroutine.resume(thread, ...))
 end

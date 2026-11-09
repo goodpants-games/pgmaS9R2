@@ -21,6 +21,7 @@
             yourself. this is so you can reuse the same cache across multiple
             map loads.
 
+
     map structure
     ----
     this is a non-comprehensive list of fields accessible in map objects:
@@ -41,6 +42,15 @@
         - map:getLayersByClass(class)
         - map:getBackgroundColor(): returns 4 numbers corresponding to r,g,b,a
           values to pass into love.graphics.setBackgroundColor
+        - map:getLayerCount()
+        - map:getLayer(index)
+        - map:insertLayer(layer[, index]): returns true if successful: it will
+                                           fail only if the layer is already in
+                                           the map.
+        - map:removeLayer(layer): returns true if the layer was in the list,
+                                  and false otherwise.
+        - map:removeLayerAt(index): returns the removed layer.
+
     
     layers
     ----
@@ -55,7 +65,7 @@
         - layer.offsety
         - layer.parallaxx
         - layer.parallaxy
-        - layer.properties: custom property tabl
+        - layer.properties: custom property table
     
     tile layers have their layer.type set to "tilelayer", and have these
     methods:
@@ -70,13 +80,18 @@
                                 values to pass into love.graphics.setColor
         - layer:pushTransform()
 
-    object layers have their layer.type set to "objectgroup".
-    they have an extra field named "objects", which contains a list of all
-    objects. they also have these methods:
+    object layers have their layer.type set to "objectgroup". they have an extra
+    field named "objects", which contains a list of all objects. they also have
+    these methods:
         - layer:getObjectByName(name)
         - layer:getObjectByType(type)
     
+    group layers have their layer.type set to "group". they have an extra field
+    named "layers", which is the layer list. they also have a set of methods for
+    easier access/manipulation of this layer list -- see the layer-related
+    methods for maps.
 
+    
     known limitations:
     ----
     
@@ -97,7 +112,7 @@
     copyright notice
     ----
     
-    Copyright (c) 2025 pkhead
+    Copyright (c) 2025-2026 pkhead
 
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -124,13 +139,52 @@ local readBase64 = require(module_root .. ".base64")
 local table_new = require(module_root .. ".tablecompat").new
 
 local tiled = {}
-tiled._version = "0.2.1"
+tiled._version = "0.3.0"
+
+-- tile gid flags
+local FLIPPED_HORIZONTALLY_FLAG  = 0x80000000
+local FLIPPED_VERTICALLY_FLAG    = 0x40000000
+local FLIPPED_DIAGONALLY_FLAG    = 0x20000000
+local ROTATED_HEXAGONAL_120_FLAG = 0x10000000
+local ALL_TILE_FLAGS = bit.bor(FLIPPED_HORIZONTALLY_FLAG, FLIPPED_VERTICALLY_FLAG, FLIPPED_DIAGONALLY_FLAG, ROTATED_HEXAGONAL_120_FLAG)
+
+---@alias pklove.tiled.LayerType
+---| "tilelayer"
+---| "objectgroup"
+---| "imagelayer"
+---| "group"
+
+---@class pklove.tiled.LayerContainer
+---@field layers pklove.tiled.Layer[]
+local LayerContainer = {}
+-- LayerContainer is a mix-in
+
+---@class pklove.tiled.Map: pklove.tiled.LayerContainer
+---@field class string
+---@field orientation string
+---@field renderorder string
+---@field width integer
+---@field height integer
+---@field tilewidth integer
+---@field tileheight integer
+---@field backgroundcolor number[]
+---@field tilesets pklove.tiled.Tileset[]
+---@field layers pklove.tiled.Layer[]
+---@field textures love.Image[]
+---@field properties table
+---@field nextlayerid integer
+---@field nextobjectid integer
+---@field _globalTiles pklove.tiled.Tile[]
+---@field package _textureLoadCache {[string]: love.Image}?
+local Map = {}
+Map.__index = Map
 
 ---@class pklove.tiled.Layer
----@field type string
+---@field type pklove.tiled.LayerType
 ---@field name string
----@field class string
+---@field class string?
 ---@field visible boolean
+---@field locked boolean
 ---@field id integer
 ---@field opacity number
 ---@field offsetx number
@@ -172,24 +226,6 @@ Layer.__index = Layer
 ---@field id integer
 ---@field quad love.Quad
 
----@class pklove.tiled.Map
----@field class string
----@field orientation string
----@field renderorder string
----@field width integer
----@field height integer
----@field tilewidth integer
----@field tileheight integer
----@field backgroundcolor number[]
----@field tilesets pklove.tiled.Tileset[]
----@field layers pklove.tiled.Layer[]
----@field textures love.Image[]
----@field properties table
----@field _globalTiles pklove.tiled.Tile[]
----@field package _textureLoadCache {[string]: love.Image}?
-local Map = {}
-Map.__index = Map
-
 ---@class pklove.tiled.TileLayer: pklove.tiled.Layer
 ---@field width integer
 ---@field height integer
@@ -204,18 +240,19 @@ TileLayer.__index = TileLayer
 
 ---@class pklove.tiled.ObjectLayer: pklove.tiled.Layer
 ---@field objects pklove.tiled.Object[]
+---@field draworder string
 local ObjectLayer = setmetatable({}, Layer)
 ObjectLayer.__index = ObjectLayer
 
 ---@class pklove.tiled.ImageLayer: pklove.tiled.Layer
 ---@field repeatx boolean
 ---@field repeaty boolean
+---@field transparentcolor number[]?
 ---@field image string
 local ImageLayer = setmetatable({}, Layer)
 ImageLayer.__index = ImageLayer
 
----@class pklove.tiled.GroupLayer: pklove.tiled.Layer
----@field layers pklove.tiled.Layer[]
+---@class pklove.tiled.GroupLayer: pklove.tiled.Layer, pklove.tiled.LayerContainer
 local GroupLayer = setmetatable({}, Layer)
 GroupLayer.__index = GroupLayer
 
@@ -240,6 +277,9 @@ tiled.mapPath = nil
 local function defaultMapPath(cwd, path)
     return Path.normalize(Path.join(cwd, path))
 end
+
+--------------------------------------------------------------------------------
+-- Loading ---------------------------------------------------------------------
 
 ---@param fileDir string
 ---@param map pklove.tiled.Map
@@ -316,28 +356,40 @@ local function parseTileData(tileLayer)
 end
 
 ---@param map pklove.tiled.Map
----@param layerList pklove.tiled.Layer[]
-local function assignLayerMts(map, layerList)
-    for _, layer in pairs(layerList) do
-        if layer.type == "tilelayer" then
-            ---@cast layer pklove.tiled.TileLayer
-            setmetatable(layer, TileLayer)
-            parseTileData(layer)
-            layer._map = map
-        elseif layer.type == "objectgroup" then
-            setmetatable(layer, ObjectLayer)
-        elseif layer.type == "imagelayer" then
-            setmetatable(layer, ImageLayer)
-        elseif layer.type == "group" then
-            ---@cast layer pklove.tiled.GroupLayer
-            setmetatable(layer, GroupLayer)
-            assignLayerMts(map, layer.layers)
-        else
-            print(("warning: unknown layer type '%s'"):format(layer.type))
-            setmetatable(layer, Layer)
+---@param layer pklove.tiled.Layer
+local function initLayer(map, layer)
+    -- create defaults
+    layer.offsetx   = layer.offsetx or 0.0
+    layer.offsety   = layer.offsety or 0.0
+    layer.opacity   = layer.opacity or 1.0
+    layer.parallaxx = layer.parallaxx or 0.0
+    layer.parallaxy = layer.parallaxy or 0.0
+
+    if layer.locked == nil then layer.locked = false end
+
+    if layer.type == "tilelayer" then
+        ---@cast layer pklove.tiled.TileLayer
+        setmetatable(layer, TileLayer)
+        parseTileData(layer)
+        layer._map = map
+    elseif layer.type == "objectgroup" then
+        ---@cast layer pklove.tiled.ObjectLayer
+        layer.draworder = layer.draworder or "topdown"
+        setmetatable(layer, ObjectLayer)
+    elseif layer.type == "imagelayer" then
+        setmetatable(layer, ImageLayer)
+    elseif layer.type == "group" then
+        ---@cast layer pklove.tiled.GroupLayer
+        setmetatable(layer, GroupLayer)
+        for _, child in ipairs(layer.layers) do
+            initLayer(map, child)
         end
+    else
+        print(("warning: unknown layer type '%s'"):format(layer.type))
+        setmetatable(layer, Layer)
     end
 end
+
 
 ---Load a lua-exported map from a given path
 ---@param mapPath string The path to the lua-exported map.
@@ -392,148 +444,78 @@ function tiled.loadMap(mapPath, loadSettings)
     end
 
     -- assign metatables to each layer
-    assignLayerMts(map, map.layers)
+    for _, layer in ipairs(map.layers) do
+        initLayer(map, layer)
+    end
 
     return map
 end
 
-local function sortRenderList(a, b)
-    return a.t.tilesetId < b.t.tilesetId
+--------------------------------------------------------------------------------
+-- LayerContainer --------------------------------------------------------------
+
+---Return the number of layers.
+---@return integer
+function LayerContainer:getLayerCount()
+    return #self.layers
 end
 
--- tile gid flags
-local FLIPPED_HORIZONTALLY_FLAG  = 0x80000000
-local FLIPPED_VERTICALLY_FLAG    = 0x40000000
-local FLIPPED_DIAGONALLY_FLAG    = 0x20000000
-local ROTATED_HEXAGONAL_120_FLAG = 0x10000000
-local ALL_TILE_FLAGS = bit.bor(FLIPPED_HORIZONTALLY_FLAG, FLIPPED_VERTICALLY_FLAG, FLIPPED_DIAGONALLY_FLAG, ROTATED_HEXAGONAL_120_FLAG)
+---Return the layer at index `index`.
+---@param index integer
+---@return pklove.tiled.Layer
+function LayerContainer:getLayer(index)
+    return self.layers[index]
+end
 
----@param map pklove.tiled.Map
----@param tileLayer pklove.tiled.TileLayer
----@return love.SpriteBatch[]
-local function renderTileLayer(map, tileLayer)
-    local data = tileLayer.data
+---Returns an iterator through all the layers in order.
+function LayerContainer:iterLayers()
+    return ipairs(self.layers)
+end
 
-    ---@type {x: number, y: number, r: number, sx: number, sy: number, ox: number, oy: number, t: pklove.tiled.Tile}[]
-    local renderList = {}
+---Insert a layer.
+---@param layer pklove.tiled.Layer
+---@param index integer?
+---@return boolean s True if the layer was successfully inserted (that is, it was not already in the layer list.)
+function LayerContainer:insertLayer(layer, index)
+    local layers = self.layers
+    if tfind(layers, layer) then
+        return false
+    end
+    if index then
+        table.insert(layers, index, layer)
+    else
+        table.insert(layers, layer)
+    end
+    return true
+end
 
-    local dataIndex = 1
-    for y=0, tileLayer.height - 1 do
-        for x=0, tileLayer.width - 1 do
-            local tileId = data[dataIndex]
-            if tileId ~= 0 then
-                local hFlip = bit.band(tileId, FLIPPED_HORIZONTALLY_FLAG) ~= 0
-                local vFlip = bit.band(tileId, FLIPPED_VERTICALLY_FLAG) ~= 0
-                local dFlip = bit.band(tileId, FLIPPED_DIAGONALLY_FLAG) ~= 0
-                local hRot = bit.band(tileId, ROTATED_HEXAGONAL_120_FLAG) ~= 0
-    
-                tileId = bit.band(tileId, bit.bnot(ALL_TILE_FLAGS))
+---Remove the layer at the given index.
+---@param index integer
+---@return pklove.tiled.Layer? removedLayer
+function LayerContainer:removeLayerAt(index)
+    return table.remove(self.layers, index)
+end
 
-                local tile = map._globalTiles[tileId]
-                local tileset = map.tilesets[tile.tilesetId]
-
-                local drawX = (x+0.5) * map.tilewidth
-                local drawY = (y+1) * map.tileheight - tileset.tileheight + map.tileheight / 2
-                local sx, sy = 1, 1
-
-                if dFlip then
-                    sx = -sx
-                end
-
-                if hFlip then
-                    sx = -sx
-                end
-
-                if vFlip then
-                    sy = -sy
-                end
-
-                table.insert(renderList, {
-                    x = drawX,
-                    y = drawY,
-                    r = dFlip and math.pi / 2 or 0,
-                    sx = dFlip and sy or sx,
-                    sy = dFlip and sx or sy,
-                    ox = tileset.tilewidth / 2,
-                    oy = tileset.tileheight / 2,
-
-                    t = tile
-                })
-            end
-
-            dataIndex=dataIndex+1
+---Remove the given layer.
+---@param layer pklove.tiled.Layer
+---@return boolean s True if the layer was successfully removed, false if not.
+function LayerContainer:removeLayer(layer)
+    local layers = self.layers
+    for i=1, #layers do
+        if layers[i] == layer then
+            table.remove(layers, i)
+            return true
         end
     end
 
-    table.sort(renderList, sortRenderList)
-
-    local batches = {}
-
-    local start = 1
-    local end_ = 1
-    while end_ <= #renderList do
-        local texId = renderList[start].t.textureId
-        while end_ <= #renderList and texId == renderList[end_].t.textureId do
-            end_ = end_ + 1
-        end
-
-        local batch = love.graphics.newSpriteBatch(map.textures[texId], end_ - start, "static")
-        table.insert(batches, batch)
-
-        for i=start, end_ - 1 do
-            local t = renderList[i]
-            batch:add(t.t.quad, t.x, t.y, t.r, t.sx, t.sy, t.ox, t.oy)
-        end
-
-        start = end_
-        end_ = start
-    end
-
-    return batches
+    return false
 end
 
----Obtain the 2x2 representation of the graphics transform matrix as well as its translation
----@return number e1_1
----@return number e1_2
----@return number e2_1
----@return number e2_2
----@return number tx
----@return number ty
-local function getGraphics2x2Matrix()
-    local tx, ty = love.graphics.transformPoint(0, 0)
-    local sxx, sxy = love.graphics.transformPoint(1, 0)
-    sxx = sxx - tx
-    sxy = sxy - ty
-    local syx, syy = love.graphics.transformPoint(0, 1)
-    syx = syx - tx
-    syy = syy - ty
+--------------------------------------------------------------------------------
+-- Map -------------------------------------------------------------------------
 
-    return sxx, syx, sxy, syy, tx, ty
-end
-
----@param map pklove.tiled.Map
----@param tileLayer pklove.tiled.TileLayer
-local function drawTileLayer(map, tileLayer)
-    if not tileLayer.visible then return end
-
-    if tileLayer._drawBatches == nil then
-        tileLayer:syncGraphics()
-    end
-
-    tileLayer:pushTransform()
-
-    -- apply tint color
-    local oldR, oldG, oldB, oldA = love.graphics.getColor()
-    love.graphics.setColor(tileLayer:getTintColor())
-
-    -- draw the tile layer!
-    for _, batch in ipairs(tileLayer._drawBatches) do
-        love.graphics.draw(batch, 0, 0)
-    end
-
-    love.graphics.setColor(oldR, oldG, oldB, oldA)
-
-    love.graphics.pop()
+for k, v in pairs(LayerContainer) do
+    Map[k] = v
 end
 
 function Map:release()
@@ -562,11 +544,57 @@ function Map:release()
     end
 end
 
--- ---Draw a given tile layer owned by the map.
--- ---@param tileLayer pklove.tiled.TileLayer The tile layer to draw.
--- function Map:drawTileLayer(tileLayer)
---     drawTileLayer(self, tileLayer)
--- end
+---Creates a new layer of the given type.
+---@param layerType pklove.tiled.LayerType The layer type.
+---@param width integer? The width of the layer, if it is a tile layer.
+---@param height integer? The height of the layer, if it is a tile layer.
+---@return pklove.tiled.Layer layer The newly created layer.
+---@overload fun(container:pklove.tiled.Map|pklove.tiled.GroupLayer, layerType:pklove.tiled.TileLayer)
+function Map:createLayer(layerType, width, height)
+    local id = self.nextlayerid
+    self.nextlayerid = id+1
+    local layer = {
+        type = layerType,
+        x = 0,
+        y = 0,
+        id = id,
+        name = "",
+        class = "",
+        visible = true,
+        properties = {},
+    }
+
+    if layerType == "tilelayer" then
+        width = width or self.width
+        height = height or self.height
+
+        local data = table_new(width * height, 0)
+        for i=1, width * height do
+            data[i] = 0    
+        end
+
+        layer.width = width
+        layer.height = height
+        layer.encoding = "lua"
+        layer.data = data
+    
+    elseif layerType == "objectgroup" then
+        layer.objects = {}
+
+    elseif layerType == "imagelayer" then
+        layer.repeatx = false
+        layer.repeaty = false
+
+    elseif layerType == "group" then
+        layer.layers = {}
+    
+    else
+        error(("unknown layer type '%s'"):format(layerType))
+    end
+
+    initLayer(self, layer)
+    return layer
+end
 
 ---Draw each layer. Do note that parallax does work with love's graphics transformation state.
 ---@param x number? X position to draw the map. Defaults to 0.
@@ -653,6 +681,28 @@ function Map:getTileInfo(globalId)
     return self._globalTiles[globalId]
 end
 
+--------------------------------------------------------------------------------
+-- Layer -----------------------------------------------------------------------
+
+---Obtain the 2x2 representation of the graphics transform matrix as well as its translation
+---@return number e1_1
+---@return number e1_2
+---@return number e2_1
+---@return number e2_2
+---@return number tx
+---@return number ty
+local function getGraphics2x2Matrix()
+    local tx, ty = love.graphics.transformPoint(0, 0)
+    local sxx, sxy = love.graphics.transformPoint(1, 0)
+    sxx = sxx - tx
+    sxy = sxy - ty
+    local syx, syy = love.graphics.transformPoint(0, 1)
+    syx = syx - tx
+    syy = syy - ty
+
+    return sxx, syx, sxy, syy, tx, ty
+end
+
 do
     local tempTransform = love.math.newTransform()
 
@@ -709,6 +759,9 @@ function Layer:getTintColor()
     return r, g, b, a
 end
 
+--------------------------------------------------------------------------------
+-- ObjectLayer -----------------------------------------------------------------
+
 ---Get an object by name.
 ---@param name string The name of the requested object.
 ---@return pklove.tiled.Object? layer The object, or nil if not found.
@@ -737,6 +790,122 @@ end
 
 function ObjectLayer:draw()
     -- no-op
+end
+
+--------------------------------------------------------------------------------
+-- TileLayer -------------------------------------------------------------------
+
+local function sortRenderList(a, b)
+    return a.t.tilesetId < b.t.tilesetId
+end
+
+---@param map pklove.tiled.Map
+---@param tileLayer pklove.tiled.TileLayer
+---@return love.SpriteBatch[]
+local function renderTileLayer(map, tileLayer)
+    local data = tileLayer.data
+
+    ---@type {x: number, y: number, r: number, sx: number, sy: number, ox: number, oy: number, t: pklove.tiled.Tile}[]
+    local renderList = {}
+
+    local dataIndex = 1
+    for y=0, tileLayer.height - 1 do
+        for x=0, tileLayer.width - 1 do
+            local tileId = data[dataIndex]
+            if tileId ~= 0 then
+                local hFlip = bit.band(tileId, FLIPPED_HORIZONTALLY_FLAG) ~= 0
+                local vFlip = bit.band(tileId, FLIPPED_VERTICALLY_FLAG) ~= 0
+                local dFlip = bit.band(tileId, FLIPPED_DIAGONALLY_FLAG) ~= 0
+                local hRot = bit.band(tileId, ROTATED_HEXAGONAL_120_FLAG) ~= 0
+    
+                tileId = bit.band(tileId, bit.bnot(ALL_TILE_FLAGS))
+
+                local tile = map._globalTiles[tileId]
+                local tileset = map.tilesets[tile.tilesetId]
+
+                local drawX = (x+0.5) * map.tilewidth
+                local drawY = (y+1) * map.tileheight - tileset.tileheight + map.tileheight / 2
+                local sx, sy = 1, 1
+
+                if dFlip then
+                    sx = -sx
+                end
+
+                if hFlip then
+                    sx = -sx
+                end
+
+                if vFlip then
+                    sy = -sy
+                end
+
+                table.insert(renderList, {
+                    x = drawX,
+                    y = drawY,
+                    r = dFlip and math.pi / 2 or 0,
+                    sx = dFlip and sy or sx,
+                    sy = dFlip and sx or sy,
+                    ox = tileset.tilewidth / 2,
+                    oy = tileset.tileheight / 2,
+
+                    t = tile
+                })
+            end
+
+            dataIndex=dataIndex+1
+        end
+    end
+
+    table.sort(renderList, sortRenderList)
+
+    local batches = {}
+
+    local start = 1
+    local end_ = 1
+    while end_ <= #renderList do
+        local texId = renderList[start].t.textureId
+        while end_ <= #renderList and texId == renderList[end_].t.textureId do
+            end_ = end_ + 1
+        end
+
+        local batch = love.graphics.newSpriteBatch(map.textures[texId], end_ - start, "static")
+        table.insert(batches, batch)
+
+        for i=start, end_ - 1 do
+            local t = renderList[i]
+            batch:add(t.t.quad, t.x, t.y, t.r, t.sx, t.sy, t.ox, t.oy)
+        end
+
+        start = end_
+        end_ = start
+    end
+
+    return batches
+end
+
+---@param map pklove.tiled.Map
+---@param tileLayer pklove.tiled.TileLayer
+local function drawTileLayer(map, tileLayer)
+    if not tileLayer.visible then return end
+
+    if tileLayer._drawBatches == nil then
+        tileLayer:syncGraphics()
+    end
+
+    tileLayer:pushTransform()
+
+    -- apply tint color
+    local oldR, oldG, oldB, oldA = love.graphics.getColor()
+    love.graphics.setColor(tileLayer:getTintColor())
+
+    -- draw the tile layer!
+    for _, batch in ipairs(tileLayer._drawBatches) do
+        love.graphics.draw(batch, 0, 0)
+    end
+
+    love.graphics.setColor(oldR, oldG, oldB, oldA)
+
+    love.graphics.pop()
 end
 
 ---Releases resources associated with rendering this tile layer.
@@ -801,6 +970,13 @@ function TileLayer:draw()
     drawTileLayer(self._map, self)
 end
 
+--------------------------------------------------------------------------------
+-- GroupLayer ------------------------------------------------------------------
+
+for k, v in pairs(LayerContainer) do
+    GroupLayer[k] = v
+end
+
 ---Draw the group layer.
 function GroupLayer:draw()
     self:pushTransform()
@@ -810,9 +986,14 @@ function GroupLayer:draw()
     love.graphics.pop()
 end
 
+--------------------------------------------------------------------------------
+-- ImageLayer ------------------------------------------------------------------
+
 ---Draw the image layer.
 function ImageLayer:draw()
     --error("ImageLayer draw not yet implemented")
 end
+
+--------------------------------------------------------------------------------
 
 return tiled

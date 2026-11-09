@@ -154,11 +154,12 @@ function World:update()
     Debug.draw:pop()
 end
 
-function World:_drawObjects()
+---@param overTilemapFilter boolean
+function World:_drawObjects(overTilemapFilter)
     for _, ent in ipairs(self._renderOrder) do
         if ent.visible then
             local renderer = ent.render
-            if renderer then
+            if renderer and ent.alwaysDrawOverTilemap == overTilemapFilter then
                 Lg.push()
                 Lg.translate(0, math.round(-ent.zOffset))
 
@@ -183,9 +184,11 @@ function World:draw()
 
         -- draw objects immediately after Main layer
         if layer == self.colMap then
-            self:_drawObjects()
+            self:_drawObjects(false)
         end
     end
+
+    self:_drawObjects(true)
 
     Lg.pop()
 

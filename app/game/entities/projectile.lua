@@ -17,6 +17,7 @@ function Projectile:new(x, y)
     self.restitution = 1.0
     self.bouncesLeft = 4
     self.zOffset = 8
+    self.alwaysDrawOverTilemap = false
 
     self.isAttached = false
     ---@type game.entities.Entity?
@@ -58,6 +59,7 @@ function Projectile:_enterAttachedMode()
     self.xVel = 0
     self.yVel = 0
     self.isAttached = true
+    self.alwaysDrawOverTilemap = true
 
     self.msg:unsubscribe("touched", self._touched)
     self.msg:subscribe("pickUp", self._pickUp)

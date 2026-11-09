@@ -362,8 +362,8 @@ local function initLayer(map, layer)
     layer.offsetx   = layer.offsetx or 0.0
     layer.offsety   = layer.offsety or 0.0
     layer.opacity   = layer.opacity or 1.0
-    layer.parallaxx = layer.parallaxx or 0.0
-    layer.parallaxy = layer.parallaxy or 0.0
+    layer.parallaxx = layer.parallaxx or 1.0
+    layer.parallaxy = layer.parallaxy or 1.0
 
     if layer.locked == nil then layer.locked = false end
 

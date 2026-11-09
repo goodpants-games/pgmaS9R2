@@ -159,11 +159,16 @@ function World:_drawObjects()
         if ent.visible then
             local renderer = ent.render
             if renderer then
+                Lg.push()
+                Lg.translate(0, math.round(-ent.zOffset))
+
                 if type(renderer) == "function" then
                     renderer(ent)
                 else
                     renderer:draw(ent)
                 end
+
+                Lg.pop()
             end
         end
     end

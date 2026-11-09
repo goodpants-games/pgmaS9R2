@@ -9,6 +9,7 @@ function GunSight:new(x, y)
     self:super(0, 0, 0, 0)
 
     self.zIndex = -100
+    self.zOffset = 8
 
     self.maxLength = 1000
     self.maxBounces = 4

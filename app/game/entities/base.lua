@@ -50,6 +50,7 @@ function Entity:new(x, y, w, h)
 
     -- render properties --
     self.zIndex = 0
+    self.zOffset = 0 -- how many pixels this sprite is lifted from the ground
     self.visible = true
     ---@type (fun(self:game.entities.Entity)|table)?
     self.render = nil

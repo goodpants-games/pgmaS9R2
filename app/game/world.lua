@@ -18,16 +18,7 @@ function World:new()
     self.curFrame = 0
 
     self._nonCollidableTiles = {}
-    for _, tileset in ipairs(self.map.tilesets) do
-        local firstgid = tileset.firstgid
-        for _, tile in ipairs(tileset.tiles) do
-            local gid = firstgid + tile.id
-
-            if tile.type == "top" then
-                self._nonCollidableTiles[gid] = true
-            end
-        end
-    end
+    self._topTiles = {}
     
     -- store button input states for the current and last frame
     -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
@@ -163,28 +154,32 @@ function World:update()
     Debug.draw:pop()
 end
 
+function World:_drawObjects()
+    for _, ent in ipairs(self._renderOrder) do
+        if ent.visible then
+            local renderer = ent.render
+            if renderer then
+                if type(renderer) == "function" then
+                    renderer(ent)
+                else
+                    renderer:draw(ent)
+                end
+            end
+        end
+    end
+end
+
 function World:draw()
     Lg.push()
     Lg.translate(-math.round(self.camX), -math.round(self.camY))
 
     for _, layer in ipairs(self.map.layers) do
-        -- draw objects immediately before Main layer
-        if layer == self.colMap then
-            for _, ent in ipairs(self._renderOrder) do
-                if ent.visible then
-                    local renderer = ent.render
-                    if renderer then
-                        if type(renderer) == "function" then
-                            renderer(ent)
-                        else
-                            renderer:draw(ent)
-                        end
-                    end
-                end
-            end
-        end
-
         layer:draw()
+
+        -- draw objects immediately after Main layer
+        if layer == self.colMap then
+            self:_drawObjects()
+        end
     end
 
     Lg.pop()
@@ -349,6 +344,43 @@ end
 --------------------------------------------------------------------------------
 
 function World:_loadMap()
+    -- load tileset data
+    table.clear(self._topTiles)
+    table.clear(self._nonCollidableTiles)
+
+    for _, tileset in ipairs(self.map.tilesets) do
+        local firstgid = tileset.firstgid
+        for _, tile in ipairs(tileset.tiles) do
+            local gid = firstgid + tile.id
+
+            if tile.type == "top" then
+                self._nonCollidableTiles[gid] = true
+                self._topTiles[gid] = true
+            end
+        end
+    end
+
+    -- create the "top" layer
+    local colMap = self.colMap
+    local mapWidth = colMap.width
+    local mapHeight = colMap.height
+    local topLayer = self.map:createLayer("tilelayer", mapWidth, mapHeight) --[[@as pklove.tiled.TileLayer]]
+    topLayer.name = "__top"
+    self.map:insertLayer(topLayer, table.index_of(self.map.layers, colMap)+1)
+
+    -- move "top" tiles to the top layer
+    for i=1, mapWidth * mapHeight do
+        local cell = colMap.data[i]
+        local gid = bit.band(cell, 0x0fffffff)
+        if self._topTiles[gid] then
+            colMap.data[i] = 0
+            topLayer.data[i] = cell
+        else
+            topLayer.data[i] = 0
+        end
+    end
+
+    -- load objects
     for _, layer in ipairs(self.map.layers) do
         if layer.type == "objectgroup" then
             ---@cast layer pklove.tiled.ObjectLayer
@@ -375,6 +407,14 @@ function World:_loadMap()
                 
                 ::continue::
             end
+        end
+    end
+
+    -- initialize graphics
+    for _, layer in self.map:iterLayers() do
+        if layer.type == "tilelayer" then
+            ---@cast layer pklove.tiled.TileLayer
+            layer:syncGraphics()
         end
     end
 end

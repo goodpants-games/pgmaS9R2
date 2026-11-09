@@ -1,9 +1,10 @@
-local RectRenderer = require("game.util").RectRenderer
+local SpriteRenderer = require("game.util").SpriteRenderer
 local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
 local Util = require("game.util")
 local EnemyAi = require "game.enemy_ai"
 local Pathfinding = require "game.pathfind"
+local Resmgr = require "game.resmgr"
 
 ---@class game.entities.Enemy: game.entities.Entity
 local Enemy = batteries.class {
@@ -16,7 +17,10 @@ function Enemy:new(x, y)
 
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
-    self.render = RectRenderer(1.0, 0.0, 0.0)
+    self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/enemy1.json"))
+    self.render.sprite.alignment = "topleft"
+    self.render.oy = -18
+    self.render.ox = -2
     self.moveSpeed = 2.0
     self.dead = false
 

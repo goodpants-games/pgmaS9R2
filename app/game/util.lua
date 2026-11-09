@@ -19,6 +19,31 @@ function RectRenderer:draw(ent)
     Lg.rectangle("fill", ent.x, ent.y, ent.width, ent.height)
 end
 
+-------------------------------- SpriteRenderer ---------------------------------
+
+---@class game.SpriteRenderer: batteries.Class
+---@overload fun(spr:pklove.Sprite):game.SpriteRenderer
+local SpriteRenderer = batteries.class()
+Util.SpriteRenderer = SpriteRenderer
+
+---@param spr pklove.Sprite
+function SpriteRenderer:new(spr)
+    self.sprite = spr
+
+    self.ox = 0.0
+    self.oy = 0.0
+    self.r = 1.0
+    self.g = 1.0
+    self.b = 1.0
+end
+
+function SpriteRenderer:draw(ent)
+    Lg.setColor(self.r, self.g, self.b)
+    self.sprite:draw(ent.x + self.ox, ent.y + self.oy)
+
+    -- Lg.rectangle("line", ent.x, ent.y, ent.width, ent.height)
+end
+
 ------------------------------ entity construction -----------------------------
 
 local entityTypes

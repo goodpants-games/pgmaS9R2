@@ -12,7 +12,7 @@ local Enemy = batteries.class {
 }
 
 function Enemy:new(x, y)
-    self:super(centeredRect(x, y, 15, 8))
+    self:super(centeredRect(x, y, 13, 8))
     self:addTag("enemy")
 
     self.collision = true
@@ -297,17 +297,18 @@ function Enemy:_sightRoutine()
     -- also, initiate the search...
     cx, cy = self:getCenterPos()
     playerVx, playerVy = math.normalize(playerVx, playerVy)
-    local knownPlayerX = playerCx + playerVx * 20
-    local knownPlayerY = playerCy + playerVy * 20
 
     self.ai = EnemyAi(world)
     self.ai.yield = coroutine.yield
-    self.ai:beginChaseSearch(cx, cy, knownPlayerX, knownPlayerY)
+    self.ai:beginChaseSearch(cx, cy, playerCx, playerCy)
 
     self.aiTask = coroutine.create(function()
         local searchBehavior = {
             beginMove = self._beginMove,
-            isCurrentlyMoving = self._isCurrentlyMoving
+            isCurrentlyMoving = self._isCurrentlyMoving,
+            getPointOfInterest = function()
+                return playerCx, playerCy
+            end
         }
         local coro = coroutine.create(function()
             self.ai:searchCoroutine(self, searchBehavior)

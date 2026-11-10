@@ -12,15 +12,15 @@ local Enemy = batteries.class {
 }
 
 function Enemy:new(x, y)
-    self:super(centeredRect(x, y, 14, 14))
+    self:super(centeredRect(x, y, 15, 8))
     self:addTag("enemy")
 
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
     self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/enemy1.json"))
     self.render.sprite.alignment = "topleft"
-    self.render.oy = -18
-    self.render.ox = -2
+    self.render.oy = -26
+    self.render.ox = -1
     self.moveSpeed = 2.0
     self.dead = false
 
@@ -279,7 +279,9 @@ function Enemy:_sightRoutine()
         self.fireTimer = self.fireTimer + 1
         if self.fireTimer == self.fireWait then
             print("fire the weapon!")
-            Sceneman.switchScene("entry")
+            if not Debug.enabled then
+                Sceneman.switchScene("entry")
+            end
         end
     end
 

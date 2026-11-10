@@ -14,7 +14,7 @@ local Player = batteries.class {
 }
 
 function Player:new(x, y)
-    self:super(centeredRect(x, y, 14, 14))
+    self:super(centeredRect(x, y, 15, 8))
     self:addTag("player")
     
     self.collision = true
@@ -22,7 +22,7 @@ function Player:new(x, y)
     self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/squid_player.json"))
     self.render.sprite.alignment = "topleft"
     self.render.ox = -1
-    self.render.oy = -20
+    self.render.oy = -26
 
     self.cancelFire = false
     self.fireCharge = 0

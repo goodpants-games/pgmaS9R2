@@ -228,14 +228,34 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
                 self:_debugDrawTileRect(tx, ty)
 
                 -- now, search for tiles in the direction of the unknown.
-                -- first, mark any tiles currently in sight as irrelevant. this
-                -- will make it so the AI will explore in the direction the
-                -- bullet came from
-                local iter = 0
-                local startX = math.floor(tx + bulletDx * 2)
-                local startY = math.floor(ty + bulletDy * 2)
 
+                -- first, mark any tiles currently in sight as irrelevant.
                 self:markTilesInSightOf(myX, myY, 3)
+
+                -- then, find the closest obscured tile. this will be used for
+                -- the origin point of the search
+                local startX, startY
+                self:_searchTiles(tx, ty, function(x, y, depth)
+                    if depth >= 8 then
+                        warn("obscured search did too much?")
+                        return "stop"
+                    end
+
+                    if self.mapAwareness[y+1][x+1] ~= 3 then
+                        startX, startY = x, y
+                        return "stop"
+                    end
+
+                    return true
+                end)
+                if not startX then
+                    return
+                end
+
+                -- finally, mark all tiles in the general vicinity as
+                -- unexplored, not bothering to explore past any tiles that were
+                -- in sight.
+                local iter = 0
                 self:_searchTiles(startX, startY, function(x, y, depth)
                     iter = iter + 1
                     if iter == 4 then
@@ -273,11 +293,39 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
 end
 
 function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
-    local iter = 0
-    local startX = math.floor(lastKnownX / TILE_SIZE)
-    local startY = math.floor(lastKnownY / TILE_SIZE)
+    local lastKnownTx = math.floor(lastKnownX / TILE_SIZE)
+    local lastKnownTy = math.floor(lastKnownY / TILE_SIZE)
 
+    -- first, mark any tiles currently in sight as irrelevant.
     self:markTilesInSightOf(myX, myY, 3)
+
+    -- then, find the closest obscured tile. this will be used for
+    -- the origin point of the search
+    self:_insDebugDraw("color", 0, 1, 0)
+    self:_debugDrawTileRect(lastKnownTx, lastKnownTy)
+
+    local startX, startY
+    self:_searchTiles(lastKnownTx, lastKnownTy, function(x, y, depth)
+        if depth >= 8 then
+            warn("obscured search did too much?")
+            return "stop"
+        end
+
+        if self.mapAwareness[y+1][x+1] ~= 3 then
+            startX, startY = x, y
+            return "stop"
+        end
+
+        return true
+    end)
+    if not startX then
+        return
+    end
+
+    -- finally, mark all tiles in the general vicinity as
+    -- unexplored, not bothering to explore past any tiles that were
+    -- in sight.
+    local iter = 0
     self:_searchTiles(startX, startY, function(x, y, depth)
         iter = iter + 1
         if iter == 4 then
@@ -333,6 +381,7 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)
 end
 
 ---@class game.EnemyAI.SearchBehavior
+---@field getPointOfInterest (fun(ent:game.entities.Entity):(x:number,y:number))?
 ---@field beginMove fun(ent:game.entities.Entity, x:number, y:number)
 ---@field isCurrentlyMoving fun(ent:game.entities.Entity):boolean
 
@@ -361,14 +410,23 @@ function EnemyAI:searchCoroutine(ent, behavior)
     }
 
     while true do
-        local startTx = math.floor(ent.x / TILE_SIZE)
-        local startTy = math.floor(ent.y / TILE_SIZE)
+        local startTx = math.floor(ent:getCenterX() / TILE_SIZE)
+        local startTy = math.floor(ent:getCenterY() / TILE_SIZE)
+
+        local interestTx, interestTy
+        if behavior.getPointOfInterest then
+            local ix, iy = behavior.getPointOfInterest(ent)
+            interestTx = math.floor(ix / TILE_SIZE)
+            interestTy = math.floor(iy / TILE_SIZE)
+        else
+            interestTx, interestTy = startTx, startTy
+        end
 
         -- find closest unexplored tile (id 2)
         local endTx, endTy
 
         local limitCounter = 0
-        self:_searchTiles(startTx, startTy, function(x, y, depth)
+        self:_searchTiles(interestTx, interestTy, function(x, y, depth)
             -- only process 40 tiles per frame
             limitCounter = limitCounter + 1
             if limitCounter == 40 then

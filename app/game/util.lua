@@ -106,4 +106,48 @@ function Util.pair2u(a, b)
     return ((a + b) * (a + b + 1)) / 2 + b
 end
 
+local PROP_CHECK_ERR_FMTSTR = "{object %i '%s'} property '%s': %s"
+
+function Util.propCheck(props, name, expectedType, id, className)
+    if expectedType == "float" or expectedType == "int" then
+        expectedType = "number"
+    end
+
+    local v = props[name]
+    if v == nil then
+        warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "does not exist"))
+        return
+    end
+
+    if expectedType == "color" then
+        if not type(v) == "string" then
+            warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "expected color string"))
+            return
+        end
+        if not (v:len() == 9 and v:sub(1,1) == "#") then
+            warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "invalid color string"))
+            return
+        end
+
+        local hex = tonumber(v:sub(2), 16)
+        return batteries.colour.unpack_rgba(hex)
+    end
+
+    if expectedType == "object" then
+        if not (type(v) == "table" and v.id) then
+            warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "expected object ref"))
+            return
+        end
+        return v
+    end
+
+    if not type(v) == expectedType then
+        local errstr = ("expected %s, got %s"):format(expectedType, type(v))
+        warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, errstr))
+        return
+    end
+
+    return v
+end
+
 return Util

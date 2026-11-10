@@ -5,6 +5,7 @@ local Consts = require("game.consts")
 ---@field msg any
 ---@field update fun(self:game.entities.Entity)?
 ---@field postUpdate fun(self:game.entities.Entity)?
+---@field loadProperties fun(self:game.entities.Entity, id:integer, props:{[string]:any}, entLookup:fun(id:integer):game.entities.Entity)?
 local Entity = batteries.class {
     name = "game.entities.Entity"
 }

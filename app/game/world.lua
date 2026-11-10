@@ -446,7 +446,20 @@ function World:_loadMap()
         end
     end
 
-    -- load objects
+    self:_loadMapObjects()
+
+    -- initialize graphics
+    for _, layer in self.map:iterLayers() do
+        if layer.type == "tilelayer" then
+            ---@cast layer pklove.tiled.TileLayer
+            layer:syncGraphics()
+        end
+    end
+end
+
+function World:_loadMapObjects()
+    -- first pass: create entities
+    local objects = {}
     for _, layer in ipairs(self.map.layers) do
         if layer.type == "objectgroup" then
             ---@cast layer pklove.tiled.ObjectLayer
@@ -469,19 +482,33 @@ function World:_loadMap()
                     ent.name = obj.name
                 end
 
-                self:addEntity(ent)
-                
+                table.insert(objects, { obj = obj, ent = ent })
                 ::continue::
             end
         end
     end
 
-    -- initialize graphics
-    for _, layer in self.map:iterLayers() do
-        if layer.type == "tilelayer" then
-            ---@cast layer pklove.tiled.TileLayer
-            layer:syncGraphics()
+    -- second pass: load properties
+    -- loading is done in two passes because entities may reference each other
+    local function entLookup(id)
+        for _, entry in ipairs(objects) do
+            if entry.obj.id == id then
+                return entry.ent
+            end
         end
+    end
+
+    for _, data in ipairs(objects) do
+        local obj, ent = data.obj, data.ent
+
+        if ent.loadProperties then
+            ent:loadProperties(obj.id, obj.properties, entLookup)
+        end
+    end
+
+    -- third pass: add each entity to the world
+    for _, data in ipairs(objects) do
+        self:addEntity(data.ent)
     end
 end
 

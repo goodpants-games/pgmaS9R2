@@ -23,8 +23,10 @@ function Enemy:new(x, y, w, h)
     -- sight timer stuff --
     self.sightTimer = 0
     self.noticeWait = 20 -- how many frames until enemy actually notices/registers player
+    self.alertNoticeWait = 8
     self.fireTimer = 0
     self.fireWait = 30 -- how frames after notice until enemy shoots player
+    self.isAlert = false
 
     self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight.maxBounces = 1
@@ -142,6 +144,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
         
         -- initialize search for the killer
+        self.isAlert = true
         self.ai.yield = coroutine.yield
         self.ai:beginKillerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
 
@@ -168,6 +171,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
 
         self:_moveToHome()
+        self.isAlert = false
     end)
 end
 
@@ -246,7 +250,15 @@ function Enemy:_sightRoutine()
 
     -- do nothing until enemy notices player
     self.sightTimer = 0
-    while self.sightTimer < self.noticeWait do
+    while true do
+        local noticeWait
+        if self.isAlert then
+            noticeWait = self.alertNoticeWait
+        else
+            noticeWait = self.noticeWait
+        end
+
+        if self.sightTimer >= noticeWait then break end
         coroutine.yield()
     end
 
@@ -299,6 +311,7 @@ function Enemy:_sightRoutine()
 
     -- hey, come back here!
     self:_beginMove(playerCx, playerCy)
+    self.isAlert = true
 
     -- also, initiate the search...
     cx, cy = self:getCenterPos()
@@ -335,6 +348,7 @@ function Enemy:_sightRoutine()
         end
 
         self:_moveToHome()
+        self.isAlert = false
     end)
 
     --[[

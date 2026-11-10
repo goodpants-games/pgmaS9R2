@@ -38,7 +38,6 @@ function Pathfind.pathfind(world, startX, startY, endX, endY, extraParams)
     local heuristic = extraParams.heuristic or heuristicIdentity
 
     local pair2u = Util.pair2u
-    local map = world.colMap
 
     local frontier = Pqueue("min")
     frontier:enqueue(Point:pooled(startX, startY), 0)

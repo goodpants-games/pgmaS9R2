@@ -12,7 +12,7 @@ function Projectile:new(x, y)
     self.collision = true
     self.touchMonitor = true
     self.colGroup = 0
-    self.colMask = bit.bor(Const.COLGROUP_NPC)
+    self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_NPC)
 
     self.restitution = 1.0
     self.bouncesLeft = 4

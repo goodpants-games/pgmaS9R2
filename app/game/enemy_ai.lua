@@ -28,16 +28,15 @@ using this process:
 ---@param world game.World
 function EnemyAI:new(world)
     self.world = world
-    local map = world.colMap
 
     -- 0: this is a solid tile
     -- 1: Not relevant
     -- 2: I did not check this tile
     -- 3: I already checked this tile
     self.mapAwareness = {}
-    for y=1, map.height do
+    for y=1, world.mapHeight do
         local row = {}
-        for x=1, map.width do
+        for x=1, world.mapWidth do
             row[x] = world:isCol(x-1, y-1) and 0 or 1
         end
         self.mapAwareness[y] = row

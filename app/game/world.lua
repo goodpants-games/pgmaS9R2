@@ -42,6 +42,10 @@ function World:new()
     ---@type game.entities.Entity?
     self.player = nil
 
+    self.mapWidth = 0
+    self.mapHeight = 0
+    self.colMap = {}
+
     ---@private
     ---@type game.entities.Entity[]
     self._renderOrder = {}
@@ -49,17 +53,15 @@ function World:new()
     ---@private
     self._needEntityRemoval = false
 
-    -- collision map is the tile layer named "Main"
-    ---@type pklove.tiled.TileLayer
-    self.colMap = nil
+    self.colLayer = nil
     do
         local layer = self.map:getLayerByName("Main")
         if layer and layer.type == "tilelayer" then
-            self.colMap = layer --[[@as pklove.tiled.TileLayer]]
+            self.colLayer = layer --[[@as pklove.tiled.TileLayer]]
         end
     end
 
-    if softassert(self.colMap, "map had no collision layer!") then
+    if softassert(self.colLayer, "map had no collision layer!") then
         local isCol = self.isCol
         ---@private
         self._getCol = function(tx, ty)
@@ -211,7 +213,7 @@ function World:draw()
         layer:draw()
 
         -- draw objects immediately after Main layer
-        if layer == self.colMap then
+        if layer == self.colLayer then
             self:_drawObjects(false)
         end
     end
@@ -294,12 +296,26 @@ end
 
 ---Returns `true` if the tile at (x, y) is collidable, `nil` if out of bounds,
 ---or `false` otherwise.
----@param x any
----@param y any
+---@param x integer
+---@param y integer
 ---@return boolean?
 function World:isCol(x, y)
-    local col = self.colMap:get(x, y)
-    return col and (col ~= 0 and not self._nonCollidableTiles[col])
+    if x < 0 or y < 0 or x >= self.mapWidth or y >= self.mapHeight then
+        return nil
+    end
+
+    return self.colMap[y+1][x+1] ~= 0
+end
+
+---@param x integer
+---@param y integer
+---@param n integer
+function World:setCol(x, y, n)
+    if x < 0 or y < 0 or x >= self.mapWidth or y >= self.mapHeight then
+        return
+    end
+
+    self.colMap[y+1][x+1] = n
 end
 
 ---@param btn string
@@ -396,20 +412,34 @@ function World:_loadMap()
         end
     end
 
+    -- load map collision
+    local colLayer = self.colLayer
+    self.mapWidth = colLayer.width
+    self.mapHeight = colLayer.height
+
+    for y=1, self.mapHeight do
+        local row = {}
+        self.colMap[y] = row
+        for x=1, self.mapWidth do
+            local tile = colLayer:get(x-1, y-1)
+            local isCol = tile ~= 0 and not self._nonCollidableTiles[tile]
+            row[x] = isCol and 1 or 0
+        end
+    end
+
     -- create the "top" layer
-    local colMap = self.colMap
-    local mapWidth = colMap.width
-    local mapHeight = colMap.height
+    local mapWidth = colLayer.width
+    local mapHeight = colLayer.height
     local topLayer = self.map:createLayer("tilelayer", mapWidth, mapHeight) --[[@as pklove.tiled.TileLayer]]
     topLayer.name = "__top"
-    self.map:insertLayer(topLayer, table.index_of(self.map.layers, colMap)+1)
+    self.map:insertLayer(topLayer, table.index_of(self.map.layers, colLayer)+1)
 
     -- move "top" tiles to the top layer
     for i=1, mapWidth * mapHeight do
-        local cell = colMap.data[i]
+        local cell = colLayer.data[i]
         local gid = bit.band(cell, 0x0fffffff)
         if self._topTiles[gid] then
-            colMap.data[i] = 0
+            colLayer.data[i] = 0
             topLayer.data[i] = cell
         else
             topLayer.data[i] = 0
@@ -463,7 +493,7 @@ function World:_moveEntities()
 
     -- then, perform X collision
     for _, ent in ipairs(self.entities) do
-        if ent.collision then
+        if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local colX, _, colW, _, colEnt =
                 Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
                                         self._getCol)
@@ -490,7 +520,7 @@ function World:_moveEntities()
 
     -- then, perform Y collision
     for _, ent in ipairs(self.entities) do
-        if ent.collision then
+        if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local _, colY, _, colH, colEnt =
                 Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
                                         self._getCol)

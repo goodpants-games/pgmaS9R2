@@ -5,7 +5,7 @@ local Pathfind = require("game.pathfind")
 local TILE_SIZE = const.TILE_SIZE
 
 ---@class game.EnemyAi: batteries.Class
----@overload fun(world:game.World):game.EnemyAi
+---@overload fun(entity:game.entities.Entity):game.EnemyAi
 local EnemyAI = batteries.class()
 
 --[[
@@ -25,26 +25,37 @@ using this process:
 5. if there are no more unchecked tiles, the algorithm is finished.
 --]]
 
----@param world game.World
-function EnemyAI:new(world)
-    self.world = world
+---@param ent game.entities.Entity
+function EnemyAI:new(ent)
+    local world = ent.world
+    self.entity = ent
+    self.world = ent.world
 
+    self._debugDraws = {}
+
+    self.yield = function() end
+end
+
+function EnemyAI:release()
+    if self._colUpdateCallback then
+        self.world.msg:unsubscribe("collisionMapChanged", self._colUpdateCallback)
+        self._colUpdateCallback = nil
+    end
+end
+
+function EnemyAI:initMapAwareness()
     -- 0: this is a solid tile
     -- 1: Not relevant
     -- 2: I did not check this tile
     -- 3: I already checked this tile
     self.mapAwareness = {}
-    for y=1, world.mapHeight do
+    for y=1, self.world.mapHeight do
         local row = {}
-        for x=1, world.mapWidth do
-            row[x] = world:isCol(x-1, y-1) and 0 or 1
+        for x=1, self.world.mapWidth do
+            row[x] = self.world:isCol(x-1, y-1) and 0 or 1
         end
         self.mapAwareness[y] = row
     end
-
-    self._debugDraws = {}
-
-    self.yield = function() end
 end
 
 local function tappend(t, ...)
@@ -384,7 +395,92 @@ end
 ---@class game.EnemyAI.SearchBehavior
 ---@field getPointOfInterest (fun(ent:game.entities.Entity):(x:number,y:number))?
 ---@field beginMove fun(ent:game.entities.Entity, x:number, y:number)
+---@field endMove fun(ent:game.entities.Entity)
 ---@field isCurrentlyMoving fun(ent:game.entities.Entity):boolean
+
+---Coroutine proceure to pathfind.
+---
+---If path successfully completed, returns true. If path failed to complete,
+---it returns false and a reason: if the path could not be made, then the reason
+---is `nil`; if the path was blocked during traversal, then the reason is the
+---string `"blocked"`.
+---@param targetX number
+---@param targetY number
+---@param params table
+---@return boolean success, string? reason
+function EnemyAI:pathfind(targetX, targetY, params)
+    print("calculate path...")
+    local startTx = math.floor(self.entity:getCenterX() / TILE_SIZE)
+    local startTy = math.floor(self.entity:getCenterY() / TILE_SIZE)
+    local endTx = math.floor(targetX / TILE_SIZE)
+    local endTy = math.floor(targetY / TILE_SIZE)
+
+    -- find path from here to that tile
+    local path = Pathfind.pathfind(self.world, startTx, startTy, endTx, endTy, params)
+    if not path then
+        print("could not find path?")
+        return false, nil
+    end
+    Pathfind.simplifyPath(path, self.world)
+
+    print("begin path traversal...")
+
+    -- make entity traverse path
+    local pathIndex = 1
+    local didPathChange = false
+
+    self._colUpdateCallback = function()
+        print("oh no. The collision map changed.")
+        didPathChange = true
+    end
+    self.world.msg:subscribe("collisionMapChanged", self._colUpdateCallback)
+
+    while pathIndex <= #path do
+        local tx, ty = path[pathIndex], path[pathIndex+1]
+        local x = (tx + 0.5) * TILE_SIZE
+        local y = (ty + 0.5) * TILE_SIZE
+
+        params.beginMove(self.entity, x, y)
+        while params.isCurrentlyMoving(self.entity) do
+            if didPathChange then
+                didPathChange = false
+
+                -- check if path was blocked, thus needing recalculation
+                for i=1, #path, 2 do
+                    local tx, ty = path[i], path[i+1]
+                    if self.world:isCol(tx, ty) then
+                        self.world.msg:unsubscribe("collisionMapChanged", self._colUpdateCallback)
+                        self._colUpdateCallback = nil
+
+                        return false, "blocked"
+                    end
+                end
+            end
+
+            -- debug draw path
+            for i=1, #path, 2 do
+                local tx, ty = path[i], path[i+1]
+                local x = (tx + 0.5) * TILE_SIZE
+                local y = (ty + 0.5) * TILE_SIZE
+                Debug.draw:color(0, 0, 0)
+                Debug.draw:rect(x, y, 4, 4)
+            end
+
+            if params.update then
+                params.update(self.entity)
+            end
+
+            coroutine.yield()
+        end
+
+        pathIndex = pathIndex + 2
+    end
+
+    self.world.msg:unsubscribe("collisionMapChanged", self._colUpdateCallback)
+    self._colUpdateCallback = nil
+
+    return true
+end
 
 local function searchCoroSightCoro(self)
     self:markTilesInSightOf( coroutine.yield() )
@@ -394,8 +490,8 @@ end
 ---@param behavior game.EnemyAI.SearchBehavior
 function EnemyAI:searchCoroutine(ent, behavior)
     local world = ent.world
+    local sightCoro
 
-    ---@type game.pathfind.ExtraParams
     local pathfindParams = {
         coroutineLimit = 20,
         cost = function(_,_, tx, ty)
@@ -407,10 +503,32 @@ function EnemyAI:searchCoroutine(ent, behavior)
             end
 
             return 1
-        end
+        end,
+        update = function()
+            -- mark any unexplored tiles currently in view as explored. but
+            -- this is a coroutine so that it is limited to processing only
+            -- 20 tiles per frame, because it is very expensive due to the
+            -- raycasting.
+            if not sightCoro then
+                sightCoro = coroutine.create(searchCoroSightCoro)
+                coroutine.sresume(sightCoro, self)
+                local stat = coroutine.sresume(sightCoro, ent.x, ent.y, 1, 20)
+                if not stat then
+                    sightCoro = nil
+                end
+            end
+            if sightCoro then
+                if not coroutine.sresume(sightCoro) then
+                    sightCoro = nil
+                end
+            end
+        end,
     }
+    table.shallow_overlay(pathfindParams, behavior)
 
     while true do
+        sightCoro = nil
+
         local startTx = math.floor(ent:getCenterX() / TILE_SIZE)
         local startTy = math.floor(ent:getCenterY() / TILE_SIZE)
 
@@ -424,7 +542,7 @@ function EnemyAI:searchCoroutine(ent, behavior)
         end
 
         -- find closest unexplored tile (id 2)
-        local endTx, endTy
+        local endX, endY
 
         local limitCounter = 0
         self:_searchTiles(interestTx, interestTy, function(x, y, depth)
@@ -436,65 +554,38 @@ function EnemyAI:searchCoroutine(ent, behavior)
             end
 
             if self.mapAwareness[y+1][x+1] == 2 then
-                endTx, endTy = x, y
-                return "stop"
+                if self.world:isCol(x, y) then
+                    self.mapAwareness[y+1][x+1] = 0
+                    return false
+                else
+                    endX = (x + 0.5) * TILE_SIZE
+                    endY = (y + 0.5) * TILE_SIZE
+                    return "stop"
+                end
             end
+
             return true
         end)
 
-        if not endTx then
+        if not endX then
             print("no more unexplored tiles")
             break
         end
 
-        print("calculate path...")
-        -- find path from here to that tile
-        local path = Pathfind.pathfind(ent.world, startTx, startTy, endTx, endTy, pathfindParams)
-        if not path then
-            softerror("could not find path?")
-            return
-        end
-        Pathfind.simplifyPath(path, world)
+        local params = table.copy(pathfindParams)
+        
+        local s, err = self:pathfind(endX, endY, params)
+        -- if path was blocked, check if a path to the interest point is still
+        -- possible...
+        if not s and behavior.getPointOfInterest then
+            local endTx = math.floor(endX / TILE_SIZE)
+            local endTy = math.floor(endY / TILE_SIZE)
 
-        print("begin path traversal...")
-
-        local sightCoro
-        -- make entity traverse path
-        for i=1, #path, 2 do
-            local tx, ty = path[i], path[i+1]
-            local x = (tx + 0.5) * TILE_SIZE
-            local y = (ty + 0.5) * TILE_SIZE
-
-            behavior.beginMove(ent, x, y)
-            while behavior.isCurrentlyMoving(ent) do
-                -- debug draw path
-                for i=1, #path, 2 do
-                    local tx, ty = path[i], path[i+1]
-                    local x = (tx + 0.5) * TILE_SIZE
-                    local y = (ty + 0.5) * TILE_SIZE
-                    Debug.draw:color(0, 0, 0)
-                    Debug.draw:rect(x, y, 4, 4)
-                end
-
-                -- mark any unexplored tiles currently in view as explored. but
-                -- this is a coroutine so that it is limited to processing only
-                -- 20 tiles per frame, because it is very expensive due to the
-                -- raycasting.
-                if not sightCoro then
-                    sightCoro = coroutine.create(searchCoroSightCoro)
-                    coroutine.sresume(sightCoro, self)
-                    local stat = coroutine.sresume(sightCoro, ent.x, ent.y, 1, 20)
-                    if not stat then
-                        sightCoro = nil
-                    end
-                end
-                if sightCoro then
-                    if not coroutine.sresume(sightCoro) then
-                        sightCoro = nil
-                    end
-                end
-
-                coroutine.yield()
+            local path = Pathfind.pathfind(self.world, startTx, startTy, endTx, endTy, params)
+            if not path then
+                print("can no longer reach point of interest...")
+                behavior.endMove(ent)
+                return
             end
         end
     end

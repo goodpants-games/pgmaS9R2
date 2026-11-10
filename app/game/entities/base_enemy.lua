@@ -59,6 +59,7 @@ end
 function Enemy:_removing()
     self.gunSight:remove()
     self._sightCoro = nil
+    self.ai:release()
     self.ai = nil
 end
 
@@ -95,6 +96,10 @@ function Enemy:_isCurrentlyMoving()
     return self._hasMoveTarget
 end
 
+function Enemy:_endMove()
+    self._hasMoveTarget = false
+end
+
 -- must be called within a coroutine...
 function Enemy:_moveToHome()
     local startX, startY = self:getCenterPos()
@@ -127,7 +132,8 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         return
     end
 
-    self.ai = EnemyAi(self.world)
+    self.ai = EnemyAi(self)
+    self.ai:initMapAwareness()
     self.aiTask = coroutine.create(function()
         local myOrigX, myOrigY = self:getCenterPos()
         local victimOrigX, victimOrigY = victim:getCenterPos()
@@ -150,7 +156,8 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
 
         local searchBehavior = {
             beginMove = self._beginMove,
-            isCurrentlyMoving = self._isCurrentlyMoving
+            isCurrentlyMoving = self._isCurrentlyMoving,
+            endMove = self._endMove,
         }
         local coro = coroutine.create(function()
             self.ai:searchCoroutine(self, searchBehavior)
@@ -164,6 +171,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
 
         -- search is done... return home.
+        self.ai:release()
         self.ai = nil
 
         for _=1, 240 do
@@ -263,7 +271,10 @@ function Enemy:_sightRoutine()
     end
 
     -- i see him!!
-    self.ai = nil
+    if self.ai then
+        self.ai:release()
+        self.ai = nil
+    end
     self.aiTask = nil
 
     self._hasMoveTarget = false
@@ -317,7 +328,8 @@ function Enemy:_sightRoutine()
     cx, cy = self:getCenterPos()
     playerVx, playerVy = math.normalize(playerVx, playerVy)
 
-    self.ai = EnemyAi(world)
+    self.ai = EnemyAi(self)
+    self.ai:initMapAwareness()
     self.ai.yield = coroutine.yield
     self.ai:beginChaseSearch(cx, cy, playerCx, playerCy)
 
@@ -325,6 +337,7 @@ function Enemy:_sightRoutine()
         local searchBehavior = {
             beginMove = self._beginMove,
             isCurrentlyMoving = self._isCurrentlyMoving,
+            endMove = self._endMove,
             getPointOfInterest = function()
                 return playerCx, playerCy
             end
@@ -341,6 +354,7 @@ function Enemy:_sightRoutine()
         end
 
         -- search is done... return home.
+        self.ai:release()
         self.ai = nil
 
         for _=1, 240 do

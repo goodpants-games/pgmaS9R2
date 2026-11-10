@@ -61,6 +61,8 @@ function World:new()
         end
     end
 
+    self._didColMapChange = false
+
     if softassert(self.colLayer, "map had no collision layer!") then
         local isCol = self.isCol
         ---@private
@@ -70,6 +72,8 @@ function World:new()
     else
         self._getCol = function() return nil end
     end
+
+    self.msg = batteries.pubsub()
 
     self:_loadMap()
     self.enemyConductor = EnemyConductor(self)
@@ -83,6 +87,11 @@ function World:update()
 
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
+
+    if self._didColMapChange then
+        self._didColMapChange = false
+        self.msg:publish("collisionMapChanged")
+    end
 
     for _, ent in ipairs(self.entities) do
         if ent.update then
@@ -316,6 +325,7 @@ function World:setCol(x, y, n)
     end
 
     self.colMap[y+1][x+1] = n
+    self._didColMapChange = true
 end
 
 ---@param btn string

@@ -139,12 +139,7 @@ function World:update()
         end
     end
 
-    -- sort render list
-    -- uses a Lua implementation of sort since i want it to be stable
-    -- although i suppose that property isn't too important.
-    table.insertion_sort(self._renderOrder, function(a, b)
-        return a.zIndex < b.zIndex
-    end)
+    self:_sortObjects()
 
     self.curFrame = self.curFrame + 1
     for _, btn in ipairs(BUTTON_INPUTS) do
@@ -152,6 +147,39 @@ function World:update()
     end
 
     Debug.draw:pop()
+end
+
+function World:_sortObjects()
+    local objList = self._renderOrder
+
+    -- sort render list by z index
+    table.sort(objList, function(a, b)
+        return a.zIndex < b.zIndex
+    end)
+
+    -- sort sprites with equal zIndex by their Y position
+    if objList[1] then
+        local function yposLess(a, b)
+            return a:getCenterY() < b:getCenterY()
+        end
+        local sort = batteries.sort._insertion_sort_impl
+        local lastZIdx = objList[1].zIndex
+        local lastIdx = 1
+        local objCount = #objList
+
+        for i=2, objCount do
+            local obj = objList[i]
+            if obj.zIndex ~= lastZIdx then
+                sort(objList, lastIdx, i-1, yposLess)
+                lastIdx = i
+                lastZIdx = obj.zIndex
+            end
+        end
+        
+        if lastIdx ~= objCount then
+            sort(objList, lastIdx, objCount, yposLess)
+        end
+    end
 end
 
 ---@param overTilemapFilter boolean

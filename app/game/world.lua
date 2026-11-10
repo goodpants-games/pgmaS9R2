@@ -525,15 +525,22 @@ end
 function World:_moveEntities()
     -- first, move all X
     for _, ent in ipairs(self.entities) do
+        if ent.collision then
+            ent.__g_oldX = ent.x
+            ent.__g_oldY = ent.y
+        end
+
         ent.x = ent.x + ent.xVel
     end
 
     -- then, perform X collision
     for _, ent in ipairs(self.entities) do
+        local oldX, oldY = ent.__g_oldX, ent.__g_oldY
+
         if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local colX, _, colW, _, colEnt =
-                Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
-                                        self._getCol)
+                Collision.gameCollision(ent.x, ent.y, oldX, oldY,
+                                        ent.width, ent.height, self._getCol)
             if colX then
                 local dir
                 if ent.xVel > 0 then
@@ -557,10 +564,12 @@ function World:_moveEntities()
 
     -- then, perform Y collision
     for _, ent in ipairs(self.entities) do
+        local oldX, oldY = ent.__g_oldX, ent.__g_oldY
+
         if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local _, colY, _, colH, colEnt =
-                Collision.gameCollision(ent.x, ent.y, ent.width, ent.height,
-                                        self._getCol)
+                Collision.gameCollision(ent.x, ent.y, oldX, oldY,
+                                        ent.width, ent.height, self._getCol)
             if colY then
                 local dir
                 if ent.yVel > 0 then

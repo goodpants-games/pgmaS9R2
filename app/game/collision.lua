@@ -93,11 +93,18 @@ end
 
 ---@param x number
 ---@param y number
+---@param oldX number
+---@param oldY number
 ---@param w number
 ---@param h number
 ---@param tileCol fun(tx:integer, ty:integer)
 ---@return integer? colX, integer? colY, integer? colW, integer? colH, any? colEnt
-function collision.gameCollision(x, y, w, h, tileCol)
+function collision.gameCollision(x, y, oldX, oldY, w, h, tileCol)
+    local oldSx = math.floor(oldX / TILE_SIZE)
+    local oldSy = math.floor(oldY / TILE_SIZE)
+    local oldEx = math.ceil((oldX + w) / TILE_SIZE) - 1
+    local oldEy = math.ceil((oldY + h) / TILE_SIZE) - 1
+    
     local sx = math.floor(x / TILE_SIZE)
     local sy = math.floor(y / TILE_SIZE)
     local ex = math.ceil((x + w) / TILE_SIZE) - 1
@@ -111,17 +118,19 @@ function collision.gameCollision(x, y, w, h, tileCol)
     -- first, check tile collisions
     for ty=sy, ey do
         for tx=sx, ex do
-            if tileCol(tx, ty) then
-                local tcx = (tx + 0.5) * TILE_SIZE
-                local tcy = (ty + 0.5) * TILE_SIZE
-                local dx = tcx - cx
-                local dy = tcy - cy
-                local distsq = dx * dx + dy * dy
-                if distsq < minDist then
-                    collideX = tx * TILE_SIZE
-                    collideY = ty * TILE_SIZE
-                    collideW = TILE_SIZE
-                    collideH = TILE_SIZE
+            if not (tx >= oldSx and tx <= oldEx and ty >= oldSy and ty <= oldEy) then
+                if tileCol(tx, ty) then
+                    local tcx = (tx + 0.5) * TILE_SIZE
+                    local tcy = (ty + 0.5) * TILE_SIZE
+                    local dx = tcx - cx
+                    local dy = tcy - cy
+                    local distsq = dx * dx + dy * dy
+                    if distsq < minDist then
+                        collideX = tx * TILE_SIZE
+                        collideY = ty * TILE_SIZE
+                        collideW = TILE_SIZE
+                        collideH = TILE_SIZE
+                    end
                 end
             end
         end

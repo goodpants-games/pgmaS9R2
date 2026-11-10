@@ -111,8 +111,8 @@ function World:update()
     end
 
     if player then
-        self.camX = (player.x + player.width / 2) - App.scrW / 2
-        self.camY = (player.y + player.height / 2) - App.scrH / 2
+        self.camX = math.round(player.x) + player.width / 2 - App.scrW / 2
+        self.camY = math.round(player.y) + player.height / 2 - App.scrH / 2
     end
 
     self.mouseX = App.mouseX + self.camX

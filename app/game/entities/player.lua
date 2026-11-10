@@ -1,8 +1,8 @@
-local RectRenderer = require("game.util").RectRenderer
-local centeredRect = require("game.util").centeredRect
-local bool2int     = require("game.util").bool2int
-local newEntity    = require("game.util").newEntity
-
+local Resmgr         = require("game.resmgr")
+local SpriteRenderer = require("game.util").SpriteRenderer
+local centeredRect   = require("game.util").centeredRect
+local bool2int       = require("game.util").bool2int
+local newEntity      = require("game.util").newEntity
 local Const = require("game.consts")
 
 local FIRE_CHARGE_MIN = 40
@@ -19,7 +19,10 @@ function Player:new(x, y)
     
     self.collision = true
     self.colGroup = Const.COLGROUP_PLAYER
-    self.render = RectRenderer(0.0, 1.0, 0.0)
+    self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/squid_player.json"))
+    self.render.sprite.alignment = "topleft"
+    self.render.ox = -1
+    self.render.oy = -20
 
     self.cancelFire = false
     self.fireCharge = 0

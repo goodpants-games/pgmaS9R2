@@ -39,9 +39,11 @@ end
 
 function SpriteRenderer:draw(ent)
     Lg.setColor(self.r, self.g, self.b)
-    self.sprite:draw(ent.x + self.ox, ent.y + self.oy)
+    self.sprite:draw(math.round(ent.x) + self.ox, math.round(ent.y) + self.oy)
 
-    -- Lg.rectangle("line", ent.x, ent.y, ent.width, ent.height)
+    if Debug.enabled then
+        Lg.rectangle("line", math.round(ent.x), math.round(ent.y), math.round(ent.width), math.round(ent.height))
+    end
 end
 
 ------------------------------ entity construction -----------------------------

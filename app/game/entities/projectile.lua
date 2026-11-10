@@ -16,7 +16,7 @@ function Projectile:new(x, y)
 
     self.restitution = 1.0
     self.bouncesLeft = 4
-    self.zOffset = 8
+    self.zOffset = 6
     self.alwaysDrawOverTilemap = false
 
     self.isAttached = false

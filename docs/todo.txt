@@ -17,3 +17,4 @@ name idea:
   of the player it may think the player has moved inside a wall (since it
   offsets the known player position by its velocity). this causes the search
   to abort.
+- enemy should be incentivized to exploer tiles near player's last position

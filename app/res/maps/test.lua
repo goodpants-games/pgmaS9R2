@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 4,
-  nextobjectid = 14,
+  nextobjectid = 17,
   properties = {},
   tilesets = {
     {
@@ -74,7 +74,7 @@ return {
       objects = {
         {
           id = 4,
-          name = "",
+          name = "player",
           type = "player",
           shape = "rectangle",
           x = 32,
@@ -85,6 +85,39 @@ return {
           opacity = 1,
           visible = true,
           properties = {}
+        },
+        {
+          id = 14,
+          name = "",
+          type = "door",
+          shape = "rectangle",
+          x = 80,
+          y = 80,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {
+            ["closed"] = false,
+            ["direction"] = "horizontal"
+          }
+        },
+        {
+          id = 15,
+          name = "",
+          type = "computer",
+          shape = "rectangle",
+          x = 80,
+          y = 32,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {
+            ["target"] = { id = 14 }
+          }
         },
         {
           id = 3,

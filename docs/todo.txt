@@ -8,13 +8,14 @@
 - buttons you have to press to open doors
 - player could have items that give them useful temporary effects, such as becoming
 invisible for 5 seconds or shooting two bullets instead of one
+- maybe you have to sometimes lure enemies to a specific place
+  so maybe it's like there's these things you need enemies to shoot at. so
+  you'd have this item which will make any bullets shot at you reflect (and
+  also break the item?)
+- Disguises
+  if you kill a certain enemy type you can get a disguise. it will make it take
+  longer for the scientists to notice you. it will also give you an extra
+  hitpoint. but you can't shoot while using it?
 
 name idea:
  <something Evil> billiards
-
-=== coding ===
-- i think depending on surroundings/player movement, when an enemy loses sight
-  of the player it may think the player has moved inside a wall (since it
-  offsets the known player position by its velocity). this causes the search
-  to abort.
-- enemy should be incentivized to exploer tiles near player's last position

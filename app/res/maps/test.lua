@@ -89,7 +89,7 @@ return {
         {
           id = 3,
           name = "",
-          type = "enemy",
+          type = "basic_enemy",
           shape = "rectangle",
           x = 224,
           y = 272,
@@ -103,7 +103,7 @@ return {
         {
           id = 12,
           name = "",
-          type = "enemy",
+          type = "basic_enemy",
           shape = "rectangle",
           x = 272,
           y = 240,
@@ -117,7 +117,7 @@ return {
         {
           id = 13,
           name = "",
-          type = "enemy",
+          type = "basic_enemy",
           shape = "rectangle",
           x = 128,
           y = 272,
@@ -130,8 +130,8 @@ return {
         },
         {
           id = 6,
-          name = "pathfind_test",
-          type = "enemy",
+          name = "",
+          type = "lazy_enemy",
           shape = "rectangle",
           x = 32,
           y = 288,

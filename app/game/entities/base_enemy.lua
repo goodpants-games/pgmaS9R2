@@ -11,16 +11,12 @@ local Enemy = batteries.class {
     extends = require("game.entities.base")
 }
 
-function Enemy:new(x, y)
-    self:super(centeredRect(x, y, 13, 8))
+function Enemy:new(x, y, w, h)
+    self:super(x, y, w, h)
     self:addTag("enemy")
 
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
-    self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/enemy1.json"))
-    self.render.sprite.alignment = "topleft"
-    self.render.oy = -26
-    self.render.ox = -1
     self.moveSpeed = 2.0
     self.dead = false
 
@@ -42,6 +38,11 @@ function Enemy:new(x, y)
 
     ---@type game.EnemyAi?
     self.ai = nil
+
+    self.aiBehavior = {
+        chasePlayer = true,
+        investigateKills = true,
+    }
 
     self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("removingFromWorld", self._removing)
@@ -250,8 +251,8 @@ function Enemy:_sightRoutine()
     end
 
     -- i see him!!
-    if self.ai then self.ai = nil end
-    if self.aiTask then self.aiTask = nil end
+    self.ai = nil
+    self.aiTask = nil
 
     self._hasMoveTarget = false
     self.xVel = 0.0
@@ -290,8 +291,13 @@ function Enemy:_sightRoutine()
         coroutine.yield()
     end
 
-    -- hey, come back here!
     self.gunSight:remove()
+
+    if not self.aiBehavior.chasePlayer then
+        return
+    end
+
+    -- hey, come back here!
     self:_beginMove(playerCx, playerCy)
 
     -- also, initiate the search...

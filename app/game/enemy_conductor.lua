@@ -14,7 +14,7 @@ function EnemyConductor:handleEnemyDeath(victim, hitVx, hitVy)
     local witnesses = {}
     for _, ent in ipairs(self.world:findEntitiesWithTag("enemy")) do
         ---@cast ent game.entities.Enemy
-        if ent:hasSightLineTo(victim) then
+        if ent:hasSightLineTo(victim) and ent.aiBehavior.investigateKills then
             table.insert(witnesses, ent)
         end
     end

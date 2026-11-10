@@ -333,9 +333,9 @@ function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
             iter = 0
         end
 
-        if self.mapAwareness[y+1][x+1] == 3 then
-            return false
-        end
+        -- if self.mapAwareness[y+1][x+1] == 3 then
+        --     return false
+        -- end
 
         if depth > 20 then
             return false
@@ -343,6 +343,8 @@ function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
         self.mapAwareness[y+1][x+1] = 2
         return true
     end)
+
+    self:markTilesInSightOf(myX, myY, 1)
 end
 
 function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)

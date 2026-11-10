@@ -13,9 +13,9 @@
  </layer>
  <objectgroup id="2" name="Object Layer 1">
   <object id="4" type="player" x="32" y="48" width="16" height="16"/>
-  <object id="3" type="enemy" x="224" y="272" width="16" height="16"/>
-  <object id="12" type="enemy" x="272" y="240" width="16" height="16"/>
-  <object id="13" type="enemy" x="128" y="272" width="16" height="16"/>
-  <object id="6" name="pathfind_test" type="enemy" x="32" y="288" width="16" height="16"/>
+  <object id="3" type="basic_enemy" x="224" y="272" width="16" height="16"/>
+  <object id="12" type="basic_enemy" x="272" y="240" width="16" height="16"/>
+  <object id="13" type="basic_enemy" x="128" y="272" width="16" height="16"/>
+  <object id="6" type="lazy_enemy" x="32" y="288" width="16" height="16"/>
  </objectgroup>
 </map>

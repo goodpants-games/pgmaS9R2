@@ -8,7 +8,7 @@ local Door = batteries.class {
 }
 
 function Door:new(x, y)
-    self:super(x - 8, y - 8, 32, 32)
+    self:super(x - 8, y - 8, 0, 0)
     self.collision = false
     self.touchMonitor = false
 
@@ -39,6 +39,12 @@ function Door:loadProperties(id, props)
     self.direction = direction
     self:_setAnim(true)
     self.render.sprite:stop()
+
+    if self.direction == "vertical" then
+        self.render.ox = -11
+    elseif self.direction == "horizontal" then
+        self.render.oy = -12
+    end
 end
 
 function Door:_setCollision(colId)
@@ -46,8 +52,11 @@ function Door:_setCollision(colId)
     local ty = math.floor(self.y / TILE_SIZE)
 
     if self.direction == "horizontal" then
+        self.world:setCol(tx, ty, colId)
+        self.world:setCol(tx + 1, ty, colId)
+    elseif self.direction == "vertical" then
+        self.world:setCol(tx, ty, colId)
         self.world:setCol(tx, ty + 1, colId)
-        self.world:setCol(tx + 1, ty + 1, colId)
     end
 end
 

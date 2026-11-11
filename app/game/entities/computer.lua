@@ -23,8 +23,8 @@ function Computer:new(x, y)
 
     self.render.oy = -24
 
-    ---@type game.entities.Door?
-    self.target = nil
+    ---@type game.entities.Door[]
+    self.targets = {}
 
     self.hasFocus = false
 
@@ -34,10 +34,23 @@ function Computer:new(x, y)
 end
 
 function Computer:loadProperties(id, props, entLookup)
-    local target = Util.propCheck(props, "target", "object", id, "computer")
-    if target == nil then return end
+    if props.target then
+        local target = Util.propCheck(props, "target", "object", id, "computer")
+        if target == nil then return end
 
-    self.target = softassert( entLookup(target.id) ) --[[@as any]]
+        self.targets[1] = softassert( entLookup(target) ) --[[@as any]]
+    end
+
+    if props.targets then
+        local targets = Util.propCheck(props, "targets", "list[object]", id, "computer")
+        if targets == nil then return end
+
+        for _, target in ipairs(targets) do
+            table.insert(self.targets, softassert(entLookup(target)))
+        end
+    end
+
+    print(("read %i targets"):format(#self.targets))
 end
 
 function Computer:_added()
@@ -67,8 +80,8 @@ end
 
 function Computer:update()
     if self.hasFocus and self.world:isInputPressed("pickUp") then
-        if self.target then
-            self.target:activate()
+        for _, target in ipairs(self.targets) do
+            target:activate()
         end
     end
 end

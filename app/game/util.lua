@@ -138,6 +138,31 @@ function Util.propCheck(props, name, expectedType, id, className)
             warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "expected object ref"))
             return
         end
+        return v.id
+    end
+
+    if expectedType:sub(1, 5) == "list[" then
+        if not type(v) == "table" then
+            warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "expected list"))
+            return
+        end 
+
+        local subType = expectedType:sub(6,-2)
+        if subType == "object" then
+            for _, subv in ipairs(v) do
+                if not type(subv) == "number" then
+                    warn(PROP_CHECK_ERR_FMTSTR:format(id, className, name, "expected list[object]"))
+                    return
+                end
+            end
+        else
+            for k, _ in ipairs(v) do
+                if Util.propCheck(v, k, expectedType, id, className) == nil then
+                    return
+                end
+            end
+        end
+
         return v
     end
 

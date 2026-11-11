@@ -17,5 +17,12 @@ invisible for 5 seconds or shooting two bullets instead of one
   longer for the scientists to notice you. it will also give you an extra
   hitpoint. but you can't shoot while using it?
 
+  if you want to shoot you need to take off the disguise. the disguise item
+  will be dropped at your current location. but it takes ~5 seconds to put on
+  and to take off the disguise, so like you can't just Simply take it off
+  temporarily to shoot someone and also if an enemy sees the disguise then they
+  take it away? (or maybe seeing the disguise on the ground makes it ineffective
+  for the rest of the level no that's kind of punishing is it?)
+
 name idea:
  <something Evil> billiards

@@ -32,10 +32,13 @@ function Player:new(x, y)
     self.render.oy = -24
 
     self.cancelFire = false
+    self.canInteract = true
+    self.canFire = true
     self.fireCharge = 0
     self.ammo = 1
 
     self.isDisguised = false
+    self.disguiseEquipTimer = nil ---@type number?
 
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
@@ -66,7 +69,23 @@ function Player:update()
     local world = softassert(self.world)
     if not world then return end
 
-    if self.fireCharge == 0 then
+    self.canInteract = true
+    self.canFire = not self.isDisguised
+    local canMove = self.fireCharge == 0
+    if self.disguiseEquipTimer then
+        self.canFire = false
+        self.canInteract = false
+        canMove = false
+
+        self.disguiseEquipTimer = self.disguiseEquipTimer - 1
+        if self.disguiseEquipTimer <= 0 then
+            self.isDisguised = true
+            self.render.sprite = self.mutantSprite
+            self.disguiseEquipTimer = nil
+        end
+    end
+
+    if canMove then
         local inputX = bool2int(world:isInputDown("right"))
                        - bool2int(world:isInputDown("left"))
         local inputY = bool2int(world:isInputDown("down"))
@@ -75,8 +94,8 @@ function Player:update()
             inputX, inputY = math.normalize(inputX, inputY)
         end
 
-        self.xVel = inputX * 2
-        self.yVel = inputY * 2
+        self.xVel = inputX * 1.5
+        self.yVel = inputY * 1.5
     else
         self.xVel = 0
         self.yVel = 0
@@ -89,19 +108,23 @@ end
 function Player:_weaponUpdate()
     local world = assert(self.world)
 
-    if self.ammo == 0 then
+    if self.ammo == 0 or not self.canFire then
+        if self.fireCharge > 0 and world:isInputDown("fire") then
+            self.cancelFire = true
+        end
+        self.fireCharge = 0
+        self.gunSight.visible = false
         return
     end
-
-    local centerX = self.x + self.width/2
-    local centerY = self.y + self.height/2
 
     if world:isInputReleased("fire") then
         self.cancelFire = false
     end
 
     if world:isInputDown("fire") and not self.cancelFire then
-        if world:isInputPressed("pickUp") then
+        self.canInteract = false
+
+        if world:isInputPressed("interact") then
             self.fireCharge = 0
             self.gunSight.visible = false
             self.cancelFire = true
@@ -141,35 +164,28 @@ end
 function Player:_interactUpdate()
     local nearestInteract = nil
     local nearestInteractDist = 100
-    local isPickup = false
 
-    local cx, cy = self:getCenterPos()
+    if self.canInteract then
+        local cx, cy = self:getCenterPos()
 
-    for _, ent in ipairs(self:getOverlappingEntities()) do        
-        if ent:hasTag("interactable") then
-            local ecx, ecy = ent:getCenterPos()
-            local dist = math.distance(cx, cy, ecx, ecy)
-            if dist < nearestInteractDist then
-                nearestInteract = ent
-                nearestInteractDist = dist
-                isPickup = false
+        for _, ent in ipairs(self:getOverlappingEntities()) do
+            if ent:hasTag("interactable") then
+                local ecx, ecy = ent:getCenterPos()
+                local dist = math.distance(cx, cy, ecx, ecy)
+                if dist < nearestInteractDist then
+                    nearestInteract = ent
+                    nearestInteractDist = dist
+                end
             end
         end
-    end
 
-    for _, ent in ipairs(self.world:findEntitiesWithTag("playerPickup")) do
-        local ecx, ecy = ent:getCenterPos()
-        local dist = math.distance(cx, cy, ecx, ecy)
-        if dist < 16 and dist < nearestInteractDist then
-            nearestInteract = ent
-            nearestInteractDist = dist
-            isPickup = true
-        end
-    end
-
-    if nearestInteract then
-        if self.world:isInputPressed("interact") then
-            nearestInteract:publish("interact", self)
+        for _, ent in ipairs(self.world:findEntitiesWithTag("playerPickup")) do
+            local ecx, ecy = ent:getCenterPos()
+            local dist = math.distance(cx, cy, ecx, ecy)
+            if dist < 16 and dist < nearestInteractDist then
+                nearestInteract = ent
+                nearestInteractDist = dist
+            end
         end
     end
 
@@ -182,6 +198,26 @@ function Player:_interactUpdate()
         end
 
         self._lastInteractable = nearestInteract
+    end
+
+    if self.canInteract and self.world:isInputPressed("interact") then
+        if nearestInteract then
+            nearestInteract:publish("interact", self)
+        else
+            self:_emptyInteract()
+        end
+    end
+end
+
+function Player:_emptyInteract()
+    if self.isDisguised then
+        self.isDisguised = false
+        self.render.sprite = self.squidSprite
+
+        local ent = self.world:newEntity("disguise_pickup", self:getCenterPos())
+        if ent then
+            self.world:addEntity(ent)
+        end
     end
 end
 
@@ -213,6 +249,14 @@ function Player:postUpdate()
 
         self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
     end
+end
+
+function Player:equipDisguise()
+    if self.isDisguised then return false end
+
+    self.disguiseEquipTimer = 120
+
+    return true
 end
 
 return Player

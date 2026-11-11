@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 4,
-  nextobjectid = 20,
+  nextobjectid = 22,
   properties = {},
   tilesets = {
     {
@@ -87,6 +87,20 @@ return {
           properties = {}
         },
         {
+          id = 21,
+          name = "",
+          type = "disguise_pickup",
+          shape = "rectangle",
+          x = 256,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {}
+        },
+        {
           id = 14,
           name = "",
           type = "door",
@@ -119,6 +133,22 @@ return {
             ["targets"] = {
               14
             }
+          }
+        },
+        {
+          id = 20,
+          name = "",
+          type = "computer",
+          shape = "rectangle",
+          x = 256,
+          y = 96,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {
+            ["target"] = { id = 14 }
           }
         },
         {

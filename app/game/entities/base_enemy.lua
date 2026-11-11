@@ -17,7 +17,7 @@ function Enemy:new(x, y, w, h)
 
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
-    self.moveSpeed = 2.0
+    self.moveSpeed = 1.5
     self.dead = false
 
     -- sight timer stuff --

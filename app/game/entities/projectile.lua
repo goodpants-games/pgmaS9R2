@@ -25,7 +25,7 @@ function Projectile:new(x, y)
     self.hasPickupFocus = false
 
     self.msg:subscribe("touched", self._touched)
-    self.msg:subscribe("pickupFocusChanged", self._pickupFocusChanged)
+    self.msg:subscribe("interactFocusChanged", self._pickupFocusChanged)
 end
 
 function Projectile:_pickupFocusChanged(v)
@@ -62,7 +62,7 @@ function Projectile:_enterAttachedMode()
     self.alwaysDrawOverTilemap = true
 
     self.msg:unsubscribe("touched", self._touched)
-    self.msg:subscribe("pickUp", self._pickUp)
+    self.msg:subscribe("interact", self._pickUp)
     self:addTag("playerPickup")
 end
 

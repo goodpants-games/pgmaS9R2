@@ -10,10 +10,12 @@ local Computer = batteries.class {
 
 function Computer:new(x, y)
     self:super(x - 7, y, 15, 16)
+    self:addTag("interactable")
+
     self.collision = true
-    self.touchMonitor = true
-    self.colGroup = 0
-    self.colMask = Const.COLGROUP_PLAYER
+    self.monitorOnly = true
+    self.colGroup = Const.COLGROUP_INTERACT_AREA
+    self.colMask = 0
 
     self.tileX = math.floor((x - 8) / TILE_SIZE)
     self.tileY = math.floor((y - 8) / TILE_SIZE)
@@ -29,8 +31,8 @@ function Computer:new(x, y)
     self.hasFocus = false
 
     self.msg:subscribe("addedToWorld", self._added)
-    self.msg:subscribe("touched", self._touched)
-    self.msg:subscribe("touchEnded", self._touchEnded)
+    self.msg:subscribe("interactFocusChanged", self._interactFocusChanged)
+    self.msg:subscribe("interact", self._interact)
 end
 
 function Computer:loadProperties(id, props, entLookup)
@@ -57,32 +59,20 @@ function Computer:_added()
     self.world:setCol(self.tileX, self.tileY, 1)
 end
 
----@param toucher game.entities.Entity
-function Computer:_touched(toucher)
-    print("computer Touche")
-
-    if not toucher:hasTag("player") then
-        return
+---@param status boolean
+function Computer:_interactFocusChanged(status)
+    if status then
+        print("computer Touche")
+    else
+        print("computer touch ende")
     end
 
-    self.hasFocus = true
+    self.hasFocus = status
 end
 
----@param toucher game.entities.Entity
-function Computer:_touchEnded(toucher)
-    print("computer touch ene")
-    if not toucher:hasTag("player") then
-        return
-    end
-
-    self.hasFocus = false
-end
-
-function Computer:update()
-    if self.hasFocus and self.world:isInputPressed("pickUp") then
-        for _, target in ipairs(self.targets) do
-            target:activate()
-        end
+function Computer:_interact()
+    for _, target in ipairs(self.targets) do
+        target:activate()
     end
 end
 

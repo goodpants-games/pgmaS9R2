@@ -16,10 +16,17 @@ local Player = batteries.class {
 function Player:new(x, y)
     self:super(centeredRect(x, y, 13, 12))
     self:addTag("player")
+
+    self.squidSprite = Resmgr.newSprite("/res/sprites/squid_player.json")
+    self.squidSprite.alignment = "topleft"
+    self.mutantSprite = Resmgr.newSprite("/res/sprites/mutant_player.json")
+    self.mutantSprite.alignment = "topleft"
     
     self.collision = true
+    self.touchMonitor = true
     self.colGroup = Const.COLGROUP_PLAYER
-    self.render = SpriteRenderer(Resmgr.newSprite("/res/sprites/squid_player.json"))
+    self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_INTERACT_AREA)
+    self.render = SpriteRenderer(self.squidSprite)
     self.render.sprite.alignment = "topleft"
     self.render.ox = -2
     self.render.oy = -24
@@ -28,6 +35,8 @@ function Player:new(x, y)
     self.fireCharge = 0
     self.ammo = 1
 
+    self.isDisguised = false
+
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
 
@@ -35,7 +44,7 @@ function Player:new(x, y)
     self.gunSight = newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight:setColor(1, 1, 0)
 
-    self._lastPickupTarget = nil
+    self._lastInteractable = nil  ---@type game.entities.Entity?
     self._fireDirX = 0.0
     self._fireDirY = 0.0
 end
@@ -74,7 +83,7 @@ function Player:update()
     end
 
     self:_weaponUpdate()
-    self:_pickupUpdate()
+    self:_interactUpdate()
 end
 
 function Player:_weaponUpdate()
@@ -129,35 +138,50 @@ function Player:_weaponUpdate()
     end
 end
 
-function Player:_pickupUpdate()
-    local nearestPickup = nil
-    local nearestPickupDist = 16
+function Player:_interactUpdate()
+    local nearestInteract = nil
+    local nearestInteractDist = 100
+    local isPickup = false
 
     local cx, cy = self:getCenterPos()
+
+    for _, ent in ipairs(self:getOverlappingEntities()) do        
+        if ent:hasTag("interactable") then
+            local ecx, ecy = ent:getCenterPos()
+            local dist = math.distance(cx, cy, ecx, ecy)
+            if dist < nearestInteractDist then
+                nearestInteract = ent
+                nearestInteractDist = dist
+                isPickup = false
+            end
+        end
+    end
+
     for _, ent in ipairs(self.world:findEntitiesWithTag("playerPickup")) do
         local ecx, ecy = ent:getCenterPos()
         local dist = math.distance(cx, cy, ecx, ecy)
-        if dist < nearestPickupDist then
-            nearestPickup = ent
-            nearestPickupDist = dist
+        if dist < 16 and dist < nearestInteractDist then
+            nearestInteract = ent
+            nearestInteractDist = dist
+            isPickup = true
         end
     end
 
-    if nearestPickup then
-        if self.world:isInputPressed("pickUp") then
-            nearestPickup:publish("pickUp", self)
+    if nearestInteract then
+        if self.world:isInputPressed("interact") then
+            nearestInteract:publish("interact", self)
         end
     end
 
-    if nearestPickup ~= self._lastPickupTarget then
-        if self._lastPickupTarget then
-            self._lastPickupTarget:publish("pickupFocusChanged", false)
+    if nearestInteract ~= self._lastInteractable then
+        if self._lastInteractable then
+            self._lastInteractable:publish("interactFocusChanged", false)
         end
-        if nearestPickup then
-            nearestPickup:publish("pickupFocusChanged", true)
+        if nearestInteract then
+            nearestInteract:publish("interactFocusChanged", true)
         end
 
-        self._lastPickupTarget = nearestPickup
+        self._lastInteractable = nearestInteract
     end
 end
 

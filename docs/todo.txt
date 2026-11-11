@@ -26,3 +26,6 @@ invisible for 5 seconds or shooting two bullets instead of one
 
 name idea:
  <something Evil> billiards
+
+=== coding ===
+export.sh: ignore dotfiles

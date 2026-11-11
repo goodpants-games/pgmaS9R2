@@ -602,6 +602,9 @@ function World:_entityCollisions()
             table.clear(ent1._touching)
 
             for _, ent2 in ipairs(self.entities) do
+                if ent1 == ent2 then
+                    goto continue
+                end
                 if not ent2.collision then
                     goto continue
                 end

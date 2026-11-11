@@ -36,11 +36,12 @@ function Entity:new(x, y, w, h)
     -- collision properties --
 
     self.collision = false
+    self.monitorOnly = false
     self.width = w or 0.0
     self.height = h or 0.0
     self.restitution = 0.0
     self.colGroup = Consts.COLGROUP_DEFAULT
-    self.colMask = Consts.COLGROUP_ALL
+    self.colMask = Consts.COLGROUP_DEFAULT
     -- touch monitor properties --
 
     self.touchMonitor = false

@@ -247,7 +247,7 @@ function Enemy:update()
                 local dist = math.length(sightDx, sightDy)
                 if dist > 16*8 then
                     print("kinda far")
-                    timerSpeed = 1 / 10
+                    timerSpeed = 1 / 12
                 elseif dist > 16*1 then
                     print("moderately far")
                     timerSpeed = 1 / 6

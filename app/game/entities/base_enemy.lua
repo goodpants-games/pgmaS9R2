@@ -19,6 +19,7 @@ function Enemy:new(x, y, w, h)
     self.colGroup = Const.COLGROUP_NPC
     self.moveSpeed = 1.5
     self.dead = false
+    self.sawDisguise = false
 
     -- sight timer stuff --
     self.sightTimer = 0
@@ -237,10 +238,25 @@ function Enemy:update()
     end
 
     -- update sight
-    if world.player then
-        local hasSight = self:hasSightLineTo(world.player)
+    local player = world.player --[[@as game.entities.Player]]
+    if player then
+        local hasSight, sightDx, sightDy = self:hasSightLineTo(player)
         if hasSight then
-            self.sightTimer = self.sightTimer + 1
+            local timerSpeed = 1
+            if player.isDisguised and not self.sawDisguise then
+                local dist = math.length(sightDx, sightDy)
+                if dist > 16*8 then
+                    print("kinda far")
+                    timerSpeed = 1 / 10
+                elseif dist > 16*1 then
+                    print("moderately far")
+                    timerSpeed = 1 / 6
+                else
+                    print("not far at all")
+                end
+            end
+
+            self.sightTimer = self.sightTimer + timerSpeed
         else
             self.sightTimer = 0
         end
@@ -287,6 +303,11 @@ function Enemy:_sightRoutine()
     local playerCx, playerCy
     local playerVx, playerVy
     while self.sightTimer > 0 do
+        local player = self.world.player --[[@as game.entities.Player]]
+        if player.isDisguised then
+            self.sawDisguise = true
+        end
+
         cx, cy = self:getCenterPos()
         playerCx, playerCy = world.player:getCenterPos()
         playerVx, playerVy = world.player.xVel, world.player.yVel

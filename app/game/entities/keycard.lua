@@ -33,14 +33,19 @@ end
 function Keycard:update()
     self.render.sprite.cel = self.auth + 1
 
-    self.xVel = self.xVel * 0.9
-    self.yVel = self.yVel * 0.9
-
     self.zVel = self.zVel + self.zGrav
     self.zOffset = self.zOffset + self.zVel
     if self.zOffset < 0 then
+        self.xVel = self.xVel * 0.7
+        self.yVel = self.yVel * 0.7
         self.zOffset = 0
-        self.zVel = self.zVel * -0.4
+        self.zVel = self.zVel * -0.5
+    end
+
+    if self.zOffset < 2 then
+        self.zIndex = -20
+    else
+        self.zIndex = 0
     end
 end
 

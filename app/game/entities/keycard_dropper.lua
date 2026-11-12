@@ -46,6 +46,8 @@ function KeycardDropper:_holderDied(holder)
         keycard.auth = self.auth
         keycard.xVel = -holder.xVel
         keycard.yVel = -holder.yVel
+        keycard.zVel = 3
+        keycard.zOffset = 4
 
         self.world:addEntity(keycard)
     end

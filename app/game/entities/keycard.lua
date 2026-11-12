@@ -12,6 +12,9 @@ function Keycard:new(x, y)
     self:addTag("interactable")
 
     self.auth = 0
+
+    self.zVel = 0.0
+    self.zGrav = -0.3
     
     self.collision = true
     self.restitution = 0.5 
@@ -29,11 +32,23 @@ end
 function Keycard:update()
     self.xVel = self.xVel * 0.9
     self.yVel = self.yVel * 0.9
+
+    self.zVel = self.zVel + self.zGrav
+    self.zOffset = self.zOffset + self.zVel
+    if self.zOffset < 0 then
+        self.zOffset = 0
+        self.zVel = self.zVel * -0.4
+    end
 end
 
+---@param plr game.entities.Player
 function Keycard:_interact(plr)
+    if not softassert(plr:hasTag("player")) then
+        return
+    end
+    
     print("player picked up keycard")
-    self:remove()
+    plr:pickUpItem(self)
 end
 
 return Keycard

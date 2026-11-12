@@ -197,21 +197,7 @@ end
 ---@param overTilemapFilter boolean
 function World:_drawObjects(overTilemapFilter)
     for _, ent in ipairs(self._renderOrder) do
-        if ent.visible then
-            local renderer = ent.render
-            if renderer and ent.alwaysDrawOverTilemap == overTilemapFilter then
-                Lg.push()
-                Lg.translate(0, math.round(-ent.zOffset))
-
-                if type(renderer) == "function" then
-                    renderer(ent)
-                else
-                    renderer:draw(ent)
-                end
-
-                Lg.pop()
-            end
-        end
+        Util.drawEntity(ent, overTilemapFilter)
     end
 end
 

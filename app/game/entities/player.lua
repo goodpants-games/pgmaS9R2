@@ -3,6 +3,7 @@ local SpriteRenderer = require("game.util").SpriteRenderer
 local centeredRect   = require("game.util").centeredRect
 local bool2int       = require("game.util").bool2int
 local newEntity      = require("game.util").newEntity
+local drawEntity     = require("game.util").drawEntity
 local Const = require("game.consts")
 
 local FIRE_CHARGE_MIN = 40
@@ -26,10 +27,9 @@ function Player:new(x, y)
     self.touchMonitor = true
     self.colGroup = Const.COLGROUP_PLAYER
     self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_INTERACT_AREA)
-    self.render = SpriteRenderer(self.squidSprite)
-    self.render.sprite.alignment = "topleft"
-    self.render.ox = -2
-    self.render.oy = -24
+    self.renderSprite = self.squidSprite
+    self.renderOx = -2
+    self.renderOy = -24
 
     self.cancelFire = false
     self.canInteract = true
@@ -39,6 +39,7 @@ function Player:new(x, y)
 
     self.isDisguised = false
     self.disguiseEquipTimer = nil ---@type number?
+    self.equippedItem = nil ---@type game.entities.Entity?
 
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
@@ -80,7 +81,7 @@ function Player:update()
         self.disguiseEquipTimer = self.disguiseEquipTimer - 1
         if self.disguiseEquipTimer <= 0 then
             self.isDisguised = true
-            self.render.sprite = self.mutantSprite
+            self.renderSprite = self.mutantSprite
             self.disguiseEquipTimer = nil
         end
     end
@@ -212,12 +213,18 @@ end
 function Player:_emptyInteract()
     if self.isDisguised then
         self.isDisguised = false
-        self.render.sprite = self.squidSprite
+        self.renderSprite = self.squidSprite
 
         local ent = self.world:newEntity("disguise_pickup", self:getCenterPos())
         if ent then
             self.world:addEntity(ent)
         end
+    elseif self.equippedItem then
+        local w, h = self.width, self.height
+        self.equippedItem.x = math.round(self:getCenterX() - w / 2)
+        self.equippedItem.y = math.round(self:getCenterY() - h / 2)
+        self.world:addEntity(self.equippedItem)
+        self.equippedItem = nil
     end
 end
 
@@ -249,12 +256,44 @@ function Player:postUpdate()
 
         self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
     end
+
+    if self.equippedItem then
+        self.equippedItem.x = self.x + 14
+        self.equippedItem.y = self.y + 20
+    end
+end
+
+function Player:render()
+    Lg.setColor(1, 1, 1)
+    Lg.translate(self.renderOx, self.renderOy)
+    self.renderSprite:draw(math.round(self.x), math.round(self.y))
+
+    if self.equippedItem then
+        drawEntity(self.equippedItem, self.alwaysDrawOverTilemap)
+    end
+
+    -- if Debug.enabled then
+    --     Lg.rectangle("line", math.round(ent.x), math.round(ent.y), math.round(ent.width), math.round(ent.height))
+    -- end
 end
 
 function Player:equipDisguise()
-    if self.isDisguised then return false end
+    if self.isDisguised or self.equippedItem then return false end
 
     self.disguiseEquipTimer = 120
+
+    return true
+end
+
+---@param item game.entities.Entity
+---@return boolean
+function Player:pickUpItem(item)
+    if self.equippedItem or self.isDisguised then
+        return false
+    end
+
+    item:remove()
+    self.equippedItem = item
 
     return true
 end

@@ -79,33 +79,6 @@ function Util.newEntity(entType, x, y, ...)
     return ctor(x, y, ...)
 end
 
---------------------------------- miscellaneous --------------------------------
-
-function Util.centeredRect(x, y, w, h)
-    return x - w/2, y - h/2, w, h
-end
-
-function Util.bool2int(v)
-    return v and 1 or 0
-end
-
----unordered pairing function of two unsigned integers
----@param a integer
----@param b integer
-function Util.upair2u(a, b)
-    if a > b then
-        a, b = b, a
-    end
-    return (a * a + a) / 2 + b
-end
-
----pairing function of two unsigned integers
----@param a integer
----@param b integer
-function Util.pair2u(a, b)
-    return ((a + b) * (a + b + 1)) / 2 + b
-end
-
 local PROP_CHECK_ERR_FMTSTR = "{object %i '%s'} property '%s': %s"
 
 function Util.propCheck(props, name, expectedType, id, className)
@@ -173,6 +146,53 @@ function Util.propCheck(props, name, expectedType, id, className)
     end
 
     return v
+end
+
+--------------------------------- miscellaneous --------------------------------
+
+---@param ent game.entities.Entity
+---@param overTilemapFilter boolean
+function Util.drawEntity(ent, overTilemapFilter)
+    if not ent.visible then return end
+
+    local renderer = ent.render
+    if renderer and ent.alwaysDrawOverTilemap == overTilemapFilter then
+        Lg.push()
+        Lg.translate(0, math.round(-ent.zOffset))
+
+        if type(renderer) == "function" then
+            renderer(ent)
+        else
+            renderer:draw(ent)
+        end
+
+        Lg.pop()
+    end
+end
+
+function Util.centeredRect(x, y, w, h)
+    return x - w/2, y - h/2, w, h
+end
+
+function Util.bool2int(v)
+    return v and 1 or 0
+end
+
+---unordered pairing function of two unsigned integers
+---@param a integer
+---@param b integer
+function Util.upair2u(a, b)
+    if a > b then
+        a, b = b, a
+    end
+    return (a * a + a) / 2 + b
+end
+
+---pairing function of two unsigned integers
+---@param a integer
+---@param b integer
+function Util.pair2u(a, b)
+    return ((a + b) * (a + b + 1)) / 2 + b
 end
 
 return Util

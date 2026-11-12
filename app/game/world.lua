@@ -45,6 +45,7 @@ function World:new()
     self.mapWidth = 0
     self.mapHeight = 0
     self.colMap = {}
+    self.aiFlags = {} ---@type integer[][]
 
     ---@private
     ---@type game.entities.Entity[]
@@ -410,23 +411,60 @@ function World:_loadMap()
     table.clear(self._topTiles)
     table.clear(self._nonCollidableTiles)
 
-    for _, tileset in ipairs(self.map.tilesets) do
-        local firstgid = tileset.firstgid
-        for _, tile in ipairs(tileset.tiles) do
-            local gid = firstgid + tile.id
+    local aiFlagsTileset = nil ---@type pklove.tiled.Tileset
 
-            if tile.type == "top" then
-                self._nonCollidableTiles[gid] = true
-                self._topTiles[gid] = true
+    for _, tileset in ipairs(self.map.tilesets) do
+        if tileset.class ~= "meta" then
+            local firstgid = tileset.firstgid
+            for _, tile in ipairs(tileset.tiles) do
+                local gid = firstgid + tile.id
+
+                if tile.type == "top" then
+                    self._nonCollidableTiles[gid] = true
+                    self._topTiles[gid] = true
+                end
             end
+        elseif tileset.name == "ai_flags_tileset" then
+            aiFlagsTileset = tileset
         end
     end
 
-    -- load map collision
     local colLayer = self.colLayer
     self.mapWidth = colLayer.width
     self.mapHeight = colLayer.height
 
+    -- load ai flags
+    local aiFlagsLayer = self.map:getLayerByName("AIFlags") --[[@as pklove.tiled.TileLayer]]
+    if aiFlagsLayer then
+        local invalidTilesetErr = false
+        
+        for y=0, self.mapHeight-1 do
+            local row = {}
+            self.aiFlags[y+1] = row
+            for x=0, self.mapWidth-1 do
+                local gid = aiFlagsLayer:get(x, y)
+
+                if gid and gid ~= 0 then
+                    local tinfo = self.map:getTileInfo(gid)
+                    local tset = self.map.tilesets[tinfo]
+                    if tset == aiFlagsTileset then
+                        row[x+1] = 0
+                        invalidTilesetErr = true
+                    else
+                        row[x+1] = tinfo.id
+                    end
+                end
+            end
+        end
+
+        if invalidTilesetErr then
+            warn("ai flags layer had one or more tiles not from the AI flags tileset")
+        end
+
+        self.map:removeLayer(aiFlagsLayer)
+    end
+
+    -- load map collision
     for y=1, self.mapHeight do
         local row = {}
         self.colMap[y] = row

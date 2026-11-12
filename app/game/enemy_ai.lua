@@ -210,6 +210,7 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
     bulletDx, bulletDy = -bulletDx, -bulletDy
 
     local origX, origY = victimX, victimY
+    local world = self.world
 
     while true do
         local hitX, hitY, normX, normY =
@@ -277,9 +278,12 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
                         return false
                     end
 
-                    if depth > 20 then
+                    if depth > 20
+                       and world.aiFlags[y+1][x+1] ~= const.AI_FLAG_ALWAYS_SEARCH
+                    then
                         return false
                     end
+                    
                     self.mapAwareness[y+1][x+1] = 2
                     return true
                 end)

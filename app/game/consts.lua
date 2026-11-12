@@ -7,4 +7,6 @@ consts.COLGROUP_NPC           = 0x4
 consts.COLGROUP_INTERACT_AREA = 0x8
 consts.COLGROUP_ALL           = 0xffffffff
 
+consts.AI_FLAG_ALWAYS_SEARCH = 1
+
 return consts

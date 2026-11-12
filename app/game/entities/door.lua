@@ -42,6 +42,7 @@ function Door:loadProperties(id, props)
 
     if self.direction == "vertical" then
         self.render.ox = -11
+        self.render.oy = -16
     elseif self.direction == "horizontal" then
         self.render.oy = -12
     end

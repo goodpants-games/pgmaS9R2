@@ -16,6 +16,7 @@ function Computer:new(x, y)
     self.monitorOnly = true
     self.colGroup = Const.COLGROUP_INTERACT_AREA
     self.colMask = 0
+    self.auth = nil ---@type integer?
 
     self.tileX = math.floor((x - 8) / TILE_SIZE)
     self.tileY = math.floor((y - 8) / TILE_SIZE)
@@ -53,6 +54,13 @@ function Computer:loadProperties(id, props, entLookup)
     end
 
     print(("read %i targets"):format(#self.targets))
+
+    if props.auth then
+        local auth = Util.propCheck(props, "auth", "integer", id, "computer")
+        if auth == nil then return end
+
+        self.auth = auth
+    end
 end
 
 function Computer:_added()
@@ -70,7 +78,26 @@ function Computer:_interactFocusChanged(status)
     self.hasFocus = status
 end
 
-function Computer:_interact()
+---@param plr game.entities.Player
+function Computer:_interact(plr)
+    if self.auth then
+        local card = plr.equippedItem --[[@as any]]
+        if card and not card:hasTag("keycard") then
+            card = nil
+        end
+
+        if not card then
+            print("[game] AUTHENTICATION REQUIRED")
+            return
+        end
+        if card.auth ~= self.auth then
+            print("[game] AUTHENTICATION FAILED")
+            return
+        end
+
+        print("[game] AUTHENTICATION SUCCESSFUL")
+    end
+
     for _, target in ipairs(self.targets) do
         target:activate()
     end

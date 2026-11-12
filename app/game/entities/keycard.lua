@@ -10,6 +10,7 @@ local Keycard = batteries.class {
 function Keycard:new(x, y)
     self:super(Util.centeredRect(x, y, 12, 12))
     self:addTag("interactable")
+    self:addTag("keycard")
 
     self.auth = 0
 
@@ -30,6 +31,8 @@ function Keycard:new(x, y)
 end
 
 function Keycard:update()
+    self.render.sprite.cel = self.auth + 1
+
     self.xVel = self.xVel * 0.9
     self.yVel = self.yVel * 0.9
 

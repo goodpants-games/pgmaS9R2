@@ -2,8 +2,8 @@
 set -e
 
 PROJECT_ROOT=$PWD
-GAME_NAME=pgmas9r2
-GAME_TITLE="PGMAS9R2"
+GAME_NAME=murder-xquid
+GAME_TITLE="Murder Xquid"
 
 WIN64_BUILD_NAME=love-11.5-win64
 

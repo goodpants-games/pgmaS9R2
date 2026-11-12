@@ -57,7 +57,7 @@ function love.conf(t)
     end
 
     t.version = "11.4"
-    t.window.title = "pls bug chromosoze to title the window once we decide on a name"
+    t.window.title = "Murder Xquid"
     t.window.width = App.scrW * 3
     t.window.height = App.scrH * 3
     t.window.resizable = true

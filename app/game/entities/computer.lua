@@ -87,20 +87,28 @@ function Computer:_interact(plr)
         end
 
         if not card then
-            print("[game] AUTHENTICATION REQUIRED")
+            self:_popupText("AUTH REQUIRED")
             return
         end
         if card.auth ~= self.auth then
-            print("[game] AUTHENTICATION FAILED")
+            self:_popupText("AUTH FAILED")
             return
         end
-
-        print("[game] AUTHENTICATION SUCCESSFUL")
     end
 
     for _, target in ipairs(self.targets) do
         target:activate()
     end
+end
+
+---@param txt string
+function Computer:_popupText(txt)
+    local x = self:getCenterX()
+    local y = self:getCenterY() - 32
+    local ent = Util.newEntity("text_popup", x, y, txt)
+    if not ent then return end
+
+    self.world:addEntity(ent)
 end
 
 return Computer

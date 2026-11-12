@@ -1,0 +1,39 @@
+local Util = require("game.util")
+local Const = require("game.consts")
+local Resmgr = require("game.resmgr")
+
+---@class game.entities.Keycard: game.entities.Entity
+local Keycard = batteries.class {
+    extends = require("game.entities.base")
+}
+
+function Keycard:new(x, y)
+    self:super(Util.centeredRect(x, y, 12, 12))
+    self:addTag("interactable")
+
+    self.auth = 0
+    
+    self.collision = true
+    self.restitution = 0.5 
+    self.colGroup = Const.COLGROUP_INTERACT_AREA
+    self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_PLAYER)
+
+    self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/keycard.json"))
+    self.render.ox = 5
+    self.render.oy = 5
+    self.zIndex = -20
+
+    self.msg:subscribe("interact", self._interact)
+end
+
+function Keycard:update()
+    self.xVel = self.xVel * 0.9
+    self.yVel = self.yVel * 0.9
+end
+
+function Keycard:_interact(plr)
+    print("player picked up keycard")
+    self:remove()
+end
+
+return Keycard

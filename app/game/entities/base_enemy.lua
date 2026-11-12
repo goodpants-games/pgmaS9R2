@@ -70,7 +70,6 @@ function Enemy:_hit(hitVx, hitVy)
     -- Die . Now.
     self.dead = true
     self.msg:unsubscribe("hit", self._hit)
-    self:removeTag("enemy")
 
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
@@ -83,6 +82,9 @@ function Enemy:_hit(hitVx, hitVy)
     self.render.r = self.render.r * 0.5
     self.render.g = self.render.g * 0.5
     self.render.b = self.render.b * 0.5
+
+    self:publish("died")
+    self:removeTag("enemy")
 
     self.world.enemyConductor:handleEnemyDeath(self, hitVx, hitVy)
 end

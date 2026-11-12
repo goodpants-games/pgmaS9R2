@@ -14,7 +14,7 @@ local ENTITY_RENDER_TAG = "__gtag_render"
 local World = batteries.class()
 
 function World:new()
-    self.map = Tiled.loadMap("/res/maps/test.lua")
+    self.map = Tiled.loadMap("/res/maps/test2.lua")
     self.curFrame = 0
 
     self._nonCollidableTiles = {}

@@ -53,25 +53,12 @@ function World:new()
     
     ---@private
     self._needEntityRemoval = false
-
-    self.colLayer = nil
-    do
-        local layer = self.map:getLayerByName("Main")
-        if layer and layer.type == "tilelayer" then
-            self.colLayer = layer --[[@as pklove.tiled.TileLayer]]
-        end
-    end
-
     self._didColMapChange = false
 
-    if softassert(self.colLayer, "map had no collision layer!") then
-        local isCol = self.isCol
-        ---@private
-        self._getCol = function(tx, ty)
-            return isCol(self, tx, ty)
-        end
-    else
-        self._getCol = function() return nil end
+    local isCol = self.isCol
+    ---@private
+    self._getCol = function(tx, ty)
+        return isCol(self, tx, ty)
     end
 
     self.msg = batteries.pubsub()
@@ -206,12 +193,12 @@ function World:draw()
     Lg.translate(-math.round(self.camX), -math.round(self.camY))
 
     for _, layer in ipairs(self.map.layers) do
-        layer:draw()
-
-        -- draw objects immediately after Main layer
-        if layer == self.colLayer then
+        -- draw objects immediately before top layer
+        if layer.name == "__top" then
             self:_drawObjects(false)
         end
+
+        layer:draw()
     end
 
     self:_drawObjects(true)
@@ -405,7 +392,7 @@ function World:_loadMap()
             for _, tile in ipairs(tileset.tiles) do
                 local gid = firstgid + tile.id
 
-                if tile.type == "top" then
+                if tile.type == "top" or tile.type == "bg" then
                     self._nonCollidableTiles[gid] = true
                 elseif tile.type == "wall" then
                     self._wallTiles[gid] = true
@@ -416,9 +403,9 @@ function World:_loadMap()
         end
     end
 
-    local colLayer = self.colLayer
-    self.mapWidth = colLayer.width
-    self.mapHeight = colLayer.height
+    local mapWidth, mapHeight = self.map.width, self.map.height
+    self.mapWidth = mapWidth
+    self.mapHeight = mapHeight
 
     -- load ai flags
     local aiFlagsLayer = self.map:getLayerByName("AIFlags") --[[@as pklove.tiled.TileLayer]]
@@ -451,35 +438,51 @@ function World:_loadMap()
         self.map:removeLayer(aiFlagsLayer)
     end
 
-    -- load map collision
+    -- init collision map
     for y=1, self.mapHeight do
         local row = {}
         self.colMap[y] = row
         for x=1, self.mapWidth do
-            local tile = colLayer:get(x-1, y-1)
-            local isCol = tile ~= 0 and not self._nonCollidableTiles[tile]
-            row[x] = isCol and 1 or 0
+            row[x] = 0
         end
     end
 
-    -- create the "top" layer
-    local mapWidth = colLayer.width
-    local mapHeight = colLayer.height
+    -- read tile layers
     local topLayer = self.map:createLayer("tilelayer", mapWidth, mapHeight) --[[@as pklove.tiled.TileLayer]]
     topLayer.name = "__top"
-    self.map:insertLayer(topLayer, table.index_of(self.map.layers, colLayer)+1)
 
-    -- move "top" tiles to the top layer
-    for i=1, mapWidth * mapHeight do
-        local cell = colLayer.data[i]
-        local gid = bit.band(cell, 0x0fffffff)
-        if not self._wallTiles[gid] then
-            colLayer.data[i] = 0
-            topLayer.data[i] = cell
-        else
-            topLayer.data[i] = 0
+    for _, layer in ipairs(self.map.layers) do
+        if layer.type ~= "tilelayer" then
+            goto continue
         end
+        ---@cast layer pklove.tiled.TileLayer
+        if layer.name == "Background" or layer.class == "background" then
+            goto continue
+        end
+        
+        for y=1, mapHeight do
+            local row = self.colMap[y]
+            for x=1, mapWidth do
+                local i = (y-1) * mapWidth + (x-1) + 1
+                local cell = layer.data[i]
+                local gid = bit.band(cell, 0x0fffffff)
+                local isCol = gid ~= 0 and not self._nonCollidableTiles[gid]
+                if isCol then
+                    row[x] = 1
+                end
+
+                -- move "top" tiles to the top layer
+                if gid ~= 0 and not self._wallTiles[gid] then
+                    layer.data[i] = 0
+                    topLayer.data[i] = cell
+                end
+            end
+        end
+
+        ::continue::
     end
+
+    self.map:insertLayer(topLayer)
 
     self:_loadMapObjects()
 

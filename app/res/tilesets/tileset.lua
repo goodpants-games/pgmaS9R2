@@ -57,6 +57,22 @@ return {
       type = "top"
     },
     {
+      id = 11,
+      type = "top"
+    },
+    {
+      id = 12,
+      type = "top"
+    },
+    {
+      id = 13,
+      type = "top"
+    },
+    {
+      id = 15,
+      type = "top"
+    },
+    {
       id = 16,
       type = "top"
     },
@@ -71,6 +87,26 @@ return {
     {
       id = 19,
       type = "top"
+    },
+    {
+      id = 27,
+      type = "wall"
+    },
+    {
+      id = 28,
+      type = "wall"
+    },
+    {
+      id = 29,
+      type = "wall"
+    },
+    {
+      id = 30,
+      type = "wall"
+    },
+    {
+      id = 31,
+      type = "wall"
     },
     {
       id = 32,
@@ -89,12 +125,44 @@ return {
       type = "top"
     },
     {
+      id = 42,
+      type = "top"
+    },
+    {
+      id = 43,
+      type = "top"
+    },
+    {
+      id = 44,
+      type = "top"
+    },
+    {
+      id = 45,
+      type = "top"
+    },
+    {
+      id = 46,
+      type = "top"
+    },
+    {
+      id = 47,
+      type = "top"
+    },
+    {
       id = 54,
       type = "top"
     },
     {
       id = 55,
       type = "top"
+    },
+    {
+      id = 62,
+      type = "wall"
+    },
+    {
+      id = 63,
+      type = "wall"
     }
   }
 }

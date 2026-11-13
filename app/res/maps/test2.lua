@@ -136,11 +136,13 @@ return {
           rotation = 0,
           opacity = 1,
           visible = true,
-          properties = {}
+          properties = {
+            ["direction"] = "down"
+          }
         },
         {
           id = 8,
-          name = "",
+          name = "dirtest",
           type = "basic_enemy",
           shape = "rectangle",
           x = 264,
@@ -150,7 +152,9 @@ return {
           rotation = 0,
           opacity = 1,
           visible = true,
-          properties = {}
+          properties = {
+            ["direction"] = "down"
+          }
         },
         {
           id = 7,
@@ -307,7 +311,9 @@ return {
           rotation = 0,
           opacity = 1,
           visible = true,
-          properties = {}
+          properties = {
+            ["direction"] = "up"
+          }
         }
       }
     }

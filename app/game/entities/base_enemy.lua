@@ -5,6 +5,7 @@ local Util = require("game.util")
 local EnemyAi = require "game.enemy_ai"
 local Pathfinding = require "game.pathfind"
 local Resmgr = require "game.resmgr"
+local DirAnim = require "game.util.dir_anim"
 
 ---@class game.entities.Enemy: game.entities.Entity
 local Enemy = batteries.class {
@@ -20,6 +21,9 @@ function Enemy:new(x, y, w, h)
     self.moveSpeed = 1.5
     self.dead = false
     self.sawDisguise = false
+    self.animState = nil ---@type string?
+    self.faceDir = 0 -- in radians
+    self.dirAnim = DirAnim()
 
     -- sight timer stuff --
     self.sightTimer = 0
@@ -53,6 +57,23 @@ function Enemy:new(x, y, w, h)
     self.msg:subscribe("witnessedDeath", self._witnessedDeath)
 end
 
+function Enemy:loadProperties(id, props)
+    local dir = Util.propCheck(props, "direction", "string", id, "enemy")
+    if not dir then
+        return
+    end
+
+    if dir == "right" then
+        self.faceDir = 0
+    elseif dir == "down" then
+        self.faceDir = math.pi / 2
+    elseif dir == "left" then
+        self.faceDir = math.pi
+    elseif dir == "up" then
+        self.faceDir = 3 * math.pi / 2
+    end
+end
+
 function Enemy:_added()
     self._homeX, self._homeY = self:getCenterPos()
 end
@@ -71,6 +92,7 @@ function Enemy:_hit(hitVx, hitVy)
     self.dead = true
     self.msg:unsubscribe("hit", self._hit)
 
+    self.faceDir = math.atan2(hitVy, hitVx)
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
     self.zIndex = -10
@@ -201,73 +223,80 @@ function Enemy:update()
     if not world.player then
         return
     end
+
+    local lastAnimState = self.animState
+    self.animState = "idle"
     
     if self.dead then
         self.xVel = self.xVel * 0.9
         self.yVel = self.yVel * 0.9
-        return
-    end
-
-    if self._hasMoveTarget then
-        local dx,dy = self._moveTargetX - self.x, self._moveTargetY - self.y
-        if math.length(dx, dy) < 10 then
-            print("STOP IT")
-            self._hasMoveTarget = false
-        else
-            dx, dy = math.normalize(dx, dy)
-            self.xVel = dx * self.moveSpeed
-            self.yVel = dy * self.moveSpeed
-        end
+        self.animState = "dead"
     else
-        self.xVel = 0
-        self.yVel = 0
-    end
-
-    -- update sight
-    if not self._sightCoro then
-        self._sightCoro = coroutine.create(self._sightRoutine)
-        coroutine.sresume(self._sightCoro, self)
-    end
-
-    if not coroutine.sresume(self._sightCoro) then
-        self._sightCoro = nil
-    end
-
-    if self.aiTask then
-        if not coroutine.sresume(self.aiTask) then
-            self.aiTask = nil
-        end
-    end
-
-    -- update sight
-    local player = world.player --[[@as game.entities.Player]]
-    if player then
-        local hasSight, sightDx, sightDy = self:hasSightLineTo(player)
-        if hasSight then
-            local timerSpeed = 1
-            if player.isDisguised and not self.sawDisguise then
-                local dist = math.length(sightDx, sightDy)
-                if dist > 16*8 then
-                    print("kinda far")
-                    timerSpeed = 1 / 12
-                elseif dist > 16*1 then
-                    print("moderately far")
-                    timerSpeed = 1 / 6
-                else
-                    print("not far at all")
-                end
+        if self._hasMoveTarget then
+            self.animState = "walk"
+            
+            local dx,dy = self._moveTargetX - self.x, self._moveTargetY - self.y
+            if math.length(dx, dy) < 10 then
+                self._hasMoveTarget = false
+            else
+                dx, dy = math.normalize(dx, dy)
+                self.faceDir = math.atan2(dy, dx)
+                self.xVel = dx * self.moveSpeed
+                self.yVel = dy * self.moveSpeed
             end
-
-            self.sightTimer = self.sightTimer + timerSpeed
         else
-            self.sightTimer = 0
+            self.xVel = 0
+            self.yVel = 0
+        end
+
+        -- update sight
+        if not self._sightCoro then
+            self._sightCoro = coroutine.create(self._sightRoutine)
+            coroutine.sresume(self._sightCoro, self)
+        end
+
+        if not coroutine.sresume(self._sightCoro) then
+            self._sightCoro = nil
+        end
+
+        if self.aiTask then
+            if not coroutine.sresume(self.aiTask) then
+                self.aiTask = nil
+            end
+        end
+
+        -- update sight
+        local player = world.player --[[@as game.entities.Player]]
+        if player then
+            local hasSight, sightDx, sightDy = self:hasSightLineTo(player)
+            if hasSight then
+                local timerSpeed = 1
+                if player.isDisguised and not self.sawDisguise then
+                    local dist = math.length(sightDx, sightDy)
+                    if dist > 16*8 then
+                        print("kinda far")
+                        timerSpeed = 1 / 12
+                    elseif dist > 16*1 then
+                        print("moderately far")
+                        timerSpeed = 1 / 6
+                    else
+                        print("not far at all")
+                    end
+                end
+
+                self.sightTimer = self.sightTimer + timerSpeed
+            else
+                self.sightTimer = 0
+            end
+        end
+        -- self:_sightUpdate()
+
+        if self.ai then
+            self.ai:update()
         end
     end
-    -- self:_sightUpdate()
 
-    if self.ai then
-        self.ai:update()
-    end
+    self:_updateAnimation(lastAnimState)
 end
 
 function Enemy:_sightRoutine()
@@ -321,6 +350,7 @@ function Enemy:_sightRoutine()
         end
 
         self.gunSight:updateSight(cx, cy, playerDx, playerDy)
+        self.faceDir = math.atan2(playerDy, playerDx)
         coroutine.yield()
 
         self.fireTimer = self.fireTimer + 1
@@ -419,6 +449,40 @@ function Enemy:_sightRoutine()
         self.fireTimer = 0
     end
     --]]
+end
+
+local DIRECTIONS = {"r", "d", "l", "u"}
+
+---@param ang number
+---@param dirCount integer
+local function getAngleInt(ang, dirCount)
+    ang = math.normalise_angle(ang - math.pi) + math.pi
+    return math.round(ang / math.tau * dirCount) % dirCount
+end
+
+---@param lastAnimState string?
+function Enemy:_updateAnimation(lastAnimState)
+    if type(self.render) ~= "table" then return end
+    local spr = self.render.sprite
+    if not spr then return end
+
+    if self.animState == "dead" then
+        local angInt = getAngleInt(-self.faceDir + math.pi/2, 8)
+        local celStart = spr.res.animations.dead.from
+        if spr.curAnim then
+            spr:stop()
+        end
+
+        spr.cel = celStart + angInt
+    else
+        local angInt = getAngleInt(self.faceDir, 4)
+        self.dirAnim:setDirection(spr, DIRECTIONS[angInt+1])
+        if self.animState ~= lastAnimState then
+            self.dirAnim:play(spr, self.animState)
+        end
+    end
+
+    spr:update(App.tickLength)
 end
 
 return Enemy

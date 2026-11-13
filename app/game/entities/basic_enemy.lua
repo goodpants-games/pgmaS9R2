@@ -1,5 +1,6 @@
 local Util = require("game.util")
 local Resmgr = require("game.resmgr")
+local DirAnim = require("game.util.dir_anim")
 
 ---@class game.entities.BasicEnemy: game.entities.Enemy
 local BasicEnemy = batteries.class {

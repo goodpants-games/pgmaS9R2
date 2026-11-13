@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 6,
-  nextobjectid = 14,
+  nextobjectid = 30,
   properties = {},
   tilesets = {
     {
@@ -22,6 +22,11 @@ return {
       name = "ai_flags_tileset",
       firstgid = 257,
       filename = "../tilesets/ai_flags_tileset.tsx"
+    },
+    {
+      name = "entity_types",
+      firstgid = 273,
+      filename = "../tilesets/entity_types.tsx"
     }
   },
   layers = {
@@ -61,7 +66,7 @@ return {
       parallaxy = 1,
       properties = {},
       encoding = "base64",
-      data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAACAAAABAAAADEAAAACAAAAAwAAAAMAAAAEAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANQAAAEMAAABDAAAAQwAAAEMAAABDAAAANgAAADQAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAAAAIAAAADAAAAAwAAAAMAAAAEAAAAQgAAAEQAAAAAAAAAAAAAACUAAAATAAAAFAAAAAAAAAAAAAAAMgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAQAAAAAAAAAAAAAAAIAAAADAAAABAAAAAAAAAAAAAAAMgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIgAAACMAAAAjAAAAIwAAACMAAAAjAAAAIwAAACMAAAAjAAAARgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQAAACQAAAAAAAAAAAAAACIAAAAjAAAARgAAADMAAAA1AAAAQwAAAEMAAABDAAAAQwAAAEMAAABDAAAAQwAAABkAAAAUAAAAAAAAAAAAAAASAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAADQAAAAAAAAAAAAAADIAAAAzAAAAMwAAADMAAAA0AAAAAgAAAAMAAAADAAAAAwAAAAMAAAADAAAABAAAADEAAAABAAAAAAAAAAAAAAABAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAADIAAAAzAAAAMwAAADMAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAEIAAABDAAAAQwAAAEMAAABEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAIAAAADAAAAAwAAAAMAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEUAAAAjAAAAIwAAACMAAAAjAAAAIwAAACMAAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFAAAAIwAAACMAAAAjAAAAIwAAACMAAAAjAAAAIwAAAAoAAAAjAAAAIwAAACMAAAAjAAAARgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQAAAACAAAABAAAADEAAAACAAAAAwAAAAMAAAAEAAAAMgAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAAAAAAAAAAAAAAAAANQAAAEMAAABDAAAAQwAAAEMAAABDAAAANgAAADQAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMgAAADUAAABDAAAAQwAAAEMAAABDAAAAQwAAAEMAAABDAAAAQwAAAEMAAAA2AAAAAAAAAAAAAAAAAAAANAAAAAIAAAADAAAAAwAAAAMAAAAEAAAAQgAAAEQAAAAAAAAAAAAAACUAAAATAAAAFAAAAAAAAAAAAAAAMgAAADQAAAACAAAAAwAAAAMAAAADAAAAAwAAAAMAAAADAAAAAwAAAAQAAAAyAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAQAAAAAAAAAAAAAAAIAAAADAAAABAAAAAAAAAAAAAAAMgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIgAAACMAAAAjAAAAIwAAACMAAAAjAAAAIwAAACMAAAAjAAAARgAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAARQAAACQAAAAAAAAAAAAAACIAAAAjAAAARgAAADMAAAA1AAAAQwAAAEMAAABDAAAAQwAAAEMAAABDAAAAQwAAABkAAAAUAAAAAAAAAAAAAAASAAAABgAAABQAAAAAAAAAAAAAABIAAAAbAAAAAAAAAAAAAAAAAAAAMwAAADQAAAAAAAAAAAAAADIAAAAzAAAAMwAAADMAAAA0AAAAAgAAAAMAAAADAAAAAwAAAAMAAAADAAAABAAAADEAAAABAAAAAAAAAAAAAAABAAAAMQAAAAEAAAAAAAAAAAAAAAEAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAADIAAAAzAAAAMwAAADMAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAEIAAABDAAAAQwAAAEMAAABEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAIAAAADAAAAAwAAAAMAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAAEUAAAAjAAAAIwAAACMAAAAjAAAAIwAAACMAAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAAAAAAAAAAAAAAAAAAAAAAAyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFAAAAIwAAACMAAAAjAAAAIwAAACMAAAAjAAAAIwAAAAoAAAAjAAAAIwAAACMAAAAjAAAACgAAACMAAAAjAAAAIwAAACMAAABGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAMwAAADMAAAAzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     },
     {
       type = "tilelayer",
@@ -121,11 +126,12 @@ return {
           type = "player",
           shape = "rectangle",
           x = 80,
-          y = 64,
+          y = 80,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {}
         },
@@ -149,11 +155,12 @@ return {
           type = "basic_enemy",
           shape = "rectangle",
           x = 208,
-          y = 144,
+          y = 160,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
             ["direction"] = "down"
@@ -161,38 +168,19 @@ return {
         },
         {
           id = 8,
-          name = "dirtest",
+          name = "",
           type = "basic_enemy",
           shape = "rectangle",
           x = 264,
-          y = 32,
+          y = 48,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
             ["direction"] = "down"
-          }
-        },
-        {
-          id = 7,
-          name = "",
-          type = "keycard_dropper",
-          shape = "rectangle",
-          x = 160,
-          y = 128,
-          width = 16,
-          height = 16,
-          rotation = 0,
-          opacity = 1,
-          visible = true,
-          properties = {
-            ["auth"] = 0,
-            ["holders"] = {
-              3,
-              4
-            }
           }
         },
         {
@@ -201,11 +189,12 @@ return {
           type = "keycard_dropper",
           shape = "rectangle",
           x = 224,
-          y = 32,
+          y = 48,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
             ["auth"] = 1,
@@ -220,16 +209,17 @@ return {
           type = "keycard_reader",
           shape = "rectangle",
           x = 272,
-          y = 112,
+          y = 128,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
-            ["auth"] = 0,
+            ["auth"] = -1,
             ["direction"] = "down",
-            ["target"] = { id = 5 }
+            ["target"] = { id = 27 }
           }
         },
         {
@@ -238,13 +228,15 @@ return {
           type = "keycard_reader",
           shape = "rectangle",
           x = 112,
-          y = 32,
+          y = 48,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
+            ["auth"] = -1,
             ["direction"] = "down",
             ["target"] = { id = 13 }
           }
@@ -255,51 +247,17 @@ return {
           type = "keycard_reader",
           shape = "rectangle",
           x = 368,
-          y = 128,
+          y = 144,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
             ["auth"] = 1,
             ["direction"] = "left",
-            ["target"] = { id = 10 }
-          }
-        },
-        {
-          id = 5,
-          name = "",
-          type = "door",
-          shape = "rectangle",
-          x = 304,
-          y = 224,
-          width = 16,
-          height = 16,
-          rotation = 0,
-          opacity = 1,
-          visible = true,
-          properties = {
-            ["closed"] = true,
-            ["direction"] = "vertical"
-          }
-        },
-        {
-          id = 10,
-          name = "",
-          type = "door",
-          shape = "rectangle",
-          x = 336,
-          y = 112,
-          width = 16,
-          height = 16,
-          rotation = 0,
-          opacity = 1,
-          visible = true,
-          properties = {
-            ["close_after_entry"] = true,
-            ["closed"] = true,
-            ["direction"] = "horizontal"
+            ["target"] = { id = 28 }
           }
         },
         {
@@ -308,14 +266,53 @@ return {
           type = "door",
           shape = "rectangle",
           x = 80,
-          y = 112,
+          y = 128,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
             ["close_after_entry"] = false,
+            ["closed"] = true,
+            ["direction"] = "horizontal"
+          }
+        },
+        {
+          id = 28,
+          name = "",
+          type = "door",
+          shape = "rectangle",
+          x = 336,
+          y = 128,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 0,
+          visible = true,
+          properties = {
+            ["close_after_entry"] = true,
+            ["closed"] = true,
+            ["direction"] = "horizontal"
+          }
+        },
+        {
+          id = 29,
+          name = "",
+          type = "door",
+          shape = "rectangle",
+          x = 416,
+          y = 128,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 0,
+          visible = true,
+          properties = {
+            ["close_after_entry"] = true,
             ["closed"] = true,
             ["direction"] = "horizontal"
           }
@@ -326,14 +323,74 @@ return {
           type = "lazy_enemy",
           shape = "rectangle",
           x = 208,
+          y = 256,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 0,
+          visible = true,
+          properties = {
+            ["direction"] = "down"
+          }
+        },
+        {
+          id = 19,
+          name = "",
+          type = "keycard_reader",
+          shape = "rectangle",
+          x = 432,
+          y = 48,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 0,
+          visible = true,
+          properties = {
+            ["auth"] = -1,
+            ["direction"] = "down",
+            ["target"] = { id = 29 }
+          }
+        },
+        {
+          id = 24,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 160,
+          y = 144,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 0,
+          visible = true,
+          properties = {
+            ["auth"] = 0,
+            ["holders"] = {
+              3,
+              4
+            }
+          }
+        },
+        {
+          id = 27,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 304,
           y = 240,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
+          gid = 0,
           visible = true,
           properties = {
-            ["direction"] = "up"
+            ["close_after_entry"] = false,
+            ["closed"] = true,
+            ["direction"] = "vertical"
           }
         }
       }

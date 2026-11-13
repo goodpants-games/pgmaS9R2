@@ -157,6 +157,10 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         return
     end
 
+    if self:hasSightLineTo(self.world.player) then
+        return
+    end
+
     self.ai = EnemyAi(self)
     self.ai:initMapAwareness()
     self.aiTask = coroutine.create(function()

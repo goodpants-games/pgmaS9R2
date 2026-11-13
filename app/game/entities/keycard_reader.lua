@@ -58,7 +58,9 @@ function KeycardReader:loadProperties(id, props, entLookup)
         local auth = Util.propCheck(props, "auth", "integer", id, "keycard_reader")
         if auth == nil then return end
 
-        self.auth = auth
+        if auth ~= -1 then
+            self.auth = auth
+        end
     end
 
     local frameOfs

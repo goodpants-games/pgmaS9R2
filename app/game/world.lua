@@ -562,7 +562,7 @@ function World:_moveEntities()
     for _, ent in ipairs(self.entities) do
         local oldX, oldY = ent.__g_oldX, ent.__g_oldY
 
-        if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
+        if ent.collision and not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local colX, _, colW, _, colEnt =
                 Collision.gameCollision(ent.x, ent.y, oldX, oldY,
                                         ent.width, ent.height, self._getCol)
@@ -577,6 +577,7 @@ function World:_moveEntities()
                 end
 
                 ent.xVel = ent.xVel * -ent.restitution
+
                 ent.msg:publish("touched", ent, colEnt, dir, 0)
             end
         end
@@ -591,7 +592,7 @@ function World:_moveEntities()
     for _, ent in ipairs(self.entities) do
         local oldX, oldY = ent.__g_oldX, ent.__g_oldY
 
-        if ent.collision and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
+        if ent.collision and not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local _, colY, _, colH, colEnt =
                 Collision.gameCollision(ent.x, ent.y, oldX, oldY,
                                         ent.width, ent.height, self._getCol)

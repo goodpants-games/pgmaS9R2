@@ -1,5 +1,6 @@
 local Util = require("game.util")
 local Resmgr = require("game.resmgr")
+local Const = require("game.consts")
 local TILE_SIZE = require("game.consts").TILE_SIZE
 
 ---@class game.entities.Door: game.entities.Entity
@@ -10,11 +11,15 @@ local Door = batteries.class {
 function Door:new(x, y)
     self:super(x - 8, y - 8, 0, 0)
     self.collision = false
+    self.monitorOnly = true
+    self.colGroup = 0
+    self.colMask = bit.bor(Const.COLGROUP_NPC, Const.COLGROUP_PLAYER)
     self.touchMonitor = false
 
     self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/door.json"))
     self.render.sprite.alignment = "topleft"
     self.closed = true
+    self.closeAfterEntry = false
 
     ---@type string?
     self.direction = nil
@@ -34,8 +39,15 @@ function Door:loadProperties(id, props)
 
     local closed = Util.propCheck(props, "closed", "boolean", id, "door")
     if closed == nil then return end
+
+    local closeAfterEntry = false
+    if props.close_after_entry then
+        closeAfterEntry =
+            Util.propCheck(props, "close_after_entry", "boolean", id, "door") --[[@as boolean]]
+    end
     
     self.closed = props.closed
+    self.closeAfterEntry = closeAfterEntry
     self.direction = direction
     self:_setAnim(true)
     self.render.sprite:stop()
@@ -43,8 +55,24 @@ function Door:loadProperties(id, props)
     if self.direction == "vertical" then
         self.render.ox = -11
         self.render.oy = -16
+        self.width = 16
+        self.height = 32
+        self.zIndex = -1
     elseif self.direction == "horizontal" then
         self.render.oy = -12
+        self.width = 32
+        self.height = 16
+    end
+
+    print("close after entry:", self.closeAfterEntry)
+
+    if self.closeAfterEntry then
+        self.collision = true
+        self.touchMonitor = true
+        self.msg:subscribe("touchEnded", self._touchEnded)
+
+        self.render.sprite = Resmgr.newSprite("/res/sprites/door2.json")
+        self.render.sprite.alignment = "topleft"
     end
 end
 
@@ -72,6 +100,16 @@ function Door:_setAnim(invert)
 
     print("play anim", self.direction .. postfix)
     self.render.sprite:play(self.direction .. postfix)
+end
+
+function Door:_touchEnded(oent)
+    if not oent then
+        return
+    end
+
+    if not self.closed then
+        self:activate()
+    end
 end
 
 function Door:activate()

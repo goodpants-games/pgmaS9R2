@@ -278,6 +278,7 @@ return {
           opacity = 1,
           visible = true,
           properties = {
+            ["close_after_entry"] = true,
             ["closed"] = true,
             ["direction"] = "horizontal"
           }
@@ -295,6 +296,7 @@ return {
           opacity = 1,
           visible = true,
           properties = {
+            ["close_after_entry"] = false,
             ["closed"] = true,
             ["direction"] = "horizontal"
           }

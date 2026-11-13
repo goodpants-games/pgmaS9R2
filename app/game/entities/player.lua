@@ -83,6 +83,9 @@ function Player:update()
             self.isDisguised = true
             self.renderSprite = self.mutantSprite
             self.disguiseEquipTimer = nil
+        elseif self.world:isInputPressed("interact") then
+            self.disguiseEquipTimer = nil
+            self:_removeDisguise()
         end
     end
 
@@ -211,20 +214,24 @@ function Player:_interactUpdate()
 end
 
 function Player:_emptyInteract()
-    if self.isDisguised then
-        self.isDisguised = false
-        self.renderSprite = self.squidSprite
-
-        local ent = self.world:newEntity("disguise_pickup", self:getCenterPos())
-        if ent then
-            self.world:addEntity(ent)
-        end
-    elseif self.equippedItem then
+    if self.equippedItem then
         local w, h = self.width, self.height
         self.equippedItem.x = math.round(self:getCenterX() - w / 2)
         self.equippedItem.y = math.round(self:getCenterY() - h / 2)
         self.world:addEntity(self.equippedItem)
         self.equippedItem = nil
+    elseif self.isDisguised then
+        self:_removeDisguise()
+    end
+end
+
+function Player:_removeDisguise()
+    self.isDisguised = false
+    self.renderSprite = self.squidSprite
+
+    local ent = self.world:newEntity("disguise_pickup", self:getCenterPos())
+    if ent then
+        self.world:addEntity(ent)
     end
 end
 
@@ -292,7 +299,7 @@ end
 ---@param item game.entities.Entity
 ---@return boolean
 function Player:pickUpItem(item)
-    if self.equippedItem or self.isDisguised then
+    if self.equippedItem then
         return false
     end
 

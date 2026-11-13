@@ -29,6 +29,22 @@ return {
   tilecount = 256,
   tiles = {
     {
+      id = 0,
+      type = "wall"
+    },
+    {
+      id = 1,
+      type = "wall"
+    },
+    {
+      id = 2,
+      type = "wall"
+    },
+    {
+      id = 3,
+      type = "wall"
+    },
+    {
       id = 4,
       type = "top"
     },

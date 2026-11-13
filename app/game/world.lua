@@ -18,7 +18,7 @@ function World:new()
     self.curFrame = 0
 
     self._nonCollidableTiles = {}
-    self._topTiles = {}
+    self._wallTiles = {}
     
     -- store button input states for the current and last frame
     -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
@@ -394,7 +394,7 @@ end
 
 function World:_loadMap()
     -- load tileset data
-    table.clear(self._topTiles)
+    table.clear(self._wallTiles)
     table.clear(self._nonCollidableTiles)
 
     local aiFlagsTileset = nil ---@type pklove.tiled.Tileset
@@ -407,7 +407,8 @@ function World:_loadMap()
 
                 if tile.type == "top" then
                     self._nonCollidableTiles[gid] = true
-                    self._topTiles[gid] = true
+                elseif tile.type == "wall" then
+                    self._wallTiles[gid] = true
                 end
             end
         elseif tileset.name == "ai_flags_tileset" then
@@ -472,7 +473,7 @@ function World:_loadMap()
     for i=1, mapWidth * mapHeight do
         local cell = colLayer.data[i]
         local gid = bit.band(cell, 0x0fffffff)
-        if self._topTiles[gid] then
+        if not self._wallTiles[gid] then
             colLayer.data[i] = 0
             topLayer.data[i] = cell
         else

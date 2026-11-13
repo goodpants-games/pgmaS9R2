@@ -19,17 +19,17 @@ function Player:new(x, y)
     self:addTag("player")
 
     self.squidSprite = Resmgr.newSprite("/res/sprites/squid_player.json")
-    self.squidSprite.alignment = "topleft"
+    self.squidSprite.alignment = "center"
     self.mutantSprite = Resmgr.newSprite("/res/sprites/mutant_player.json")
-    self.mutantSprite.alignment = "topleft"
+    self.mutantSprite.alignment = "center"
     
     self.collision = true
     self.touchMonitor = true
     self.colGroup = Const.COLGROUP_PLAYER
     self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_INTERACT_AREA)
     self.renderSprite = self.squidSprite
-    self.renderOx = -2
-    self.renderOy = -24
+    self.renderOx = 6
+    self.renderOy = -4
 
     self.cancelFire = false
     self.canInteract = true
@@ -258,12 +258,13 @@ function Player:postUpdate()
     end
 
     if self.equippedItem then
-        self.equippedItem.x = self.x + 14
-        self.equippedItem.y = self.y + 20
+        self.equippedItem.x = self.x
+        self.equippedItem.y = self.y
     end
 end
 
 function Player:render()
+    Lg.push()
     Lg.setColor(1, 1, 1)
     Lg.translate(self.renderOx, self.renderOy)
     self.renderSprite:draw(math.round(self.x), math.round(self.y))
@@ -272,9 +273,12 @@ function Player:render()
         drawEntity(self.equippedItem, self.alwaysDrawOverTilemap)
     end
 
-    -- if Debug.enabled then
-    --     Lg.rectangle("line", math.round(ent.x), math.round(ent.y), math.round(ent.width), math.round(ent.height))
-    -- end
+    Lg.pop()
+
+    if Debug.enabled then
+        Lg.rectangle("line", math.round(self.x), math.round(self.y),
+                     math.round(self.width), math.round(self.height))
+    end
 end
 
 function Player:equipDisguise()

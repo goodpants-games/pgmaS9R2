@@ -11,9 +11,9 @@ function LazyEnemy:new(x, y)
     self:addTag("enemy")
 
     self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/enemy2.json"))
-    self.render.sprite.alignment = "topleft"
-    self.render.oy = -24
-    self.render.ox = -2
+    self.render.sprite.alignment = "center"
+    self.render.ox = 6
+    self.render.oy = 8
 
     self.aiBehavior.chasePlayer = false
     self.aiBehavior.investigateKills = false

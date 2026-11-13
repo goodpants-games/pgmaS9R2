@@ -31,7 +31,7 @@ function Keycard:new(x, y)
 end
 
 function Keycard:update()
-    self.render.sprite.cel = self.auth + 1
+    self.render.sprite.cel = self.auth + 2
 
     self.zVel = self.zVel + self.zGrav
     self.zOffset = self.zOffset + self.zVel

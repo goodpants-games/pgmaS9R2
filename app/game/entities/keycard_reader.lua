@@ -3,12 +3,12 @@ local Resmgr = require("game.resmgr")
 local Const = require("game.consts")
 local TILE_SIZE = require("game.consts").TILE_SIZE
 
----@class game.entities.Computer: game.entities.Entity
-local Computer = batteries.class {
+---@class game.entities.KeycardReader: game.entities.Entity
+local KeycardReader = batteries.class {
     extends = require("game.entities.base")
 }
 
-function Computer:new(x, y)
+function KeycardReader:new(x, y)
     self:super(x - 7, y, 15, 16)
     self:addTag("interactable")
 
@@ -18,34 +18,33 @@ function Computer:new(x, y)
     self.colMask = 0
     self.auth = nil ---@type integer?
 
-    self.tileX = math.floor((x - 8) / TILE_SIZE)
-    self.tileY = math.floor((y - 8) / TILE_SIZE)
-
-    self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/computer.json"))
+    self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/keycard_reader.json"))
     self.render.sprite.alignment = "topleft"
-
-    self.render.oy = -24
+    self.render.ox = -1
+    self.render.oy = -7
 
     ---@type game.entities.Door[]
     self.targets = {}
 
     self.hasFocus = false
 
-    self.msg:subscribe("addedToWorld", self._added)
     self.msg:subscribe("interactFocusChanged", self._interactFocusChanged)
     self.msg:subscribe("interact", self._interact)
 end
 
-function Computer:loadProperties(id, props, entLookup)
+function KeycardReader:loadProperties(id, props, entLookup)
+    local dir = Util.propCheck(props, "direction", "string", id, "keycard_reader")
+    if not dir then return end
+
     if props.target then
-        local target = Util.propCheck(props, "target", "object", id, "computer")
+        local target = Util.propCheck(props, "target", "object", id, "keycard_reader")
         if target == nil then return end
 
         self.targets[1] = softassert( entLookup(target) ) --[[@as any]]
     end
 
     if props.targets then
-        local targets = Util.propCheck(props, "targets", "list[object]", id, "computer")
+        local targets = Util.propCheck(props, "targets", "list[object]", id, "keycard_reader")
         if targets == nil then return end
 
         for _, target in ipairs(targets) do
@@ -56,19 +55,29 @@ function Computer:loadProperties(id, props, entLookup)
     print(("read %i targets"):format(#self.targets))
 
     if props.auth then
-        local auth = Util.propCheck(props, "auth", "integer", id, "computer")
+        local auth = Util.propCheck(props, "auth", "integer", id, "keycard_reader")
         if auth == nil then return end
 
         self.auth = auth
     end
-end
 
-function Computer:_added()
-    self.world:setCol(self.tileX, self.tileY, 1)
+    local frameOfs
+    if dir == "down" then
+        frameOfs = 0
+    elseif dir == "right" then
+        frameOfs = 1
+    elseif dir == "left" then
+        frameOfs = 2
+    else
+        warn(("{object %i '%s'}': 'direction' property must be 'down', 'left', or 'right'"):format(id, "keycard_reader"))
+    end
+
+    local color = (self.auth or -1) + 1
+    self.render.sprite.cel = color * 3 + frameOfs + 1
 end
 
 ---@param status boolean
-function Computer:_interactFocusChanged(status)
+function KeycardReader:_interactFocusChanged(status)
     if status then
         print("computer Touche")
     else
@@ -79,7 +88,7 @@ function Computer:_interactFocusChanged(status)
 end
 
 ---@param plr game.entities.Player
-function Computer:_interact(plr)
+function KeycardReader:_interact(plr)
     if self.auth then
         local card = plr.equippedItem --[[@as any]]
         if card and not card:hasTag("keycard") then
@@ -102,7 +111,7 @@ function Computer:_interact(plr)
 end
 
 ---@param txt string
-function Computer:_popupText(txt)
+function KeycardReader:_popupText(txt)
     local x = self:getCenterX()
     local y = self:getCenterY() - 32
     local ent = Util.newEntity("text_popup", x, y, txt)
@@ -111,4 +120,4 @@ function Computer:_popupText(txt)
     self.world:addEntity(ent)
 end
 
-return Computer
+return KeycardReader

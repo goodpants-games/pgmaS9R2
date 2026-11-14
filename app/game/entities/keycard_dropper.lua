@@ -1,8 +1,8 @@
 local Util = require("game.util")
 
----@class game.entities.KeycardDropper: game.entities.Entity
+---@class game.entities.KeycardDropper: game.Entity
 local KeycardDropper = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function KeycardDropper:new(x, y)
@@ -34,7 +34,7 @@ function KeycardDropper:loadProperties(id, props, entLookup)
     end
 end
 
----@param holder game.entities.Entity
+---@param holder game.Entity
 function KeycardDropper:_holderDied(holder)
     print("holder die :(")
     table.remove_value(self.holders, holder)

@@ -7,9 +7,9 @@ local Pathfinding = require "game.pathfind"
 local Resmgr = require "game.resmgr"
 local DirAnim = require "game.util.dir_anim"
 
----@class game.entities.Enemy: game.entities.Entity
+---@class game.entities.Enemy: game.Entity
 local Enemy = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function Enemy:new(x, y, w, h)

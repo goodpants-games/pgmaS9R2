@@ -3,9 +3,9 @@ local Resmgr = require("game.resmgr")
 local Const = require("game.consts")
 local TILE_SIZE = require("game.consts").TILE_SIZE
 
----@class game.entities.Door: game.entities.Entity
+---@class game.entities.Door: game.Entity
 local Door = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function Door:new(x, y)

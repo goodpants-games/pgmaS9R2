@@ -37,9 +37,9 @@ function World:new()
     self.mouseX = 0.0
     self.mouseY = 0.0
 
-    ---@type game.entities.Entity[]
+    ---@type game.Entity[]
     self.entities = {}
-    ---@type game.entities.Entity?
+    ---@type game.Entity?
     self.player = nil
 
     self.mapWidth = 0
@@ -48,11 +48,11 @@ function World:new()
     self.aiFlags = {} ---@type integer[][]
 
     ---@private
-    ---@type game.entities.Entity[]
+    ---@type game.Entity[]
     self._renderOrder = {}
 
     ---@private
-    ---@type game.entities.Entity[]
+    ---@type game.Entity[]
     self._collisionEntities = {}
     
     ---@private
@@ -232,12 +232,12 @@ end
 ---@param x number
 ---@param y number
 ---@param ... any
----@return game.entities.Entity?
+---@return game.Entity?
 function World:newEntity(entType, x, y, ...)
     return Util.newEntity(entType, x, y, ...)
 end
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 ---@return boolean wasAdded
 function World:addEntity(ent)
     if not table.index_of(self.entities, ent) then
@@ -250,7 +250,7 @@ function World:addEntity(ent)
     end
 end
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 function World:removeEntity(ent)
     if ent.world == self then
         ent._removeOnFrameEnd = true
@@ -259,7 +259,7 @@ function World:removeEntity(ent)
 end
 
 ---@param name string
----@return game.entities.Entity?
+---@return game.Entity?
 function World:findEntityByName(name)
     for _, ent in ipairs(self.entities) do
         if ent.name == name then
@@ -271,7 +271,7 @@ function World:findEntityByName(name)
 end
 
 ---@param tag string
----@return game.entities.Entity[]
+---@return game.Entity[]
 function World:findEntitiesWithTag(tag)
     local res = {}
     for _, ent in ipairs(self.entities) do
@@ -507,7 +507,7 @@ function World:_loadMapObjects()
         if layer.type == "objectgroup" then
             ---@cast layer pklove.tiled.ObjectLayer
             for _, obj in ipairs(layer.objects) do
-                local ent ---@type game.entities.Entity?
+                local ent ---@type game.Entity?
                 local shape = obj.shape
                 
                 if shape == "rectangle" then

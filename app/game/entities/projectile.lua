@@ -2,9 +2,9 @@ local RectRenderer = require("game.util").RectRenderer
 local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
 
----@class game.entities.Projectile: game.entities.Entity
+---@class game.entities.Projectile: game.Entity
 local Projectile = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function Projectile:new(x, y)
@@ -20,7 +20,7 @@ function Projectile:new(x, y)
     self.alwaysDrawOverTilemap = false
 
     self.isAttached = false
-    ---@type game.entities.Entity?
+    ---@type game.Entity?
     self.entAttachedTo = nil
     self.hasPickupFocus = false
 

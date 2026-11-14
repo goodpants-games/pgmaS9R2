@@ -2,9 +2,9 @@ local Util = require("game.util")
 local Const = require("game.consts")
 local Resmgr = require("game.resmgr")
 
----@class game.entities.Keycard: game.entities.Entity
+---@class game.entities.Keycard: game.Entity
 local Keycard = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function Keycard:new(x, y)

@@ -1,8 +1,8 @@
 local const = require("game.consts")
 
----@class game.entities.GunSight: game.entities.Entity
+---@class game.entities.GunSight: game.Entity
 local GunSight = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function GunSight:new(x, y)

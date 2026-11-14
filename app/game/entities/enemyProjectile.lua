@@ -2,9 +2,9 @@ local RectRenderer = require("game.util").RectRenderer
 local centeredRect = require("game.util").centeredRect
 local Const = require("game.consts")
 
----@class game.entities.EnemyProjectile: game.entities.Entity
+---@class game.entities.EnemyProjectile: game.Entity
 local EnemyProjectile = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function EnemyProjectile:new(x, y)

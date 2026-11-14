@@ -3,9 +3,9 @@ local Resmgr = require("game.resmgr")
 local Const = require("game.consts")
 local TILE_SIZE = require("game.consts").TILE_SIZE
 
----@class game.entities.KeycardReader: game.entities.Entity
+---@class game.entities.KeycardReader: game.Entity
 local KeycardReader = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function KeycardReader:new(x, y)

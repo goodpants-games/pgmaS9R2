@@ -13,7 +13,7 @@ function RectRenderer:new(r, g, b)
     self.b = b or 1.0
 end
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 function RectRenderer:draw(ent)
     Lg.setColor(self.r, self.g, self.b)
     Lg.rectangle("fill", ent.x, ent.y, ent.width, ent.height)
@@ -64,7 +64,7 @@ end
 ---@param x number
 ---@param y number
 ---@param ... any
----@return game.entities.Entity?
+---@return game.Entity?
 function Util.newEntity(entType, x, y, ...)
     if not entityTypes then
         loadEntityTypes()     
@@ -150,7 +150,7 @@ end
 
 --------------------------------- miscellaneous --------------------------------
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 ---@param overTilemapFilter boolean
 function Util.drawEntity(ent, overTilemapFilter)
     if not ent.visible then return end

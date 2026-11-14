@@ -9,9 +9,9 @@ local Const = require("game.consts")
 local FIRE_CHARGE_MIN = 40
 local ANGLE_SNAP = 0.00001
 
----@class game.entities.Player: game.entities.Entity
+---@class game.entities.Player: game.Entity
 local Player = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function Player:new(x, y)
@@ -39,7 +39,7 @@ function Player:new(x, y)
 
     self.isDisguised = false
     self.disguiseEquipTimer = nil ---@type number?
-    self.equippedItem = nil ---@type game.entities.Entity?
+    self.equippedItem = nil ---@type game.Entity?
 
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
@@ -48,7 +48,7 @@ function Player:new(x, y)
     self.gunSight = newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight:setColor(1, 1, 0)
 
-    self._lastInteractable = nil  ---@type game.entities.Entity?
+    self._lastInteractable = nil  ---@type game.Entity?
     self._fireDirX = 0.0
     self._fireDirY = 0.0
 end
@@ -296,7 +296,7 @@ function Player:equipDisguise()
     return true
 end
 
----@param item game.entities.Entity
+---@param item game.Entity
 ---@return boolean
 function Player:pickUpItem(item)
     if self.equippedItem then

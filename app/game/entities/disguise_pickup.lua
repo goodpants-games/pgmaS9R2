@@ -2,9 +2,9 @@ local Util = require("game.util")
 local Const = require("game.consts")
 local Resmgr = require("game.resmgr")
 
----@class game.entities.DisguisePickup: game.entities.Entity
+---@class game.entities.DisguisePickup: game.Entity
 local DisguisePickup = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function DisguisePickup:new(x, y)

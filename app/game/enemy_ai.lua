@@ -5,7 +5,7 @@ local Pathfind = require("game.pathfind")
 local TILE_SIZE = const.TILE_SIZE
 
 ---@class game.EnemyAi: batteries.Class
----@overload fun(entity:game.entities.Entity):game.EnemyAi
+---@overload fun(entity:game.Entity):game.EnemyAi
 local EnemyAI = batteries.class()
 
 --[[
@@ -25,7 +25,7 @@ using this process:
 5. if there are no more unchecked tiles, the algorithm is finished.
 --]]
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 function EnemyAI:new(ent)
     local world = ent.world
     self.entity = ent
@@ -397,10 +397,10 @@ function EnemyAI:markTilesInSightOf(origX, origY, markId, limitPerFrame)
 end
 
 ---@class game.EnemyAI.SearchBehavior
----@field getPointOfInterest (fun(ent:game.entities.Entity):(x:number,y:number))?
----@field beginMove fun(ent:game.entities.Entity, x:number, y:number)
----@field endMove fun(ent:game.entities.Entity)
----@field isCurrentlyMoving fun(ent:game.entities.Entity):boolean
+---@field getPointOfInterest (fun(ent:game.Entity):(x:number,y:number))?
+---@field beginMove fun(ent:game.Entity, x:number, y:number)
+---@field endMove fun(ent:game.Entity)
+---@field isCurrentlyMoving fun(ent:game.Entity):boolean
 
 ---Coroutine proceure to pathfind.
 ---
@@ -490,7 +490,7 @@ local function searchCoroSightCoro(self)
     self:markTilesInSightOf( coroutine.yield() )
 end
 
----@param ent game.entities.Entity
+---@param ent game.Entity
 ---@param behavior game.EnemyAI.SearchBehavior
 function EnemyAI:searchCoroutine(ent, behavior)
     local world = ent.world

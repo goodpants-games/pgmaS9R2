@@ -1,13 +1,13 @@
 local Consts = require("game.consts")
 
----@class game.entities.Entity: batteries.Class
----@overload fun(x:number?, y:number?, w:number?, h:number?):game.entities.Entity
+---@class game.Entity: batteries.Class
+---@overload fun(x:number?, y:number?, w:number?, h:number?):game.Entity
 ---@field msg any
----@field update fun(self:game.entities.Entity)?
----@field postUpdate fun(self:game.entities.Entity)?
----@field loadProperties fun(self:game.entities.Entity, id:integer, props:{[string]:any}, entLookup:fun(id:integer):game.entities.Entity)?
+---@field update fun(self:game.Entity)?
+---@field postUpdate fun(self:game.Entity)?
+---@field loadProperties fun(self:game.Entity, id:integer, props:{[string]:any}, entLookup:fun(id:integer):game.Entity)?
 local Entity = batteries.class {
-    name = "game.entities.Entity"
+    name = "game.Entity"
 }
 
 local nextEntityId = 0
@@ -45,9 +45,9 @@ function Entity:new(x, y, w, h)
     -- touch monitor properties --
 
     self.touchMonitor = false
-    ---@type game.entities.Entity[]?
+    ---@type game.Entity[]?
     self._touching = nil
-    ---@type game.entities.Entity[]?
+    ---@type game.Entity[]?
     self._prevTouching = nil
 
     -- render properties --
@@ -55,7 +55,7 @@ function Entity:new(x, y, w, h)
     self.zOffset = 0.0 -- how many pixels this sprite is lifted from the ground
     self.alwaysDrawOverTilemap = false
     self.visible = true
-    ---@type (fun(self:game.entities.Entity)|table)?
+    ---@type (fun(self:game.Entity)|table)?
     self.render = nil
 end
 
@@ -100,7 +100,7 @@ function Entity:getCenterPos()
            self.y + self.height / 2
 end
 
----@return game.entities.Entity[]
+---@return game.Entity[]
 function Entity:getOverlappingEntities()
     return self._touching or {}
 end

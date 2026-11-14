@@ -1,6 +1,6 @@
----@class game.entities.NpcPath: game.entities.Enemy
+---@class game.entities.NpcPath: game.Entity
 local NpcPath = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 function NpcPath:new(x, y, poly)

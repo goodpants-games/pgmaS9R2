@@ -1,8 +1,8 @@
 local FontRes = require "fontres"
 
----@class game.entities.TextPopup: game.entities.Entity
+---@class game.entities.TextPopup: game.Entity
 local TextPopup = batteries.class {
-    extends = require("game.entities.base")
+    extends = require("game.entity")
 }
 
 ---@param x number

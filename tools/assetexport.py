@@ -16,6 +16,9 @@ ASEPRITE_ARGS = [
     '--format', 'json-array',
     '--list-tags',
 ]
+TILED_ARGS = [
+    '--detach-templates'
+]
 IGNORED_EXTENSIONS = [
     '.tiled-project',
     '.tiled-session',
@@ -24,12 +27,15 @@ IGNORED_EXTENSIONS = [
 artifacts: list[str] = []
 ignored_artifacts: list[str] = []
 dry_run: bool = False
+always_update: bool = False
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, *kwargs)
 
 
 def needs_update(src_path: str, dst_path: str) -> bool:
+    if always_update: return True
+
     # first, determine if out_path is out of date
     has_mtime = False
     if os.path.exists(dst_path):
@@ -73,7 +79,11 @@ def process_tmx(src_path: str, dst_path: str) -> bool:
     intermediate_path = os.path.normpath(intermediate_path)
 
     eprint(f'[TMX] {src_path} => {dst_path}')
-    tiled = subprocess.run([TILED, '--export-map', 'lua', src_path, intermediate_path])
+
+    args: list[str] = [TILED]
+    args += TILED_ARGS
+    args += ['--export-map', 'lua', src_path, intermediate_path]
+    tiled = subprocess.run(args)
     if tiled.returncode != 0:
         return False
     
@@ -94,7 +104,11 @@ def process_tsx(src_path: str, dst_path: str) -> bool:
     intermediate_path = os.path.normpath(intermediate_path)
 
     eprint(f'[TSX] {src_path} => {dst_path}')
-    tiled = subprocess.run([TILED, '--export-tileset', 'lua', src_path, intermediate_path])
+
+    args: list[str] = [TILED]
+    args += TILED_ARGS
+    args += ['--export-tileset', 'lua', src_path, intermediate_path]
+    tiled = subprocess.run(args)
     if tiled.returncode != 0:
         return False
     
@@ -255,11 +269,13 @@ def update_gitignore() -> bool:
 
 
 def main():
-    global dry_run
+    global dry_run, always_update
     
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == '--dry-run':
             dry_run = True
+        if sys.argv[i] == '--always-update' or sys.argv[i] == '-a':
+            always_update = True
     
     s = False
     while True:

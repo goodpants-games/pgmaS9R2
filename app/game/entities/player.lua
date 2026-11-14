@@ -239,17 +239,18 @@ function Player:postUpdate()
     local world = softassert(self.world)
     if not world then return end
 
-    local centerX = self.x + self.width/2
-    local centerY = self.y + self.height/2
+    local centerX, centerY = self:getCenterPos()
 
     if self.fireCharge > 0 then
         -- update sights. this is in post-update so that the mouse position reading
         -- doesn't lag behind the camera update.
+        -- local mouseX = world.camX + App.mouseX
+        -- local mouseY = world.camY + App.mouseY
         local mouseX = world.camX + App.mouseX
         local mouseY = world.camY + App.mouseY
     
-        local fireDx = mouseX - centerX
-        local fireDy = mouseY - centerY
+        local fireDx = mouseX - (world.camX + App.scrW / 2)
+        local fireDy = mouseY - (world.camY + App.scrH / 2)
         if fireDx * fireDx + fireDy * fireDy == 0 then
             fireDx, fireDy = 1, 0
         end

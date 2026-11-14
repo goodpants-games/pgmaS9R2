@@ -4,6 +4,7 @@ local Consts = require("game.consts")
 local Collision = require("game.collision")
 local Util = require("game.util")
 local EnemyConductor = require("game.enemy_conductor")
+local Camera = require("game.camera")
 
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "interact"}
@@ -69,13 +70,14 @@ function World:new()
 
     self:_loadMap()
     self.enemyConductor = EnemyConductor(self)
+    self.camera = Camera(self)
 end
 
 function World:update()
     Debug.draw:push()
     Debug.draw:translate(-math.round(self.camX), -math.round(self.camY))
 
-    local player = self.player
+    local player = self.player --[[@as game.entities.Player]]
 
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
@@ -114,10 +116,9 @@ function World:update()
         end
     end
 
-    if player then
-        self.camX = math.round(player.x) + player.width / 2 - App.scrW / 2
-        self.camY = math.round(player.y) + player.height / 2 - App.scrH / 2
-    end
+    self.camera:update()
+    self.camX = math.round(self.camera.x) - App.scrW / 2
+    self.camY = math.round(self.camera.y) - App.scrH / 2
 
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
@@ -525,7 +526,7 @@ function World:_loadMapObjects()
                 elseif shape == "polyline" then
                     local poly = {
                         closed = false,
-                        points = obj.polygon
+                        points = obj.polyline
                     }
                     ent = self:newEntity(obj.type, obj.x, obj.y, poly)
 

@@ -344,7 +344,7 @@ function Player:_hit(hitVx, hitVy)
     self.gunSight:remove()
 
     -- drop equipped item and disguise
-    if self.equippedItem then
+    if self.equippedItem or self.isDisguised then
         local itemDropX = -hitVx
         local itemDropY = -hitVy
 
@@ -354,22 +354,26 @@ function Player:_hit(hitVx, hitVy)
             local pickup = self:_removeDisguise()
             local disguiseDropX = itemDropX
             local disguiseDropY = itemDropY
-            local separation = math.rad(20)
 
-            disguiseDropX, disguiseDropY =
-                math.rotate(disguiseDropX, disguiseDropY, separation)
-            itemDropX, itemDropY =
-                math.rotate(itemDropX, itemDropY, -separation)
+            if self.equippedItem then
+                local separation = math.rad(20)
+                disguiseDropX, disguiseDropY =
+                    math.rotate(disguiseDropX, disguiseDropY, separation)
+                itemDropX, itemDropY =
+                    math.rotate(itemDropX, itemDropY, -separation)
+            end
             
             pickup:launch(disguiseDropX, disguiseDropY)
         end
 
-        local w, h = self.equippedItem.width, self.equippedItem.height
-        self.equippedItem.x = math.round(self:getCenterX() - w / 2)
-        self.equippedItem.y = math.round(self:getCenterY() - h / 2)
-        self.world:addEntity(self.equippedItem)
-        self.equippedItem:launch(itemDropX, itemDropY)
-        self.equippedItem = nil
+        if self.equippedItem then
+            local w, h = self.equippedItem.width, self.equippedItem.height
+            self.equippedItem.x = math.round(self:getCenterX() - w / 2)
+            self.equippedItem.y = math.round(self:getCenterY() - h / 2)
+            self.world:addEntity(self.equippedItem)
+            self.equippedItem:launch(itemDropX, itemDropY)
+            self.equippedItem = nil
+        end
     end
 
     self:publish("died")

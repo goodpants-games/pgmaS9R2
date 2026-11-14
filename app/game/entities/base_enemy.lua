@@ -147,10 +147,25 @@ end
 -- must be called within a coroutine...
 function Enemy:_moveToHome()
     local startX, startY = self:getCenterPos()
+
+    -- go to the nearest patrol path point
+    local homeX, homeY = self._homeX, self._homeY
+    if self.patrolPath then
+        local minDist = math.huge
+        for i=1, self.patrolPath:getPointCount() do
+            local x, y = self.patrolPath:getPoint(i)
+            local dist = math.distance(startX, startY, x, y)
+            if dist < minDist then
+                minDist = dist
+                homeX, homeY = x, y
+            end
+        end
+    end
+
     startX = math.floor(startX / Const.TILE_SIZE)
     startY = math.floor(startY / Const.TILE_SIZE)
-    local endX = math.floor(self._homeX / Const.TILE_SIZE)
-    local endY = math.floor(self._homeY / Const.TILE_SIZE)
+    local endX = math.floor(homeX / Const.TILE_SIZE)
+    local endY = math.floor(homeY / Const.TILE_SIZE)
     local path = Pathfinding.pathfind(self.world, startX, startY, endX, endY)
     if not path then
         softerror("could not create path?")
@@ -169,6 +184,8 @@ function Enemy:_moveToHome()
             coroutine.yield()
         end
     end
+
+    self.isAlert = false
 end
 
 function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
@@ -228,7 +245,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
 
         self:_moveToHome()
-        self.isAlert = false
+        return self:_patrolRoutine()
     end)
 end
 
@@ -445,11 +462,32 @@ function Enemy:_sightRoutine()
         end
 
         self:_moveToHome()
-        self.isAlert = false
-        self.aiTask = coroutine.create(function()
-            return self:_patrolRoutine()
-        end)
+        return self:_patrolRoutine()
     end)
+end
+
+---@param path any
+---@param index integer
+---@param dir integer
+---@return integer index, integer dir
+local function getNextPathIndex(path, index, dir)
+    local pointCount = path:getPointCount()
+
+    if path.closed then
+        index = math.wrap(index + dir, 1, pointCount + 1)
+    else
+        if dir == 1 and index == pointCount then
+            dir = -1
+            index = index - 1
+        elseif dir == -1 and index == 1 then
+            dir = 1
+            index = 2
+        else
+            index = index + dir
+        end
+    end
+
+    return index, dir
 end
 
 function Enemy:_patrolRoutine()
@@ -458,20 +496,39 @@ function Enemy:_patrolRoutine()
     end
 
     -- starting vertex is the closest one
-    local patrolPathIndex
-    local moveDir = 1
+    local pathIndex
     do
         local cx, cy = self:getCenterPos()
 
-        patrolPathIndex = 1
+        pathIndex = 1
         local minDist = math.distance(cx, cy, self.patrolPath:getPoint(1))
         for i=2, self.patrolPath:getPointCount() do
             local dist = math.distance(cx, cy, self.patrolPath:getPoint(i))
             if dist < minDist then
-                patrolPathIndex = i
+                pathIndex = i
                 minDist = dist
             end
         end
+    end
+
+    -- determine initial path traversal direction
+    -- the enemy shall traverse the path according to the direction it is
+    -- currently facing
+    local moveDir
+    do
+        local path = self.patrolPath
+        local angX = math.cos(self.faceDir)
+        local angY = math.sin(self.faceDir)
+        local curX, curY = path:getPoint(pathIndex)
+        local prevX, prevY = path:getPoint(getNextPathIndex(path, pathIndex, -1))
+        local nextX, nextY = path:getPoint(getNextPathIndex(path, pathIndex, 1))
+        local prevDx, prevDy = prevX - curX, prevY - curY
+        local nextDx, nextDy = nextX - curX, nextY - curY
+
+        local nextDot = angX * nextDx + angY * nextDy
+        local prevDot = angX * prevDx + angY * prevDy
+
+        moveDir = nextDot > prevDot and 1 or -1
     end
 
     self.moveSpeed = PATROL_MOVE_SPEED
@@ -486,19 +543,7 @@ function Enemy:_patrolRoutine()
 
         -- get next path index
         local nextIndex
-        if path.closed then
-            nextIndex = patrolPathIndex % pointCount + 1
-        else
-            if moveDir == 1 and patrolPathIndex == pointCount then
-                moveDir = -1
-                nextIndex = patrolPathIndex - 1
-            elseif moveDir == -1 and patrolPathIndex == 1 then
-                moveDir = 1
-                nextIndex = 2
-            else
-                nextIndex = patrolPathIndex + moveDir
-            end
-        end
+        nextIndex, moveDir = getNextPathIndex(path, pathIndex, moveDir)
         
         -- move to it please.
         local x, y = path:getPoint(nextIndex)
@@ -510,15 +555,12 @@ function Enemy:_patrolRoutine()
             coroutine.yield()
         end
 
-        self._homeX = x
-        self._homeY = y
-
         -- wait 1.5 secs before moving to the next point
         for i=1, 90 do
             coroutine.yield()
         end
 
-        patrolPathIndex = nextIndex
+        pathIndex = nextIndex
     end
 end
 

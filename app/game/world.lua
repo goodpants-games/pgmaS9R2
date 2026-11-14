@@ -7,7 +7,7 @@ local EnemyConductor = require("game.enemy_conductor")
 local Camera = require("game.camera")
 
 local TILE_SIZE = Consts.TILE_SIZE
-local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "interact"}
+local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "interact", "camSwitch"}
 local ENTITY_RENDER_TAG = "__gtag_render"
 
 ---@class game.World: batteries.Class

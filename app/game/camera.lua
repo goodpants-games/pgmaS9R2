@@ -1,6 +1,3 @@
-local Pathfind = require("game.pathfind")
-local TILE_SIZE = require("game.consts").TILE_SIZE
-
 ---@class game.Camera: batteries.Class
 ---@overload fun(world:game.World):game.Camera
 local Camera = batteries.class()
@@ -26,7 +23,12 @@ function Camera:update()
     local targetOy = 0.0
     local approachSpeed = 0.1
 
-    if player.fireCharge > 0 and player.gunSight and player.gunSight.world then
+    local gunSight = player.gunSight ---@type game.entities.GunSight?
+    if gunSight and not gunSight.world then
+        gunSight = nil
+    end
+
+    if player.fireCharge > 0 and gunSight and self.world:isInputDown("camSwitch") then
         local gunSight = player.gunSight
         local posAccumX = 0.0
         local posAccumY = 0.0
@@ -49,41 +51,43 @@ function Camera:update()
         
         -- focus on centerpoint between player and any enemies the player may
         -- be targeting...
-        -- local posAccumX = 0.0
-        -- local posAccumY = 0.0
-        -- local posAccumDivider = 1
+        --[[
+        local posAccumX = 0.0
+        local posAccumY = 0.0
+        local posAccumDivider = 1
 
-        -- local playerTx = math.floor(playerCx / TILE_SIZE)
-        -- local playerTy = math.floor(playerCy / TILE_SIZE)
+        local playerTx = math.floor(playerCx / TILE_SIZE)
+        local playerTy = math.floor(playerCy / TILE_SIZE)
 
-        -- for _, ent in ipairs(world.entities) do
-        --     if ent:hasTag("enemy") then
-        --         local cx, cy = ent:getCenterPos()
-        --         local relPosX = cx - playerCx
-        --         local relPosY = cy - playerCy
+        for _, ent in ipairs(world.entities) do
+            if ent:hasTag("enemy") then
+                local cx, cy = ent:getCenterPos()
+                local relPosX = cx - playerCx
+                local relPosY = cy - playerCy
 
-        --         local entX = math.floor(cx / TILE_SIZE)
-        --         local entY = math.floor(cy / TILE_SIZE)
+                local entX = math.floor(cx / TILE_SIZE)
+                local entY = math.floor(cy / TILE_SIZE)
 
-        --         local eucDist = math.length(relPosX, relPosY)
-        --         if eucDist < 240 then
-        --             local path = Pathfind.pathfind(world, playerTx, playerTy, entX, entY, nil)
-        --             local traverseLen = path and #path / 2 or math.huge
+                local eucDist = math.length(relPosX, relPosY)
+                if eucDist < 240 then
+                    local path = Pathfind.pathfind(world, playerTx, playerTy, entX, entY, nil)
+                    local traverseLen = path and #path / 2 or math.huge
 
-        --             if traverseLen < 20 then
-        --                 posAccumX = posAccumX + relPosX
-        --                 posAccumY = posAccumY + relPosY
-        --                 posAccumDivider = posAccumDivider + 1
-        --             end
-        --         end
-        --     end
-        -- end
+                    if traverseLen < 20 then
+                        posAccumX = posAccumX + relPosX
+                        posAccumY = posAccumY + relPosY
+                        posAccumDivider = posAccumDivider + 1
+                    end
+                end
+            end
+        end
 
-        -- local focusX = posAccumX / posAccumDivider
-        -- local focusY = posAccumY / posAccumDivider
+        local focusX = posAccumX / posAccumDivider
+        local focusY = posAccumY / posAccumDivider
 
-        -- targetOx = focusX
-        -- targetOy = focusY
+        targetOx = focusX
+        targetOy = focusY
+        --]]
     else
         local mouseOfsX = math.round(App.mouseX) - (App.scrW / 2)
         local mouseOfsY = math.round(App.mouseY) - (App.scrH / 2)

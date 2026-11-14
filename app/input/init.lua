@@ -10,8 +10,9 @@ local base_controls = {
     up = {'axis:lefty-', 'button:dpup'},
     down = {'axis:lefty+', 'button:dpdown'},
 
-    fire = {"mouse:1", "button:a"},
-    interact = {"key:e", "button:b"}
+    fire = {"mouse:1",--[["button:a"]]},
+    interact = {"key:e", "button:a"},
+    camSwitch = {"key:q", "button:lb"}
 }
 
 local function get_new_baton_config()

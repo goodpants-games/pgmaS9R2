@@ -36,13 +36,11 @@ function Player:new(x, y)
     self.canFire = true
     self.fireCharge = 0
     self.ammo = 1
+    self.dead = false
 
     self.isDisguised = false
     self.disguiseEquipTimer = nil ---@type number?
     self.equippedItem = nil ---@type game.Entity?
-
-    self.msg:subscribe("addedToWorld", self._addedToWorld)
-    self.msg:subscribe("removingFromWorld", self._removingFromWorld)
 
     -- create gun sight
     self.gunSight = newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
@@ -51,6 +49,10 @@ function Player:new(x, y)
     self._lastInteractable = nil  ---@type game.Entity?
     self._fireDirX = 0.0
     self._fireDirY = 0.0
+
+    self.msg:subscribe("addedToWorld", self._addedToWorld)
+    self.msg:subscribe("removingFromWorld", self._removingFromWorld)
+    self.msg:subscribe("hit", self._hit)
 end
 
 function Player:_addedToWorld()
@@ -69,6 +71,12 @@ end
 function Player:update()
     local world = softassert(self.world)
     if not world then return end
+
+    if self.dead then
+        self.xVel = self.xVel * 0.9
+        self.yVel = self.yVel * 0.9
+        return
+    end
 
     self.canInteract = true
     self.canFire = not self.isDisguised
@@ -107,6 +115,88 @@ function Player:update()
 
     self:_weaponUpdate()
     self:_interactUpdate()
+end
+
+function Player:postUpdate()
+    local world = softassert(self.world)
+    if not world then return end
+
+    if self.dead then return end
+
+    local centerX, centerY = self:getCenterPos()
+
+    if self.fireCharge > 0 then
+        -- update sights. this is in post-update so that the mouse position reading
+        -- doesn't lag behind the camera update.
+        -- local mouseX = world.camX + App.mouseX
+        -- local mouseY = world.camY + App.mouseY
+        local mouseX = world.camX + App.mouseX
+        local mouseY = world.camY + App.mouseY
+    
+        local fireDx = mouseX - (world.camX + App.scrW / 2)
+        local fireDy = mouseY - (world.camY + App.scrH / 2)
+        if fireDx * fireDx + fireDy * fireDy == 0 then
+            fireDx, fireDy = 1, 0
+        end
+
+        local fireAng = math.atan2(fireDy, fireDx)
+        fireAng = math.round(fireAng / ANGLE_SNAP) * ANGLE_SNAP
+
+        fireDx = math.cos(fireAng)
+        fireDy = math.sin(fireAng)
+        self._fireDirX, self._fireDirY = fireDx, fireDy
+
+        self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
+    end
+
+    if self.equippedItem then
+        self.equippedItem.x = self.x
+        self.equippedItem.y = self.y
+    end
+end
+
+function Player:render()
+    Lg.push()
+    if self.dead then
+        Lg.setColor(0.5, 0.5, 0.5)
+    else
+        Lg.setColor(1, 1, 1)
+    end
+
+    Lg.translate(self.renderOx, self.renderOy)
+    self.renderSprite:draw(math.round(self.x), math.round(self.y))
+
+    if self.equippedItem then
+        drawEntity(self.equippedItem, self.alwaysDrawOverTilemap)
+    end
+
+    Lg.pop()
+
+    if Debug.enabled then
+        Lg.rectangle("line", math.round(self.x), math.round(self.y),
+                     math.round(self.width), math.round(self.height))
+    end
+end
+
+function Player:equipDisguise()
+    if self.isDisguised or self.equippedItem then return false end
+
+    self.disguiseEquipTimer = 120
+
+    return true
+end
+
+---@param item game.Entity
+---@return boolean
+function Player:pickUpItem(item)
+    if self.equippedItem then
+        return false
+    end
+
+    item:remove()
+    self.equippedItem = item
+
+    return true
 end
 
 function Player:_weaponUpdate()
@@ -215,7 +305,7 @@ end
 
 function Player:_emptyInteract()
     if self.equippedItem then
-        local w, h = self.width, self.height
+        local w, h = self.equippedItem.width, self.equippedItem.height
         self.equippedItem.x = math.round(self:getCenterX() - w / 2)
         self.equippedItem.y = math.round(self:getCenterY() - h / 2)
         self.world:addEntity(self.equippedItem)
@@ -233,81 +323,56 @@ function Player:_removeDisguise()
     if ent then
         self.world:addEntity(ent)
     end
+
+    return ent
 end
 
-function Player:postUpdate()
-    local world = softassert(self.world)
-    if not world then return end
+---@param hitVx number
+---@param hitVy number
+function Player:_hit(hitVx, hitVy)
+    hitVx, hitVy = math.normalize(hitVx, hitVy)
 
-    local centerX, centerY = self:getCenterPos()
+    -- Die . Now.
+    self.dead = true
+    self.msg:unsubscribe("hit", self._hit)
 
-    if self.fireCharge > 0 then
-        -- update sights. this is in post-update so that the mouse position reading
-        -- doesn't lag behind the camera update.
-        -- local mouseX = world.camX + App.mouseX
-        -- local mouseY = world.camY + App.mouseY
-        local mouseX = world.camX + App.mouseX
-        local mouseY = world.camY + App.mouseY
-    
-        local fireDx = mouseX - (world.camX + App.scrW / 2)
-        local fireDy = mouseY - (world.camY + App.scrH / 2)
-        if fireDx * fireDx + fireDy * fireDy == 0 then
-            fireDx, fireDy = 1, 0
+    -- self.faceDir = math.atan2(hitVy, hitVx)
+    self.xVel = hitVx * 3
+    self.yVel = hitVy * 3
+    self.zIndex = -10
+
+    self.gunSight:remove()
+
+    -- drop equipped item and disguise
+    if self.equippedItem then
+        local itemDropX = -hitVx
+        local itemDropY = -hitVy
+
+        -- if dropping both item and disguise, then their launch angle will be
+        -- somewhat separated...
+        if self.isDisguised then
+            local pickup = self:_removeDisguise()
+            local disguiseDropX = itemDropX
+            local disguiseDropY = itemDropY
+            local separation = math.rad(20)
+
+            disguiseDropX, disguiseDropY =
+                math.rotate(disguiseDropX, disguiseDropY, separation)
+            itemDropX, itemDropY =
+                math.rotate(itemDropX, itemDropY, -separation)
+            
+            pickup:launch(disguiseDropX, disguiseDropY)
         end
 
-        local fireAng = math.atan2(fireDy, fireDx)
-        fireAng = math.round(fireAng / ANGLE_SNAP) * ANGLE_SNAP
-
-        fireDx = math.cos(fireAng)
-        fireDy = math.sin(fireAng)
-        self._fireDirX, self._fireDirY = fireDx, fireDy
-
-        self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
+        local w, h = self.equippedItem.width, self.equippedItem.height
+        self.equippedItem.x = math.round(self:getCenterX() - w / 2)
+        self.equippedItem.y = math.round(self:getCenterY() - h / 2)
+        self.world:addEntity(self.equippedItem)
+        self.equippedItem:launch(itemDropX, itemDropY)
+        self.equippedItem = nil
     end
 
-    if self.equippedItem then
-        self.equippedItem.x = self.x
-        self.equippedItem.y = self.y
-    end
-end
-
-function Player:render()
-    Lg.push()
-    Lg.setColor(1, 1, 1)
-    Lg.translate(self.renderOx, self.renderOy)
-    self.renderSprite:draw(math.round(self.x), math.round(self.y))
-
-    if self.equippedItem then
-        drawEntity(self.equippedItem, self.alwaysDrawOverTilemap)
-    end
-
-    Lg.pop()
-
-    if Debug.enabled then
-        Lg.rectangle("line", math.round(self.x), math.round(self.y),
-                     math.round(self.width), math.round(self.height))
-    end
-end
-
-function Player:equipDisguise()
-    if self.isDisguised or self.equippedItem then return false end
-
-    self.disguiseEquipTimer = 120
-
-    return true
-end
-
----@param item game.Entity
----@return boolean
-function Player:pickUpItem(item)
-    if self.equippedItem then
-        return false
-    end
-
-    item:remove()
-    self.equippedItem = item
-
-    return true
+    self:publish("died")
 end
 
 return Player

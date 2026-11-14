@@ -124,11 +124,6 @@ function Enemy:_hit(hitVx, hitVy)
     self.gunSight:remove()
     self.gunSight = nil
 
-    -- darken color
-    self.render.r = self.render.r * 0.5
-    self.render.g = self.render.g * 0.5
-    self.render.b = self.render.b * 0.5
-
     self:publish("died")
     self:removeTag("enemy")
 
@@ -297,26 +292,29 @@ function Enemy:update()
         -- update sight
         local player = world.player --[[@as game.entities.Player]]
         if player then
-            local hasSight, sightDx, sightDy = self:hasSightLineTo(player)
-            if hasSight then
-                local timerSpeed = 1
-                if player.isDisguised and not self.sawDisguise then
-                    local dist = math.length(sightDx, sightDy)
-                    if dist > 16*8 then
-                        print("kinda far")
-                        timerSpeed = 1 / 12
-                    elseif dist > 16*1 then
-                        print("moderately far")
-                        timerSpeed = 1 / 6
-                    else
-                        print("not far at all")
+            if not player.dead then
+                local hasSight, sightDx, sightDy = self:hasSightLineTo(player)
+                if hasSight then
+                    local timerSpeed = 1
+                    if player.isDisguised and not self.sawDisguise then
+                        local dist = math.length(sightDx, sightDy)
+                        if dist > 16*8 then
+                            print("kinda far")
+                            timerSpeed = 1 / 12
+                        elseif dist > 16*1 then
+                            print("moderately far")
+                            timerSpeed = 1 / 6
+                        else
+                            print("not far at all")
+                        end
                     end
-                end
 
-                self.sightTimer = self.sightTimer + timerSpeed
-            else
-                self.sightTimer = 0
+                    self.sightTimer = self.sightTimer + timerSpeed
+                    goto done
+                end
             end
+            self.sightTimer = 0
+            ::done::
         end
         -- self:_sightUpdate()
 
@@ -385,9 +383,7 @@ function Enemy:_sightRoutine()
         self.fireTimer = self.fireTimer + 1
         if self.fireTimer == self.fireWait then
             print("fire the weapon!")
-            if not Debug.enabled then
-                Sceneman.switchScene("entry")
-            end
+            player:publish("hit", playerDx, playerDy)
         end
     end
 
@@ -396,9 +392,15 @@ function Enemy:_sightRoutine()
         coroutine.yield()
     end
 
+    if world.player.dead then
+        for _=1, 120 do
+            coroutine.yield()
+        end
+    end
+
     self.gunSight:remove()
 
-    if not self.aiBehavior.chasePlayer then
+    if not self.aiBehavior.chasePlayer or world.player.dead then
         self.aiTask = coroutine.create(function()
             return self:_patrolRoutine()
         end)

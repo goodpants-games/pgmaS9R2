@@ -50,6 +50,8 @@ function Player:new(x, y)
     self._fireDirX = 0.0
     self._fireDirY = 0.0
 
+    self.godMode = false
+
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
     self.msg:subscribe("hit", self._hit)
@@ -331,6 +333,7 @@ end
 ---@param hitVy number
 function Player:_hit(hitVx, hitVy)
     hitVx, hitVy = math.normalize(hitVx, hitVy)
+    if self.godMode then return end
 
     -- Die . Now.
     self.dead = true

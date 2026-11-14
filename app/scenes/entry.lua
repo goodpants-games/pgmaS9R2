@@ -8,9 +8,29 @@ function scene.load()
 
     self.world = World()
     Mark_perf_heavy_frame()
+
+    Debug.console.addCommand({
+        name = "godmode",
+        help = "[<on|off>]",
+        func = function (term_env, status)
+            if status == "on" then
+                self.world.player.godMode = true
+                term_env.print("god mode enabled")
+            elseif status == "off" then
+                self.world.player.godMode = false
+                term_env.print("god mode disabled")
+            elseif not status then
+                term_env.print(self.world.player.godMode and "on" or "off")
+            else
+                term_env.print("unknown status")
+            end
+        end
+    })
 end
 
 function scene.unload()
+    Debug.console.removeCommand("godmode")
+    
     self.world:release()
     self = nil
 end

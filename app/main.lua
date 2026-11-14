@@ -118,6 +118,8 @@ function love.update(dt)
     update_display_fit()
     App.mouseX = (love.mouse.getX() - display_ox) / display_scale
     App.mouseY = (love.mouse.getY() - display_oy) / display_scale
+    App.mouseX = math.max(0, math.min(App.scrW, App.mouseX))
+    App.mouseY = math.max(0, math.min(App.scrH, App.mouseY))
 
     -- rawUpdate is used primarily for input polling; game logic should not
     -- occur here.

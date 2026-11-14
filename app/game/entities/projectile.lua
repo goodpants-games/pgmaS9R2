@@ -33,7 +33,7 @@ function Projectile:_pickupFocusChanged(v)
 end
 
 function Projectile:_touched(oent, nx, ny)
-    if oent then
+    if oent and oent:hasTag("enemy") then
         oent:publish("hit", self.xVel, self.yVel)
         self.entAttachedTo = oent
         self:_enterAttachedMode()

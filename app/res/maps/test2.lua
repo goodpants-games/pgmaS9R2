@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 6,
-  nextobjectid = 35,
+  nextobjectid = 37,
   properties = {},
   tilesets = {
     {
@@ -164,7 +164,7 @@ return {
           visible = true,
           properties = {
             ["direction"] = "down",
-            ["path"] = { id = 31 }
+            ["path"] = { id = 35 }
           }
         },
         {
@@ -173,7 +173,7 @@ return {
           type = "basic_enemy",
           shape = "rectangle",
           x = 264,
-          y = 64,
+          y = 56,
           width = 16,
           height = 16,
           rotation = 0,
@@ -182,7 +182,7 @@ return {
           visible = true,
           properties = {
             ["direction"] = "down",
-            ["path"] = { id = 0 }
+            ["path"] = { id = 36 }
           }
         },
         {
@@ -219,7 +219,7 @@ return {
           gid = 0,
           visible = true,
           properties = {
-            ["auth"] = -1,
+            ["auth"] = 0,
             ["direction"] = "down",
             ["target"] = { id = 27 }
           }
@@ -334,7 +334,7 @@ return {
           visible = true,
           properties = {
             ["direction"] = "down",
-            ["path"] = { id = 32 }
+            ["path"] = { id = 35 }
           }
         },
         {
@@ -397,7 +397,7 @@ return {
           }
         },
         {
-          id = 31,
+          id = 35,
           name = "",
           type = "npc_path",
           shape = "polygon",
@@ -411,28 +411,29 @@ return {
           polygon = {
             { x = 0, y = 0 },
             { x = 64, y = 0 },
-            { x = 64, y = 16 },
-            { x = 0, y = 16 }
+            { x = 64, y = 96 },
+            { x = 0, y = 96 }
           },
           properties = {}
         },
         {
-          id = 32,
+          id = 36,
           name = "",
           type = "npc_path",
-          shape = "polygon",
-          x = 280,
-          y = 248,
+          shape = "polyline",
+          x = 192,
+          y = 48,
           width = 0,
           height = 0,
           rotation = 0,
           opacity = 1,
           visible = true,
-          polygon = {
+          polyline = {
             { x = 0, y = 0 },
-            { x = -64, y = 0 },
-            { x = -64, y = 16 },
-            { x = 0, y = 16 }
+            { x = -0.25, y = 38.5 },
+            { x = 79.75, y = 39.25 },
+            { x = 79.75, y = -4.25 },
+            { x = 45, y = -4.75 }
           },
           properties = {}
         }

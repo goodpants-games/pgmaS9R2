@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="21" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="35">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="21" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="37">
  <tileset firstgid="1" source="../tilesets/tileset.tsx"/>
  <tileset firstgid="257" source="../tilesets/ai_flags_tileset.tsx"/>
  <tileset firstgid="273" source="../tilesets/entity_types.tsx"/>
@@ -28,10 +28,14 @@
   <object id="2" type="disguise_pickup" x="176" y="64" width="16" height="16"/>
   <object id="3" template="../.templates/basic_enemy.tx" type="basic_enemy" x="208" y="176">
    <properties>
-    <property name="path" type="object" value="31"/>
+    <property name="path" type="object" value="35"/>
    </properties>
   </object>
-  <object id="8" template="../.templates/basic_enemy.tx" type="basic_enemy" x="264" y="64"/>
+  <object id="8" template="../.templates/basic_enemy.tx" type="basic_enemy" x="264" y="56">
+   <properties>
+    <property name="path" type="object" value="36"/>
+   </properties>
+  </object>
   <object id="9" template="../.templates/keycard_dropper.tx" type="keycard_dropper" x="224" y="64">
    <properties>
     <property name="auth" type="int" value="1"/>
@@ -42,6 +46,7 @@
   </object>
   <object id="6" template="../.templates/keycard_reader.tx" type="keycard_reader" x="272" y="144">
    <properties>
+    <property name="auth" type="int" value="0"/>
     <property name="target" type="object" value="27"/>
    </properties>
   </object>
@@ -70,7 +75,7 @@
   </object>
   <object id="4" template="../.templates/lazy_enemy.tx" type="lazy_enemy" x="272" y="256">
    <properties>
-    <property name="path" type="object" value="32"/>
+    <property name="path" type="object" value="35"/>
    </properties>
   </object>
   <object id="19" template="../.templates/keycard_reader.tx" type="keycard_reader" x="432" y="64">
@@ -91,11 +96,11 @@
     <property name="direction" value="vertical"/>
    </properties>
   </object>
-  <object id="31" type="npc_path" x="216" y="168">
-   <polygon points="0,0 64,0 64,16 0,16"/>
+  <object id="35" type="npc_path" x="216" y="168">
+   <polygon points="0,0 64,0 64,96 0,96"/>
   </object>
-  <object id="32" type="npc_path" x="280" y="248">
-   <polygon points="0,0 -64,0 -64,16 0,16"/>
+  <object id="36" type="npc_path" x="192" y="48">
+   <polyline points="0,0 -0.25,38.5 79.75,39.25 79.75,-4.25 45,-4.75"/>
   </object>
  </objectgroup>
 </map>

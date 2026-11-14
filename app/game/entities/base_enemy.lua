@@ -7,6 +7,9 @@ local Pathfinding = require "game.pathfind"
 local Resmgr = require "game.resmgr"
 local DirAnim = require "game.util.dir_anim"
 
+local ALERT_MOVE_SPEED = 1.5
+local PATROL_MOVE_SPEED = 0.8
+
 ---@class game.entities.Enemy: game.Entity
 local Enemy = batteries.class {
     extends = require("game.entity")
@@ -58,6 +61,10 @@ function Enemy:new(x, y, w, h)
     self.msg:subscribe("removingFromWorld", self._removing)
     self.msg:subscribe("hit", self._hit)
     self.msg:subscribe("witnessedDeath", self._witnessedDeath)
+
+    self.aiTask = coroutine.create(function()
+        return self:_patrolRoutine()
+    end)
 end
 
 function Enemy:loadProperties(id, props, entLookup)
@@ -190,6 +197,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
 
         -- then, move to victim...
+        self.moveSpeed = ALERT_MOVE_SPEED
         self:_beginMove(victim.x, victim.y)
         while self:_isCurrentlyMoving() do
             coroutine.yield()
@@ -257,7 +265,7 @@ function Enemy:update()
             self.animState = "walk"
             
             local dx,dy = self._moveTargetX - self.x, self._moveTargetY - self.y
-            if math.length(dx, dy) < 10 then
+            if math.length(dx, dy) < self.moveSpeed then
                 self._hasMoveTarget = false
             else
                 dx, dy = math.normalize(dx, dy)
@@ -391,12 +399,16 @@ function Enemy:_sightRoutine()
     self.gunSight:remove()
 
     if not self.aiBehavior.chasePlayer then
+        self.aiTask = coroutine.create(function()
+            return self:_patrolRoutine()
+        end)
         return
     end
 
     -- hey, come back here!
     self:_beginMove(playerCx, playerCy)
     self.isAlert = true
+    self.moveSpeed = ALERT_MOVE_SPEED
 
     -- also, initiate the search...
     cx, cy = self:getCenterPos()
@@ -437,6 +449,9 @@ function Enemy:_sightRoutine()
 
         self:_moveToHome()
         self.isAlert = false
+        self.aiTask = coroutine.create(function()
+            return self:_patrolRoutine()
+        end)
     end)
 
     --[[
@@ -470,6 +485,76 @@ function Enemy:_sightRoutine()
         self.fireTimer = 0
     end
     --]]
+end
+
+function Enemy:_patrolRoutine()
+    if not self.patrolPath then
+        return
+    end
+
+    -- starting vertex is the closest one
+    local patrolPathIndex
+    local moveDir = 1
+    do
+        local cx, cy = self:getCenterPos()
+
+        patrolPathIndex = 1
+        local minDist = math.distance(cx, cy, self.patrolPath:getPoint(1))
+        for i=2, self.patrolPath:getPointCount() do
+            local dist = math.distance(cx, cy, self.patrolPath:getPoint(i))
+            if dist < minDist then
+                patrolPathIndex = i
+                minDist = dist
+            end
+        end
+    end
+
+    self.moveSpeed = PATROL_MOVE_SPEED
+    
+    while true do
+        local path = self.patrolPath
+        local pointCount = path:getPointCount()
+        if pointCount == 1 then
+            softerror("bruh")
+            break
+        end
+
+        -- get next path index
+        local nextIndex
+        if path.closed then
+            nextIndex = patrolPathIndex % pointCount + 1
+        else
+            if moveDir == 1 and patrolPathIndex == pointCount then
+                moveDir = -1
+                nextIndex = patrolPathIndex - 1
+            elseif moveDir == -1 and patrolPathIndex == 1 then
+                moveDir = 1
+                nextIndex = 2
+            else
+                nextIndex = patrolPathIndex + moveDir
+            end
+        end
+        
+        -- move to it please.
+        local x, y = path:getPoint(nextIndex)
+        x = math.round(x / 8) * 8
+        y = math.round(y / 8) * 8
+
+        self:_beginMove(x, y)
+        while self:_isCurrentlyMoving() do
+            coroutine.yield()
+        end
+
+        self._homeX = x
+        self._homeY = y
+
+        -- wait 1.5 secs before moving to the next point
+        for i=1, 90 do
+            coroutine.yield()
+        end
+
+        patrolPathIndex = nextIndex
+    end
 end
 
 local DIRECTIONS = {"r", "d", "l", "u"}

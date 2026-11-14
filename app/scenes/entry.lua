@@ -66,6 +66,20 @@ function scene.load()
             plr.ammo = plr.ammo + 1
         end
     })
+
+    Debug.console.addCommand({
+        name = "load_map",
+        help = "<map name>",
+        func = function (term_env, mapName)
+            local path = ("/res/maps/%s.lua"):format(mapName)
+            if not love.filesystem.getInfo(path) then
+                term_env.print("map does not exist")
+                return
+            end
+
+            self.world:reset(path)
+        end
+    })
 end
 
 function scene.unload()
@@ -73,6 +87,7 @@ function scene.unload()
     Debug.console.removeCommand("noclip")
     Debug.console.removeCommand("spawn")
     Debug.console.removeCommand("give_ammo")
+    Debug.console.removeCommand("load_map")
     
     self.world:release()
     self = nil

@@ -44,10 +44,7 @@ function KeycardDropper:_holderDied(holder)
 
         local keycard = Util.newEntity("keycard", holder:getCenterPos()) --[[@as game.entities.Keycard]]
         keycard.auth = self.auth
-        keycard.xVel = -holder.xVel * 0.4
-        keycard.yVel = -holder.yVel * 0.4
-        keycard.zVel = 3
-        keycard.zOffset = 4
+        keycard:launch(-holder.xVel, -holder.yVel)
 
         self.world:addEntity(keycard)
     end

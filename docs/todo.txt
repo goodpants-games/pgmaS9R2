@@ -1,23 +1,19 @@
-=== ideas ===
+=== mechanics/gameplay ===
 - make red alert circle in direction of enemy that can currently see you
 - maybe you have limited ammo, and you need to pick them up from enemies you
   kill.
 - make another weapon type which can phase through enemies
 - a melee weapon?
-- enemy type which does not investigate or chase the player, so you can't lure
-  it out to safely kill it.
-- buttons you have to press to open doors
 - player could have items that give them useful temporary effects, such as becoming
 invisible for 5 seconds or shooting two bullets instead of one
+
+
+=== level design ideas ===
 - maybe you have to sometimes lure enemies to a specific place
   so maybe it's like there's these things you need enemies to shoot at. so
   you'd have this item which will make any bullets shot at you reflect (and
   also break the item?)
-- Disguises
-  if you kill a certain enemy type you can get a disguise. it will make it take
-  longer for the scientists to notice you. it will also give you an extra
-  hitpoint. but you can't shoot while using it?
-
+- Disguises:
   if you want to shoot you need to take off the disguise. the disguise item
   will be dropped at your current location. but it takes ~5 seconds to put on
   and to take off the disguise, so like you can't just Simply take it off
@@ -25,8 +21,6 @@ invisible for 5 seconds or shooting two bullets instead of one
   take it away? (or maybe seeing the disguise on the ground makes it ineffective
   for the rest of the level no that's kind of punishing is it?)
 
-name idea:
- <something Evil> billiards
 
 === coding ===
-export.sh: ignore dotfiles
+- export.sh: ignore dotfiles

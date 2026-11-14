@@ -17,7 +17,9 @@ function NpcPath:new(x, y, poly)
 end
 
 function NpcPath:_addedToWorld()
-    self:remove()
+    -- should remove at this point, but can't so that entity save state
+    -- reloading can work...
+    -- self:remove()
 end
 
 function NpcPath:getPointCount()

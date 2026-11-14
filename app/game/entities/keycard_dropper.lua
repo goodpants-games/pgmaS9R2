@@ -47,6 +47,7 @@ function KeycardDropper:_holderDied(holder)
         keycard:launch(-holder.xVel, -holder.yVel)
 
         self.world:addEntity(keycard)
+        self:remove()
     end
 end
 

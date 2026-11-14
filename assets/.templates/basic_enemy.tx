@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <template>
- <tileset firstgid="1" source="entity_types.tsx"/>
+ <tileset firstgid="1" source="../tilesets/entity_types.tsx"/>
  <object type="basic_enemy" gid="2" width="16" height="16">
   <properties>
    <property name="direction" value="down"/>

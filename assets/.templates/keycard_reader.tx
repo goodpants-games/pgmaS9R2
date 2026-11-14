@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <template>
- <tileset firstgid="1" source="entity_types.tsx"/>
+ <tileset firstgid="1" source="../tilesets/entity_types.tsx"/>
  <object type="keycard_reader" gid="5" width="16" height="16">
   <properties>
    <property name="auth" type="int" value="-1"/>

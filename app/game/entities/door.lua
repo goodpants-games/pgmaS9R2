@@ -27,6 +27,8 @@ function Door:new(x, y)
     -- self.render.sprite.alignment = "topleft"
 
     self.msg:subscribe("addedToWorld", self._added)
+
+    self.persistentData = true
 end
 
 function Door:loadProperties(id, props)
@@ -121,6 +123,18 @@ end
 
 function Door:update()
     self.render.sprite:update(App.tickLength)
+end
+
+function Door:savePersistentData(data)
+    Door.__super.savePersistentData(self, data)
+    data.closed = self.closed
+end
+
+function Door:loadPersistentData(data)
+    self.closed = data.closed
+
+    self:_setAnim(true)
+    self.render.sprite:stop()
 end
 
 return Door

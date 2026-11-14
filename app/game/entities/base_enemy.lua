@@ -19,6 +19,7 @@ function Enemy:new(x, y, w, h)
     self:super(x, y, w, h)
     self:addTag("enemy")
 
+    self.persistentData = true
     self.collision = true
     self.colGroup = Const.COLGROUP_NPC
     self.moveSpeed = 1.5
@@ -134,6 +135,7 @@ function Enemy:_hit(hitVx, hitVy)
     self:publish("died")
     self:removeTag("enemy")
 
+    self.persistentData = true
     self.world.enemyConductor:handleEnemyDeath(self, hitVx, hitVy)
 end
 
@@ -604,6 +606,37 @@ function Enemy:_updateAnimation(lastAnimState)
     end
 
     spr:update(App.tickLength)
+end
+
+function Enemy:savePersistentData(data)
+    Enemy.__super.savePersistentData(self, data)
+
+    data.x, data.y = self:getCenterPos()
+    data.dead = self.dead
+    data.faceDir = self.faceDir
+end
+
+function Enemy:loadPersistentData(data)
+    Enemy.__super.loadPersistentData(self, data)
+
+    self.dead = data.dead
+    if self.dead then
+        self.faceDir = data.faceDir
+        self.x = data.x - self.width / 2
+        self.y = data.y - self.height / 2
+
+        if self.dead then
+            self.msg:unsubscribe("hit", self._hit)
+            self.zIndex = -10
+
+            if self.gunSight then
+                self.gunSight:remove()
+                self.gunSight = nil
+            end
+
+            self:removeTag("enemy")
+        end
+    end
 end
 
 return Enemy

@@ -52,6 +52,8 @@ function Player:new(x, y)
 
     self.godMode = false
 
+    self.persistentData = true
+
     self.msg:subscribe("addedToWorld", self._addedToWorld)
     self.msg:subscribe("removingFromWorld", self._removingFromWorld)
     self.msg:subscribe("hit", self._hit)
@@ -380,6 +382,25 @@ function Player:_hit(hitVx, hitVy)
     end
 
     self:publish("died")
+end
+
+function Player:savePersistentData(data)
+    Player.__super.savePersistentData(self, data)
+    local strayBulletCount = #self.world:findEntitiesWithTag("strayPlayerBullet")
+
+    data.x, data.y = self.x, self.y
+    data.ammo = self.ammo + strayBulletCount
+    data.isDisguised = self.isDisguised
+end
+
+function Player:loadPersistentData(data)
+    Player.__super.loadPersistentData(self, data)
+    self.x, self.y = data.x, data.y
+    self.ammo = data.ammo
+    
+    if data.isDisguised then
+        self.disguiseEquipTimer = 0 -- bruh
+    end
 end
 
 return Player

@@ -10,6 +10,8 @@ local Projectile = batteries.class {
 
 function Projectile:new(x, y)
     self:super(centeredRect(x, y, 0, 0))
+    self:addTag("strayPlayerBullet")
+    
     self.collision = true
     self.touchMonitor = true
     self.colGroup = 0

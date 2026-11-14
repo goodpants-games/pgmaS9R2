@@ -19,6 +19,8 @@ function BasePickup:new(x, y, w, h)
     self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_PLAYER)
 
     self.msg:subscribe("interact", self._interact)
+
+    self.persistentData = true
 end
 
 function BasePickup:launch(dirX, dirY)
@@ -55,6 +57,17 @@ function BasePickup:_interact(plr)
     
     print("player picked up keycard")
     plr:pickUpItem(self)
+end
+
+function BasePickup:savePersistentData(data)
+    BasePickup.__super.savePersistentData(self, data)
+    data.x, data.y = self:getCenterPos()
+end
+
+function BasePickup:loadPersistentData(data)
+    BasePickup.__super.loadPersistentData(self, data)
+    self.x = data.x - self.width / 2
+    self.y = data.y - self.height / 2
 end
 
 return BasePickup

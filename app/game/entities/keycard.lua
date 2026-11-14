@@ -23,7 +23,7 @@ end
 
 function Keycard:update()
     self.render.sprite.cel = self.auth + 2
-    self.__super.update(self)
+    Keycard.__super.update(self)
 end
 
 return Keycard

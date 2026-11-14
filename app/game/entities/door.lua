@@ -95,8 +95,6 @@ end
 ---@param invert boolean?
 function Door:_setAnim(invert)
     local postfix = (self.closed ~= not not invert) and "_close" or "_open"
-
-    print("play anim", self.direction .. postfix)
     self.render.sprite:play(self.direction .. postfix)
 end
 
@@ -110,9 +108,7 @@ function Door:_touchEnded(oent)
     end
 end
 
-function Door:activate()
-    print("activated!")
-    
+function Door:activate()    
     self.closed = not self.closed
     if self.closed then
         self:_setCollision(1)

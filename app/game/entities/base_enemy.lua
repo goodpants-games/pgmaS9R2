@@ -299,13 +299,9 @@ function Enemy:update()
                     if player.isDisguised and not self.sawDisguise then
                         local dist = math.length(sightDx, sightDy)
                         if dist > 16*8 then
-                            print("kinda far")
                             timerSpeed = 1 / 12
                         elseif dist > 16*1 then
-                            print("moderately far")
-                            timerSpeed = 1 / 6
-                        else
-                            print("not far at all")
+                            timerSpeed = 1 / 8
                         end
                     end
 
@@ -382,7 +378,6 @@ function Enemy:_sightRoutine()
 
         self.fireTimer = self.fireTimer + 1
         if self.fireTimer == self.fireWait then
-            print("fire the weapon!")
             player:publish("hit", playerDx, playerDy)
         end
     end
@@ -455,38 +450,6 @@ function Enemy:_sightRoutine()
             return self:_patrolRoutine()
         end)
     end)
-
-    --[[
-    if sightRaycast then
-        if not self.gunSight.world then
-            self.world:addEntity(self.gunSight)
-        end
-
-        local cx, cy = self:getCenterPos()
-        local dx, dy = math.normalize(playerDx, playerDy)
-        self.gunSight:updateSight(cx, cy, dx, dy)
-
-        self.fireTimer = self.fireTimer + 1
-        if self.fireTimer == self.noticeWait then
-            print("notice")
-            self._hasMoveTarget = true
-            self._moveTargetX, self._moveTargetY = world.player:getCenterPos()
-        end
-
-        if self.fireTimer >= self.fireWait then
-            print("fire the weapon")
-            self.fireTimer = 0
-            -- Sceneman.switchScene("entry")
-        end
-    else
-        if self.gunSight.world then
-            self.gunSight:remove()
-            self.gunSight:clearSight()
-        end
-
-        self.fireTimer = 0
-    end
-    --]]
 end
 
 function Enemy:_patrolRoutine()

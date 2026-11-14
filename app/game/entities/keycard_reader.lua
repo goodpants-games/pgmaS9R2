@@ -57,8 +57,6 @@ function KeycardReader:loadProperties(id, props, entLookup)
         end
     end
 
-    print(("read %i targets"):format(#self.targets))
-
     if props.auth then
         local auth = Util.propCheck(props, "auth", "integer", id, "keycard_reader")
         if auth == nil then return end
@@ -85,12 +83,6 @@ end
 
 ---@param status boolean
 function KeycardReader:_interactFocusChanged(status)
-    if status then
-        print("computer Touche")
-    else
-        print("computer touch ende")
-    end
-
     self.hasFocus = status
 end
 

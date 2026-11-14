@@ -716,8 +716,6 @@ function World:_moveEntities()
             ent.x = hitX + rnx * 0.001
             ent.y = hitY + rny * 0.001
 
-            print("hit", rnx, rny)
-
             -- reflect:
             -- v' = v - (1+R)(v ⋅ n)
             local dot = (ent.xVel * rnx + ent.yVel * rny) * (ent.restitution + 1.0)

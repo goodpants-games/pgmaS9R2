@@ -50,6 +50,10 @@ function World:new()
     ---@private
     ---@type game.entities.Entity[]
     self._renderOrder = {}
+
+    ---@private
+    ---@type game.entities.Entity[]
+    self._collisionEntities = {}
     
     ---@private
     self._needEntityRemoval = false
@@ -87,6 +91,7 @@ function World:update()
         end
     end
 
+    self:_collectColEnts()
     self:_moveEntities()
     self:_entityCollisions()
 
@@ -550,22 +555,31 @@ function World:_loadMapObjects()
     end
 end
 
-function World:_moveEntities()
-    -- first, move all X
+function World:_collectColEnts()
+    local colEnts = self._collisionEntities
+    table.clear(colEnts)
+
     for _, ent in ipairs(self.entities) do
         if ent.collision then
+            colEnts[#colEnts+1] = ent
             ent.__g_oldX = ent.x
             ent.__g_oldY = ent.y
         end
+    end
+end
 
+function World:_moveEntities()
+    local colEnts = self._collisionEntities
+
+    -- first, move all X
+    for _, ent in ipairs(self.entities) do
         ent.x = ent.x + ent.xVel
     end
 
     -- then, perform X collision
-    for _, ent in ipairs(self.entities) do
+    for _, ent in ipairs(colEnts) do
         local oldX, oldY = ent.__g_oldX, ent.__g_oldY
-
-        if ent.collision and not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
+        if not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local colX, _, colW, _, colEnt =
                 Collision.gameCollision(ent.x, ent.y, oldX, oldY,
                                         ent.width, ent.height, self._getCol)
@@ -592,10 +606,9 @@ function World:_moveEntities()
     end
 
     -- then, perform Y collision
-    for _, ent in ipairs(self.entities) do
+    for _, ent in ipairs(colEnts) do
         local oldX, oldY = ent.__g_oldX, ent.__g_oldY
-
-        if ent.collision and not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
+        if not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
             local _, colY, _, colH, colEnt =
                 Collision.gameCollision(ent.x, ent.y, oldX, oldY,
                                         ent.width, ent.height, self._getCol)
@@ -617,10 +630,12 @@ function World:_moveEntities()
 end
 
 function World:_entityCollisions()
+    local colEnts = self._collisionEntities
+
     -- collect entity contacts
     local contacts = {}
-    for _, ent1 in ipairs(self.entities) do
-        if ent1.collision and ent1.touchMonitor then            
+    for _, ent1 in ipairs(colEnts) do
+        if ent1.touchMonitor then
             -- allocate tables if not exists
             ent1._touching = ent1._touching or {}
             ent1._prevTouching = ent1._prevTouching or {}
@@ -630,11 +645,8 @@ function World:_entityCollisions()
             table.append_inplace(ent1._prevTouching, ent1._touching)
             table.clear(ent1._touching)
 
-            for _, ent2 in ipairs(self.entities) do
+            for _, ent2 in ipairs(colEnts) do
                 if ent1 == ent2 then
-                    goto continue
-                end
-                if not ent2.collision then
                     goto continue
                 end
                 if bit.band(ent1.colMask, ent2.colGroup) == 0 then
@@ -672,8 +684,8 @@ function World:_entityCollisions()
     end
 
     -- dispatch touching/touchEnded events
-    for _, ent in ipairs(self.entities) do
-        if ent.collision and ent.touchMonitor then
+    for _, ent in ipairs(colEnts) do
+        if ent.touchMonitor then
             for _, oent in ipairs(ent._touching) do
                 if not table.index_of(ent._prevTouching, oent) then
                     ent.msg:publish("touched", ent, oent, 0, 0)

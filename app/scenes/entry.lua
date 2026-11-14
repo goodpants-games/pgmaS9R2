@@ -80,6 +80,23 @@ function scene.load()
             self.world:reset(path)
         end
     })
+
+    Debug.console.addCommand({
+        name = "rewind",
+        help = "",
+        func = function(term_env)
+            self.world:reset()
+        end
+    })
+
+    Debug.console.addCommand({
+        name = "reload",
+        help = "",
+        func = function(term_env)
+            self.world:clearSaveData()
+            self.world:reset()
+        end
+    })
 end
 
 function scene.unload()
@@ -88,6 +105,8 @@ function scene.unload()
     Debug.console.removeCommand("spawn")
     Debug.console.removeCommand("give_ammo")
     Debug.console.removeCommand("load_map")
+    Debug.console.removeCommand("rewind")
+    Debug.console.removeCommand("reload")
     
     self.world:release()
     self = nil

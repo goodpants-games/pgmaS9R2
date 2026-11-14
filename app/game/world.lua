@@ -380,11 +380,16 @@ function World:raycast(x, y, dx, dy, colFlags)
     return resultDist, resultNx, resultNy
 end
 
+function World:clearSaveData()
+    self._checkpointData = nil
+end
+
 ---@param newMap string?
 function World:reset(newMap)
     self:_clearEntities()
 
     if newMap then
+        self._checkpointData = nil
         self.map = Tiled.loadMap(newMap)
         self:_loadMap()
     else

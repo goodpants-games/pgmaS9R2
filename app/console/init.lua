@@ -52,6 +52,12 @@ function module.addCommand(desc)
 end
 
 ---@param name string
+---@param value any
+function module.setVariable(name, value)
+    terminal.process_env[name] = value
+end
+
+---@param name string
 function module.removeCommand(name)
     terminal.commands[name] = nil
 end

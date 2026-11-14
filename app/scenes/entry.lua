@@ -9,6 +9,8 @@ function scene.load()
     self.world = World()
     Mark_perf_heavy_frame()
 
+    Debug.console.setVariable("world", self.world)
+
     Debug.console.addCommand({
         name = "godmode",
         help = "[<on|off>]",
@@ -100,6 +102,7 @@ function scene.load()
 end
 
 function scene.unload()
+    Debug.console.setVariable("world", nil)
     Debug.console.removeCommand("godmode")
     Debug.console.removeCommand("noclip")
     Debug.console.removeCommand("spawn")

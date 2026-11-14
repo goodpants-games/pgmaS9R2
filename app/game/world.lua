@@ -80,8 +80,6 @@ function World:update()
     Debug.draw:push()
     Debug.draw:translate(-math.round(self.camX), -math.round(self.camY))
 
-    local player = self.player --[[@as game.entities.Player]]
-
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
 
@@ -99,6 +97,7 @@ function World:update()
     self:_collectColEnts()
     self:_moveEntities()
     self:_entityCollisions()
+    self.camera:update()
 
     while self._needEntityRemoval do
         self._needEntityRemoval = false
@@ -119,10 +118,8 @@ function World:update()
         end
     end
 
-    self.camera:update()
     self.camX = math.round(self.camera.x) - App.scrW / 2
     self.camY = math.round(self.camera.y) - App.scrH / 2
-
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
 
@@ -198,6 +195,10 @@ function World:_drawObjects(overTilemapFilter)
 end
 
 function World:draw()
+    Lg.setColor(batteries.colour.unpack_rgb(0x39afd6))
+    Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
+    
+    -- draw world
     Lg.push()
     Lg.translate(-math.round(self.camX), -math.round(self.camY))
 
@@ -214,9 +215,8 @@ function World:draw()
 
     Lg.pop()
 
-    Lg.setColor(1, 1, 1)
-    Lg.setLineWidth(1.0)
-    Lg.rectangle("line", App.mouseX - 4, App.mouseY - 4, 8, 8)
+    -- draw UI
+    self.camera:drawUI()
 end
 
 ---@param dt number
@@ -229,7 +229,7 @@ function World:rawUpdate(dt)
 end
 
 function World:release()
-
+    
 end
 
 ---@param entType string

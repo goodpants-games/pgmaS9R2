@@ -210,7 +210,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
 
         -- then, move to victim...
         self.moveSpeed = ALERT_MOVE_SPEED
-        self:_beginMove(victim.x, victim.y)
+        self:_beginMove(victim:getCenterPos())
         while self:_isCurrentlyMoving() do
             coroutine.yield()
         end

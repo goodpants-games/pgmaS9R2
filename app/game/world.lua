@@ -74,6 +74,13 @@ function World:new()
     self:_loadMap()
     self.enemyConductor = EnemyConductor(self)
     self.camera = Camera(self)
+
+    self._respawnTimer = nil ---@type integer?
+
+    self.player.msg:subscribe("died", function(plr)
+        print("start respawn timer")
+        self._respawnTimer = 60
+    end)
 end
 
 function World:update()
@@ -143,8 +150,15 @@ function World:update()
             end
         end
     end
-
     self:_sortObjects()
+
+    -- update death respawn timer
+    if self._respawnTimer then
+        self._respawnTimer = self._respawnTimer - 1
+        if self._respawnTimer <= 0 then
+            Sceneman.switchScene("entry")
+        end
+    end
 
     self.curFrame = self.curFrame + 1
     for _, btn in ipairs(BUTTON_INPUTS) do

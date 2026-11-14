@@ -27,6 +27,11 @@ function Entity:new(x, y, w, h)
     self.id = nextEntityId
     nextEntityId = nextEntityId + 1
 
+    --- id of originating tiled object, assigned to by the object loader.
+    self.tiledId = nil ---@type integer?
+    --- type name, assigned to by the loader after construction
+    self.typeName = nil ---@type string
+
     self.x = x or 0.0
     self.y = y or 0.0
 
@@ -57,6 +62,10 @@ function Entity:new(x, y, w, h)
     self.visible = true
     ---@type (fun(self:game.Entity)|table)?
     self.render = nil
+
+    --- true if this entity should keep certain data across checkpoint loads
+    --- (e.g. its position).
+    self.persistentData = false
 end
 
 ---Remove this entity from its world.
@@ -103,6 +112,16 @@ end
 ---@return game.Entity[]
 function Entity:getOverlappingEntities()
     return self._touching or {}
+end
+
+---@param data table
+function Entity:savePersistentData(data)
+    
+end
+
+---@param data any
+function Entity:loadPersistentData(data)
+    
 end
 
 return Entity

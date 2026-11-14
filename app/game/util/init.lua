@@ -76,7 +76,9 @@ function Util.newEntity(entType, x, y, ...)
         return nil
     end
 
-    return ctor(x, y, ...)
+    local ent = ctor(x, y, ...)
+    ent.typeName = entType
+    return ent
 end
 
 local PROP_CHECK_ERR_FMTSTR = "{object %i '%s'} property '%s': %s"

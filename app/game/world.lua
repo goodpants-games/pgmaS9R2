@@ -20,9 +20,6 @@ local World = batteries.class()
 function World:new()
     self.map = nil ---@type pklove.tiled.Map
     self.curFrame = 0
-
-    self._nonCollidableTiles = {}
-    self._wallTiles = {}
     
     -- store button input states for the current and last frame
     -- self.buttonInputs[1] = current frame  (updated in rawUpdate)
@@ -61,7 +58,12 @@ function World:new()
     
     ---@private
     self._needEntityRemoval = false
+    ---@private
     self._didColMapChange = false
+    ---@private
+    self._nonCollidableTiles = {}
+    ---@private
+    self._wallTiles = {}
 
     local isCol = self.isCol
     ---@private
@@ -70,6 +72,9 @@ function World:new()
     end
 
     self.msg = batteries.pubsub()
+
+    ---@private
+    self._checkpointData = nil ---@type table?
 
     self:reset("/res/maps/test.lua")
 end
@@ -397,6 +402,47 @@ function World:reset(newMap)
     end)
 end
 
+function World:saveCheckpoint()
+    local entData = {} -- entity data
+    local removed = {} -- tiled-instantiated objects that got removed
+
+    self._checkpointData = {
+        ents = entData,
+        removed = removed
+    }
+
+    -- fill entity data
+    for _, ent in ipairs(self.entities) do
+        if ent.persistentData then
+            local data = {}
+            data._typeName = ent.typeName
+            data._tiledId = ent.tiledId
+
+            ent:savePersistentData(data)
+            table.insert(entData, data)
+        end
+    end
+
+    -- fill removed
+    local existing = {}
+    for _, ent in ipairs(self.entities) do
+        if ent.tiledId then
+            existing[ent.tiledId] = true
+        end    
+    end
+
+    for _, objLayer in ipairs(self.map.layers) do
+        if objLayer.type == "objectgroup" then
+            ---@cast objLayer pklove.tiled.ObjectLayer
+            for _, obj in ipairs(objLayer.objects) do
+                if not existing[obj.id] then
+                    removed[obj.id] = true
+                end
+            end
+        end
+    end
+end
+
 --------------------------------------------------------------------------------
 
 function World:_loadMap()
@@ -526,12 +572,24 @@ function World:_loadMap()
 end
 
 function World:_loadMapObjects()
+    local savedEnts
+    local ignoreList = {}
+
+    if self._checkpointData then
+        savedEnts = self._checkpointData.ents
+        ignoreList = self._checkpointData.removed
+    end
+
     -- first pass: create entities
     local objects = {}
     for _, layer in ipairs(self.map.layers) do
         if layer.type == "objectgroup" then
             ---@cast layer pklove.tiled.ObjectLayer
             for _, obj in ipairs(layer.objects) do
+                if ignoreList[obj.id] then
+                    goto continue
+                end
+
                 local ent ---@type game.Entity?
                 local shape = obj.shape
                 
@@ -574,14 +632,17 @@ function World:_loadMapObjects()
                     ent.name = obj.name
                 end
 
+                ent.tiledId = obj.id
+
                 table.insert(objects, { obj = obj, ent = ent })
                 ::continue::
             end
         end
     end
 
-    -- second pass: load properties
-    -- loading is done in two passes because entities may reference each other
+    -- second pass: load properties and persistent data
+    -- loading is done in multiple passes because entities may reference each
+    -- other in their load properties
     local function entLookup(id)
         for _, entry in ipairs(objects) do
             if entry.obj.id == id then
@@ -590,15 +651,50 @@ function World:_loadMapObjects()
         end
     end
 
-    for _, data in ipairs(objects) do
-        local obj, ent = data.obj, data.ent
+    -- savedEnts map from tiled ID to save data
+    local cpData = {}
+    if savedEnts then
+        for _, data in ipairs(savedEnts) do
+            if data._tiledId then
+                cpData[data._tiledId] = data
+            end
+        end
+    end
+
+    for _, objData in ipairs(objects) do
+        local obj, ent = objData.obj, objData.ent
 
         if ent.loadProperties then
             ent:loadProperties(obj.id, obj.properties, entLookup)
         end
+
+        if ent.persistentData and cpData[obj.id] then
+            local data = cpData[obj.id]
+            if not softassert(data._typeName == ent.typeName, "mismatched class name") then
+                goto continue
+            end
+
+            ent:loadPersistentData(data)
+        end
+
+        ::continue::
     end
 
-    -- third pass: add each entity to the world
+    -- afterwards, load any objects from save data that were not associated with
+    -- a tiled object
+    if savedEnts then
+        for _, data in ipairs(savedEnts) do
+            if not data._tiledId then
+                local ent = Util.newEntity(data._typeName, 0, 0)
+                if ent then
+                    ent:loadPersistentData(data)
+                    self:addEntity(ent)
+                end
+            end
+        end
+    end
+
+    -- finally, add each entity to the world
     for _, data in ipairs(objects) do
         self:addEntity(data.ent)
     end

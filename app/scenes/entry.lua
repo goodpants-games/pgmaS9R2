@@ -1,14 +1,23 @@
 local scene = Sceneman.scene()
 local World = require("game.world")
+local gameProgression = require("game.progression")
+
 local self
+
+local function loadMap(mapName)
+    self.mapName = mapName
+    self.world:reset(("/res/maps/%s.lua"):format(mapName))
+end
 
 function scene.load()
     self = {}
     Lg.setBackgroundColor(0.5, 0.5, 0.5)
 
     self.world = World()
-    self.world:reset("/res/maps/level1.lua")
+    loadMap(gameProgression.levels[1])
     Mark_perf_heavy_frame()
+
+    self.darken = 0.0
 
     Debug.console.setVariable("world", self.world)
 
@@ -102,6 +111,14 @@ function scene.load()
             self.world:reset()
         end
     })
+
+    Debug.console.addCommand({
+        name = "next_level",
+        help = "",
+        func = function()
+            scene.transitionToNextLevel()
+        end
+    })
 end
 
 function scene.unload()
@@ -113,6 +130,7 @@ function scene.unload()
     Debug.console.removeCommand("load_map")
     Debug.console.removeCommand("rewind")
     Debug.console.removeCommand("reload")
+    Debug.console.removeCommand("next_level")
     
     self.world:release()
     self = nil
@@ -125,10 +143,51 @@ end
 
 function scene.update()
     self.world:update()
+
+    if self.transitionCoro then
+        if not coroutine.sresume(self.transitionCoro) then
+            self.transitionCoro = nil
+        end
+    end
 end
 
 function scene.draw()
     self.world:draw()
+
+    Lg.push("all")
+    Lg.setBlendMode("multiply", "premultiplied")
+    local mul = 1.0 - self.darken
+    Lg.setColor(mul, mul, mul, 10)
+    Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
+
+    Lg.pop()
+end
+
+function scene.transitionToNextLevel()
+    if self.transitionCoro then
+        return
+    end
+
+    self.transitionCoro = coroutine.create(function()
+        local yield = coroutine.yield
+
+        for i=1, 60 do
+            self.darken = (i-1) / 60
+            yield()
+        end
+        self.darken = 1.0
+
+        local idx = table.index_of(gameProgression.levels, self.mapName)
+        loadMap(gameProgression.levels[idx + 1])
+        Mark_perf_heavy_frame()
+        yield()
+
+        for i=1, 60 do
+            self.darken = 1.0 - (i / 60)
+            yield()
+        end
+        self.darken = 0.0
+    end)
 end
 
 return scene

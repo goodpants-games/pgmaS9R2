@@ -163,6 +163,30 @@ return {
     {
       id = 63,
       type = "wall"
+    },
+    {
+      id = 81,
+      type = "wall"
+    },
+    {
+      id = 82,
+      type = "wall"
+    },
+    {
+      id = 83,
+      type = "wall"
+    },
+    {
+      id = 97,
+      type = "wall"
+    },
+    {
+      id = 98,
+      type = "wall"
+    },
+    {
+      id = 99,
+      type = "wall"
     }
   }
 }

@@ -35,4 +35,10 @@
  <tile id="55" type="top"/>
  <tile id="62" type="wall"/>
  <tile id="63" type="wall"/>
+ <tile id="81" type="wall"/>
+ <tile id="82" type="wall"/>
+ <tile id="83" type="wall"/>
+ <tile id="97" type="wall"/>
+ <tile id="98" type="wall"/>
+ <tile id="99" type="wall"/>
 </tileset>

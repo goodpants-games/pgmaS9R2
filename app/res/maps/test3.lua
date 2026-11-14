@@ -10,18 +10,13 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 4,
-  nextobjectid = 2,
+  nextobjectid = 3,
   properties = {},
   tilesets = {
     {
       name = "tileset",
       firstgid = 1,
       filename = "../tilesets/tileset.tsx"
-    },
-    {
-      name = "entity_types",
-      firstgid = 257,
-      filename = "../.templates/entity_types.tsx"
     },
     {
       name = "entity_types",
@@ -83,12 +78,12 @@ return {
       properties = {},
       objects = {
         {
-          id = 1,
+          id = 2,
           name = "",
           type = "player",
           shape = "rectangle",
           x = 208,
-          y = 128,
+          y = 112,
           width = 16,
           height = 16,
           rotation = 0,

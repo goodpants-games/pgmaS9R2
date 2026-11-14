@@ -19,8 +19,18 @@ function Checkpoint:new(x, y)
     self.msg:subscribe("interact", self._interact)
 end
 
+---@param txt string
+function Checkpoint:_popupText(txt)
+    local x = self:getCenterX()
+    local y = self:getCenterY() - 32
+    local ent = Util.newEntity("text_popup", x, y, txt)
+    if not ent then return end
+
+    self.world:addEntity(ent)
+end
+
 function Checkpoint:_interact()
-    print("checkpoint interacted")
+    self:_popupText("Checkpoint saved!")
     self.world:saveCheckpoint()
 end
 

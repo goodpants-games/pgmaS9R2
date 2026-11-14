@@ -40,7 +40,12 @@ function KeycardReader:loadProperties(id, props, entLookup)
         local target = Util.propCheck(props, "target", "object", id, "keycard_reader")
         if target == nil then return end
 
-        self.targets[1] = softassert( entLookup(target) ) --[[@as any]]
+        local obj = entLookup(target)
+        if obj then
+            self.targets[1] = obj --[[@as any]]
+        else
+            warn(("{object id %i 'keycard_reader'}: ent lookup failed"):format(id))
+        end
     end
 
     if props.targets then

@@ -507,15 +507,39 @@ function World:_loadMapObjects()
         if layer.type == "objectgroup" then
             ---@cast layer pklove.tiled.ObjectLayer
             for _, obj in ipairs(layer.objects) do
-                if obj.shape ~= "rectangle" then
-                    softerror("tiled object shape should be a rectangle!")
-                    goto continue
+                local ent ---@type game.entities.Entity?
+                local shape = obj.shape
+                
+                if shape == "rectangle" then
+                    local cx = obj.x + obj.width / 2
+                    local cy = obj.y + obj.height / 2
+
+                    -- tile objects have their origin at the bottom-left instead of
+                    -- the top-left. What the fuck?
+                    if obj.gid then
+                        cy = cy - obj.height
+                    end
+
+                    ent = self:newEntity(obj.type, cx, cy)
+                
+                elseif shape == "polyline" then
+                    local poly = {
+                        closed = false,
+                        points = obj.polygon
+                    }
+                    ent = self:newEntity(obj.type, obj.x, obj.y, poly)
+
+                elseif shape == "polygon" then
+                    local poly = {
+                        closed = true,
+                        points = obj.polygon
+                    }
+                    ent = self:newEntity(obj.type, obj.x, obj.y, poly)
+                
+                else
+                    warn(("object %i '%s': invalid object shape '%s'"):format(obj.id, obj.type, shape))
                 end
 
-                local cx = obj.x + obj.width / 2
-                local cy = obj.y + obj.height / 2
-
-                local ent = self:newEntity(obj.type, cx, cy)
                 if not ent then
                     print("error: could not load entity")
                     goto continue

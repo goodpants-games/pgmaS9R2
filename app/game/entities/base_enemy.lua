@@ -24,6 +24,7 @@ function Enemy:new(x, y, w, h)
     self.animState = nil ---@type string?
     self.faceDir = 0 -- in radians
     self.dirAnim = DirAnim()
+    self.patrolPath = nil ---@type game.entities.NpcPath
 
     -- sight timer stuff --
     self.sightTimer = 0
@@ -36,6 +37,7 @@ function Enemy:new(x, y, w, h)
     self.gunSight = Util.newEntity("gun_sight", 0, 0) --[[@as game.entities.GunSight]]
     self.gunSight.maxBounces = 1
 
+    -- movement stuff --
     self._hasMoveTarget = false
     self._moveTargetX = 0
     self._moveTargetY = 0
@@ -43,6 +45,7 @@ function Enemy:new(x, y, w, h)
     self._homeY = 0.0
     self._isTrackingPlayer = false
 
+    -- ai stuff --
     ---@type game.EnemyAi?
     self.ai = nil
 
@@ -57,7 +60,7 @@ function Enemy:new(x, y, w, h)
     self.msg:subscribe("witnessedDeath", self._witnessedDeath)
 end
 
-function Enemy:loadProperties(id, props)
+function Enemy:loadProperties(id, props, entLookup)
     local dir = Util.propCheck(props, "direction", "string", id, "enemy")
     if not dir then
         return
@@ -71,6 +74,20 @@ function Enemy:loadProperties(id, props)
         self.faceDir = math.pi
     elseif dir == "up" then
         self.faceDir = 3 * math.pi / 2
+    end
+
+    if props.path then
+        local pathId = Util.propCheck(props, "path", "object", id, "enemy")
+        if not pathId then return end
+
+        if pathId ~= 0 then
+            local path = entLookup(pathId)
+            if not path then
+                warn("enemy.loadProperties: could not dereference object ID")
+            end
+
+            self.patrolPath = path --[[@as any]]
+        end
     end
 end
 

@@ -4,6 +4,7 @@
  <object type="basic_enemy" gid="2" width="16" height="16">
   <properties>
    <property name="direction" value="down"/>
+   <property name="path" type="object" value="0"/>
   </properties>
  </object>
 </template>

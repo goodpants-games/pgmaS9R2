@@ -80,6 +80,9 @@ function love.keypressed(key, _, isrepeat)
     -- toggle debug mode when f1 is pressed
     if key == "f1" then
         Debug.enabled = not Debug.enabled
+        if not Debug.enabled then
+            Debug.console.setEnabled(false)
+        end
     end
 
     if Debug.enabled then

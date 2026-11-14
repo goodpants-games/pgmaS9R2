@@ -435,10 +435,10 @@ function World:_loadMap()
     if aiFlagsLayer then
         local invalidTilesetErr = false
         
-        for y=0, self.mapHeight-1 do
+        for y=0, mapHeight-1 do
             local row = {}
             self.aiFlags[y+1] = row
-            for x=0, self.mapWidth-1 do
+            for x=0, mapWidth-1 do
                 local gid = aiFlagsLayer:get(x, y)
 
                 if gid and gid ~= 0 then
@@ -459,6 +459,14 @@ function World:_loadMap()
         end
 
         self.map:removeLayer(aiFlagsLayer)
+    else
+        for y=0, mapHeight-1 do
+            local row = {}
+            self.aiFlags[y+1] = row
+            for x=0, mapWidth-1 do
+                row[x+1] = 0
+            end
+        end
     end
 
     -- init collision map

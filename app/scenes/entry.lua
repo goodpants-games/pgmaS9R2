@@ -7,6 +7,7 @@ function scene.load()
     Lg.setBackgroundColor(0.5, 0.5, 0.5)
 
     self.world = World()
+    self.world:reset("/res/maps/level1.lua")
     Mark_perf_heavy_frame()
 
     Debug.console.setVariable("world", self.world)
@@ -33,8 +34,10 @@ function scene.load()
         func = function(term_env, status)
             if status == "on" then
                 self.world.player.collision = false
+                self.world.player.moveSpeed = self.world.player.moveSpeed * 3
             elseif status == "off" then
                 self.world.player.collision = true
+                self.world.player.moveSpeed = self.world.player.moveSpeed / 3
             elseif not status then
                 term_env.print(self.world.player.collision and "off" or "on")
             else

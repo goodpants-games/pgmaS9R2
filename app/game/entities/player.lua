@@ -37,6 +37,7 @@ function Player:new(x, y)
     self.fireCharge = 0
     self.ammo = 1
     self.dead = false
+    self.moveSpeed = 1.5
 
     self.isDisguised = false
     self.disguiseEquipTimer = nil ---@type number?
@@ -110,8 +111,8 @@ function Player:update()
             inputX, inputY = math.normalize(inputX, inputY)
         end
 
-        self.xVel = inputX * 1.5
-        self.yVel = inputY * 1.5
+        self.xVel = inputX * self.moveSpeed
+        self.yVel = inputY * self.moveSpeed
     else
         self.xVel = 0
         self.yVel = 0

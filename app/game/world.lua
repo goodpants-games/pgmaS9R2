@@ -18,7 +18,7 @@ local ENTITY_OLDY = "__g_oldY"
 local World = batteries.class()
 
 function World:new()
-    self.map = Tiled.loadMap("/res/maps/test2.lua")
+    self.map = nil ---@type pklove.tiled.Map
     self.curFrame = 0
 
     self._nonCollidableTiles = {}
@@ -71,16 +71,7 @@ function World:new()
 
     self.msg = batteries.pubsub()
 
-    self:_loadMap()
-    self.enemyConductor = EnemyConductor(self)
-    self.camera = Camera(self)
-
-    self._respawnTimer = nil ---@type integer?
-
-    self.player.msg:subscribe("died", function(plr)
-        print("start respawn timer")
-        self._respawnTimer = 60
-    end)
+    self:reset("/res/maps/test.lua")
 end
 
 function World:update()
@@ -106,24 +97,7 @@ function World:update()
     self:_entityCollisions()
     self.camera:update()
 
-    while self._needEntityRemoval do
-        self._needEntityRemoval = false
-
-        for i=#self.entities, 1, -1 do
-            local ent = self.entities[i]
-            if ent._removeOnFrameEnd then
-                ent._removeOnFrameEnd = false
-                ent.msg:publish("removingFromWorld", ent)
-                ent.world = nil
-
-                if ent[ENTITY_RENDER_TAG] then
-                    ent[ENTITY_RENDER_TAG] = nil
-                    table.remove_value(self._renderOrder, ent)
-                end
-                table.remove(self.entities, i)
-            end
-        end
-    end
+    self:_flushEntRemovals()
 
     self.camX = math.round(self.camera.x) - App.scrW / 2
     self.camY = math.round(self.camera.y) - App.scrH / 2
@@ -156,7 +130,8 @@ function World:update()
     if self._respawnTimer then
         self._respawnTimer = self._respawnTimer - 1
         if self._respawnTimer <= 0 then
-            Sceneman.switchScene("entry")
+            self._respawnTimer = nil
+            self:reset()
         end
     end
 
@@ -400,6 +375,28 @@ function World:raycast(x, y, dx, dy, colFlags)
     return resultDist, resultNx, resultNy
 end
 
+---@param newMap string?
+function World:reset(newMap)
+    self:_clearEntities()
+
+    if newMap then
+        self.map = Tiled.loadMap(newMap)
+        self:_loadMap()
+    else
+        self:_loadMapObjects()
+    end
+
+    self.enemyConductor = EnemyConductor(self)
+    self.camera = Camera(self)
+
+    self._respawnTimer = nil ---@type integer?
+
+    self.player.msg:subscribe("died", function()
+        print("start respawn timer")
+        self._respawnTimer = 60
+    end)
+end
+
 --------------------------------------------------------------------------------
 
 function World:_loadMap()
@@ -431,6 +428,7 @@ function World:_loadMap()
     self.mapHeight = mapHeight
 
     -- load ai flags
+    self.aiFlags = {}
     local aiFlagsLayer = self.map:getLayerByName("AIFlags") --[[@as pklove.tiled.TileLayer]]
     if aiFlagsLayer then
         local invalidTilesetErr = false
@@ -470,6 +468,7 @@ function World:_loadMap()
     end
 
     -- init collision map
+    self.colMap = {}
     for y=1, self.mapHeight do
         local row = {}
         self.colMap[y] = row
@@ -515,8 +514,6 @@ function World:_loadMap()
 
     self.map:insertLayer(topLayer)
 
-    self:_loadMapObjects()
-
     -- initialize graphics
     for _, layer in self.map:iterLayers() do
         if layer.type == "tilelayer" then
@@ -524,6 +521,8 @@ function World:_loadMap()
             layer:syncGraphics()
         end
     end
+
+    self:_loadMapObjects()
 end
 
 function World:_loadMapObjects()
@@ -602,6 +601,36 @@ function World:_loadMapObjects()
     -- third pass: add each entity to the world
     for _, data in ipairs(objects) do
         self:addEntity(data.ent)
+    end
+end
+
+function World:_clearEntities()
+    for _, ent in ipairs(self.entities) do
+        ent:remove()
+    end
+
+    self:_flushEntRemovals()
+    self.player = nil
+end
+
+function World:_flushEntRemovals()
+    while self._needEntityRemoval do
+        self._needEntityRemoval = false
+
+        for i=#self.entities, 1, -1 do
+            local ent = self.entities[i]
+            if ent._removeOnFrameEnd then
+                ent._removeOnFrameEnd = false
+                ent.msg:publish("removingFromWorld", ent)
+                ent.world = nil
+
+                if ent[ENTITY_RENDER_TAG] then
+                    ent[ENTITY_RENDER_TAG] = nil
+                    table.remove_value(self._renderOrder, ent)
+                end
+                table.remove(self.entities, i)
+            end
+        end
     end
 end
 

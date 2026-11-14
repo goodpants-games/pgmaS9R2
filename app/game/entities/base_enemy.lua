@@ -103,10 +103,17 @@ function Enemy:_added()
 end
 
 function Enemy:_removing()
-    self.gunSight:remove()
+    if self.gunSight then
+        self.gunSight:remove()
+    end
+    
     self._sightCoro = nil
-    self.ai:release()
-    self.ai = nil
+    self.aiTask = nil
+
+    if self.ai then
+        self.ai:release()
+        self.ai = nil
+    end
 end
 
 function Enemy:_hit(hitVx, hitVy)

@@ -15,21 +15,64 @@ function scene.load()
         func = function (term_env, status)
             if status == "on" then
                 self.world.player.godMode = true
-                term_env.print("god mode enabled")
             elseif status == "off" then
                 self.world.player.godMode = false
-                term_env.print("god mode disabled")
             elseif not status then
                 term_env.print(self.world.player.godMode and "on" or "off")
             else
-                term_env.print("unknown status")
+                term_env.print("arg error")
             end
+        end
+    })
+
+    Debug.console.addCommand({
+        name = "noclip",
+        help = "[<on|off>]",
+        func = function(term_env, status)
+            if status == "on" then
+                self.world.player.collision = false
+            elseif status == "off" then
+                self.world.player.collision = true
+            elseif not status then
+                term_env.print(self.world.player.collision and "off" or "on")
+            else
+                term_env.print("arg error")
+            end
+        end
+    })
+
+    Debug.console.addCommand({
+        name = "spawn",
+        help = "<object name>",
+        func = function(term_env, itemName)
+            local plr = self.world.player
+            if not plr then return end
+
+            local ent = self.world:newEntity(itemName, plr:getCenterPos())
+            if ent then
+                self.world:addEntity(ent)
+            else
+                term_env.print("could not create object")
+            end
+        end
+    })
+
+    Debug.console.addCommand({
+        name = "give_ammo",
+        help = "",
+        func = function (term_env, ...)
+            local plr = self.world.player
+            if not plr then return end
+            plr.ammo = plr.ammo + 1
         end
     })
 end
 
 function scene.unload()
     Debug.console.removeCommand("godmode")
+    Debug.console.removeCommand("noclip")
+    Debug.console.removeCommand("spawn")
+    Debug.console.removeCommand("give_ammo")
     
     self.world:release()
     self = nil

@@ -28,3 +28,5 @@ invisible for 5 seconds or shooting two bullets instead of one
   you knife it it bounces off (because of the plate they're holding) and then
   they lose the maid outfit i guess idfk. maybe also the food items drop too.
   then it becomes a regular enemy lul, including the ability to Kill You.
+- sprite.lua: update it so the :play function doesn't error when animation is
+  not found. instead it simply returns a boolean indicating success.

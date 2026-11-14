@@ -76,7 +76,7 @@ function World:new()
     ---@private
     self._checkpointData = nil ---@type table?
 
-    self:reset("/res/maps/test.lua")
+    self:reset("/res/maps/test2.lua")
 end
 
 function World:update()

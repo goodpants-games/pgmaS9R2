@@ -40,18 +40,42 @@ function Projectile:_pickupFocusChanged(v)
 end
 
 function Projectile:_touched(oent, nx, ny)
-    if oent then
-        if oent:hasTag("enemy") then
-            oent:publish("hit", self.xVel, self.yVel)
-            self.entAttachedTo = oent
-            self:_enterAttachedMode()
-        end
+    if oent and oent:hasTag("enemy") and not oent.reflectProjectiles then
+        oent:publish("hit", self.xVel, self.yVel)
+        self.entAttachedTo = oent
+        self:_enterAttachedMode()
     else
-        self.bouncesLeft = self.bouncesLeft - 1
-        if self.bouncesLeft <= 0 then
-            self:_enterAttachedMode()
+        if not oent or oent.reflectProjectiles then
+            if oent then
+                oent:publish("hit", self.xVel, self.yVel)
+                
+                self.xVel = -self.xVel
+                self.yVel = -self.yVel
+
+                local ang = (love.math.random()*2-1) * math.rad(30)
+                self.xVel, self.yVel = math.rotate(self.xVel, self.yVel, ang)
+                self.bouncesLeft = 2
+                -- local normX = self:getCenterX() - oent:getCenterX()
+                -- local normY = self:getCenterY() - oent:getCenterY()
+                -- normX, normY = math.normalize(normX, normY)
+                -- print(normX, normY)
+
+                -- local speed = math.length(self.xVel, self.yVel)
+                -- self.xVel = normX * speed
+                -- self.yVel = normY * speed
+
+                -- v' = v - (1+R)(v ⋅ n)
+                -- local dot = (self.xVel * normX + self.yVel * normY) * (self.restitution + 1.0)
+                -- self.xVel = self.xVel - dot * normX
+                -- self.yVel = self.yVel - dot * normY
+            end
             
-            -- self:remove()
+            self.bouncesLeft = self.bouncesLeft - 1
+            if self.bouncesLeft <= 0 then
+                self:_enterAttachedMode()
+                
+                -- self:remove()
+            end
         end
     end
 end

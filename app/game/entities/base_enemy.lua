@@ -15,6 +15,9 @@ local Enemy = batteries.class {
     extends = require("game.entity")
 }
 
+Enemy.ALERT_MOVE_SPEED = ALERT_MOVE_SPEED
+Enemy.PATROL_MOVE_SPEED = PATROL_MOVE_SPEED
+
 function Enemy:new(x, y, w, h)
     self:super(x, y, w, h)
     self:addTag("enemy")
@@ -54,8 +57,10 @@ function Enemy:new(x, y, w, h)
     self.ai = nil
 
     self.aiBehavior = {
+        enabled = true,
         chasePlayer = true,
         investigateKills = true,
+        shootPlayer = true,
     }
 
     self.msg:subscribe("addedToWorld", self._added)
@@ -197,6 +202,45 @@ function Enemy:_moveToHome()
     self.isAlert = false
 end
 
+---@param myOrigX number
+---@param myOrigY number
+---@param victimOrigX number
+---@param victimOrigY number
+---@param hitVx number
+---@param hitVy number
+function Enemy:_killerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
+    self.isAlert = true
+    self.ai.yield = coroutine.yield
+    self.ai:beginKillerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
+
+    local searchBehavior = {
+        beginMove = self._beginMove,
+        isCurrentlyMoving = self._isCurrentlyMoving,
+        endMove = self._endMove,
+    }
+    local coro = coroutine.create(function()
+        self.ai:searchCoroutine(self, searchBehavior)
+    end)
+
+    while true do
+        if not coroutine.sresume(coro) then
+            break
+        end
+        coroutine.yield()
+    end
+
+    -- search is done... return home.
+    self.ai:release()
+    self.ai = nil
+
+    for _=1, 240 do
+        coroutine.yield()
+    end
+
+    self:_moveToHome()
+    return self:_patrolRoutine()
+end
+
 function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
     if not isPerpretator then
         return
@@ -225,36 +269,7 @@ function Enemy:_witnessedDeath(victim, hitVx, hitVy, isPerpretator)
         end
         
         -- initialize search for the killer
-        self.isAlert = true
-        self.ai.yield = coroutine.yield
-        self.ai:beginKillerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
-
-        local searchBehavior = {
-            beginMove = self._beginMove,
-            isCurrentlyMoving = self._isCurrentlyMoving,
-            endMove = self._endMove,
-        }
-        local coro = coroutine.create(function()
-            self.ai:searchCoroutine(self, searchBehavior)
-        end)
-
-        while true do
-            if not coroutine.sresume(coro) then
-                break
-            end
-            coroutine.yield()
-        end
-
-        -- search is done... return home.
-        self.ai:release()
-        self.ai = nil
-
-        for _=1, 240 do
-            coroutine.yield()
-        end
-
-        self:_moveToHome()
-        return self:_patrolRoutine()
+        return self:_killerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, hitVy)
     end)
 end
 
@@ -281,7 +296,9 @@ function Enemy:update()
         self.xVel = self.xVel * 0.9
         self.yVel = self.yVel * 0.9
         self.animState = "dead"
-    else
+
+        self:_updateAnimation(lastAnimState)
+    elseif self.aiBehavior.enabled then
         if self._hasMoveTarget then
             self.animState = "walk"
             
@@ -343,9 +360,18 @@ function Enemy:update()
         if self.ai then
             self.ai:update()
         end
-    end
 
-    self:_updateAnimation(lastAnimState)
+        self:_updateAnimation(lastAnimState)
+    else
+        self.gunSight:remove()
+        self.sightTimer = 0
+        self._sightCoro = nil
+        if self.ai then
+            self.ai:release()
+        end
+        self.ai = nil
+        self.aiTask = nil
+    end
 end
 
 function Enemy:_sightRoutine()
@@ -376,8 +402,11 @@ function Enemy:_sightRoutine()
     self._hasMoveTarget = false
     self.xVel = 0.0
     self.yVel = 0.0
-    self.world:addEntity(self.gunSight)
     self.fireTimer = 0
+
+    if self.aiBehavior.shootPlayer then
+        self.world:addEntity(self.gunSight)
+    end
 
     local cx, cy
     local playerCx, playerCy
@@ -398,13 +427,17 @@ function Enemy:_sightRoutine()
             playerDx, playerDy = math.normalize(playerDx, playerDy)
         end
 
-        self.gunSight:updateSight(cx, cy, playerDx, playerDy)
+        if self.aiBehavior.shootPlayer then
+            self.gunSight:updateSight(cx, cy, playerDx, playerDy)
+        end
         self.faceDir = math.atan2(playerDy, playerDx)
         coroutine.yield()
 
-        self.fireTimer = self.fireTimer + 1
-        if self.fireTimer == self.fireWait then
-            player:publish("hit", playerDx, playerDy)
+        if self.aiBehavior.shootPlayer then
+            self.fireTimer = self.fireTimer + 1
+            if self.fireTimer == self.fireWait then
+                player:publish("hit", playerDx, playerDy)
+            end
         end
     end
 
@@ -429,20 +462,24 @@ function Enemy:_sightRoutine()
     end
 
     -- hey, come back here!
+    return self:_beginChase(playerCx, playerCy)
+end
+
+function Enemy:_beginChase(playerCx, playerCy)
+    -- hey, come back here!
     self:_beginMove(playerCx, playerCy)
     self.isAlert = true
     self.moveSpeed = ALERT_MOVE_SPEED
 
     -- also, initiate the search...
-    cx, cy = self:getCenterPos()
-    playerVx, playerVy = math.normalize(playerVx, playerVy)
+    local cx, cy = self:getCenterPos()
 
     self.ai = EnemyAi(self)
     self.ai:initMapAwareness()
     self.ai.yield = coroutine.yield
     self.ai:beginChaseSearch(cx, cy, playerCx, playerCy, 10)
 
-    self.aiTask = coroutine.create(function()
+    local function aiTask()
         local searchBehavior = {
             expand = true,
             beginMove = self._beginMove,
@@ -473,7 +510,13 @@ function Enemy:_sightRoutine()
 
         self:_moveToHome()
         return self:_patrolRoutine()
-    end)
+    end
+
+    if coroutine.running() == self.aiTask then
+        return aiTask()
+    else
+        self.aiTask = coroutine.create(aiTask)
+    end
 end
 
 ---@param path any
@@ -589,7 +632,7 @@ function Enemy:_updateAnimation(lastAnimState)
     local spr = self.render.sprite
     if not spr then return end
 
-    if self.animState == "dead" then
+    if self.animState == "dead" then        
         local angInt = getAngleInt(-self.faceDir + math.pi/2, 8)
         local celStart = spr.res.animations.dead.from
         if spr.curAnim then
@@ -599,9 +642,16 @@ function Enemy:_updateAnimation(lastAnimState)
         spr.cel = celStart + angInt
     else
         local angInt = getAngleInt(self.faceDir, 4)
-        self.dirAnim:setDirection(spr, DIRECTIONS[angInt+1])
+        local s = pcall(self.dirAnim.setDirection, self.dirAnim, spr, DIRECTIONS[angInt+1])
+        if not s then
+            warn("could not play animation")
+        end
+
         if self.animState ~= lastAnimState then
-            self.dirAnim:play(spr, self.animState)
+            local s = pcall(self.dirAnim.play, self.dirAnim, spr, self.animState)
+            if not s then
+                warn("could not play animation...")
+            end
         end
     end
 

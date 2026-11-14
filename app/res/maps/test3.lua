@@ -22,6 +22,11 @@ return {
       name = "entity_types",
       firstgid = 257,
       filename = "../.templates/entity_types.tsx"
+    },
+    {
+      name = "entity_types",
+      firstgid = 257,
+      filename = "../tilesets/entity_types.tsx"
     }
   },
   layers = {
@@ -80,7 +85,7 @@ return {
         {
           id = 1,
           name = "",
-          type = "",
+          type = "player",
           shape = "rectangle",
           x = 208,
           y = 128,

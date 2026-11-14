@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 6,
-  nextobjectid = 39,
+  nextobjectid = 40,
   properties = {},
   tilesets = {
     {
@@ -125,13 +125,13 @@ return {
           name = "",
           type = "player",
           shape = "rectangle",
-          x = 64,
-          y = 48,
+          x = 176,
+          y = 80,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 273,
           visible = true,
           properties = {}
         },
@@ -140,8 +140,8 @@ return {
           name = "",
           type = "disguise_pickup",
           shape = "rectangle",
-          x = 64,
-          y = 80,
+          x = 160,
+          y = 96,
           width = 16,
           height = 16,
           rotation = 0,
@@ -160,7 +160,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 274,
           visible = true,
           properties = {
             ["direction"] = "down",
@@ -172,16 +172,16 @@ return {
           name = "",
           type = "basic_enemy",
           shape = "rectangle",
-          x = 328,
-          y = 56,
+          x = 248,
+          y = 96,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 274,
           visible = true,
           properties = {
-            ["direction"] = "down",
+            ["direction"] = "up",
             ["path"] = { id = 36 }
           }
         },
@@ -196,7 +196,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 278,
           visible = true,
           properties = {
             ["auth"] = 1,
@@ -216,7 +216,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 277,
           visible = true,
           properties = {
             ["auth"] = 0,
@@ -235,7 +235,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 277,
           visible = true,
           properties = {
             ["auth"] = -1,
@@ -254,7 +254,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 277,
           visible = true,
           properties = {
             ["auth"] = -1,
@@ -273,7 +273,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 277,
           visible = true,
           properties = {
             ["auth"] = 1,
@@ -292,7 +292,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 276,
           visible = true,
           properties = {
             ["close_after_entry"] = false,
@@ -311,7 +311,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 276,
           visible = true,
           properties = {
             ["close_after_entry"] = true,
@@ -330,7 +330,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 276,
           visible = true,
           properties = {
             ["close_after_entry"] = true,
@@ -349,7 +349,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 276,
           visible = true,
           properties = {
             ["close_after_entry"] = true,
@@ -368,11 +368,11 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 275,
           visible = true,
           properties = {
-            ["direction"] = "down",
-            ["path"] = { id = 35 }
+            ["direction"] = "up",
+            ["path"] = { id = 39 }
           }
         },
         {
@@ -386,7 +386,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 277,
           visible = true,
           properties = {
             ["auth"] = -1,
@@ -405,7 +405,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 278,
           visible = true,
           properties = {
             ["auth"] = 0,
@@ -426,7 +426,7 @@ return {
           height = 16,
           rotation = 0,
           opacity = 1,
-          gid = 0,
+          gid = 276,
           visible = true,
           properties = {
             ["close_after_entry"] = false,
@@ -449,8 +449,28 @@ return {
           polygon = {
             { x = 0, y = 0 },
             { x = 56, y = 0 },
-            { x = 56, y = 96 },
-            { x = 0, y = 96 }
+            { x = 56, y = 40 },
+            { x = 0, y = 40 }
+          },
+          properties = {}
+        },
+        {
+          id = 39,
+          name = "",
+          type = "npc_path",
+          shape = "polygon",
+          x = 288,
+          y = 224,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          polygon = {
+            { x = 0, y = 0 },
+            { x = 56, y = 0 },
+            { x = 56, y = 40 },
+            { x = 0, y = 40 }
           },
           properties = {}
         },

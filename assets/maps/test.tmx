@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="37" height="29" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="23">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="37" height="29" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="24">
  <tileset firstgid="1" source="../tilesets/tileset.tsx"/>
  <layer id="3" name="Background" width="37" height="29">
   <data encoding="base64">
@@ -14,6 +14,7 @@
  <objectgroup id="2" name="Object Layer 1">
   <object id="4" template="../.templates/player.tx" x="288" y="128"/>
   <object id="21" type="disguise_pickup" x="256" y="176" width="16" height="16"/>
+  <object id="23" type="checkpoint" x="224" y="368" width="16" height="16"/>
   <object id="14" template="../.templates/door.tx" x="192" y="176"/>
   <object id="15" template="../.templates/keycard_reader.tx" x="272" y="368">
    <properties>

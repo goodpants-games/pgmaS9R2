@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 4,
-  nextobjectid = 23,
+  nextobjectid = 24,
   properties = {},
   tilesets = {
     {
@@ -99,6 +99,20 @@ return {
           shape = "rectangle",
           x = 256,
           y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 23,
+          name = "",
+          type = "checkpoint",
+          shape = "rectangle",
+          x = 224,
+          y = 368,
           width = 16,
           height = 16,
           rotation = 0,

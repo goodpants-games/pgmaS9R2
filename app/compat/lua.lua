@@ -28,6 +28,17 @@ if unpack == nil then
     unpack = table.unpack
 end
 
+-- Lua 5.2 removes loadstring in favor of load. They behave identically for
+-- strings.
+if loadstring == nil then
+    ---@param text string
+    ---@param chunkname string?
+    ---@return function?, string error_message?
+    function loadstring(text, chunkname)
+        return load(text, chunkname, "bt", nil)
+    end
+end
+
 -- Lua 5.2 removes setfenv because they redesigned environment overloading. We
 -- can emulate setfenv by replacing the _ENV function upvalue using the debug
 -- library.

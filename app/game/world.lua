@@ -9,6 +9,9 @@ local Camera = require("game.camera")
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "interact", "camSwitch"}
 local ENTITY_RENDER_TAG = "__gtag_render"
+local ENTITY_POINTCOL = "__gtag_pointCol"
+local ENTITY_OLDX = "__g_oldX"
+local ENTITY_OLDY = "__g_oldY"
 
 ---@class game.World: batteries.Class
 ---@overload fun():game.World
@@ -587,8 +590,14 @@ function World:_collectColEnts()
     for _, ent in ipairs(self.entities) do
         if ent.collision then
             colEnts[#colEnts+1] = ent
-            ent.__g_oldX = ent.x
-            ent.__g_oldY = ent.y
+            ent[ENTITY_OLDX] = ent.x
+            ent[ENTITY_OLDY] = ent.y
+
+            if ent.width == 0.0 and ent.height == 0.0 then
+                ent[ENTITY_POINTCOL] = true
+            else
+                ent[ENTITY_POINTCOL] = nil
+            end
         end
     end
 end
@@ -603,26 +612,33 @@ function World:_moveEntities()
 
     -- then, perform X collision
     for _, ent in ipairs(colEnts) do
-        local oldX, oldY = ent.__g_oldX, ent.__g_oldY
-        if not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
-            local colX, _, colW, _, colEnt =
-                Collision.gameCollision(ent.x, ent.y, oldX, oldY,
-                                        ent.width, ent.height, self._getCol)
-            if colX then
-                local dir
-                if ent.xVel > 0 then
-                    ent.x = colX - ent.width
-                    dir = -1
-                else
-                    ent.x = colX + colW
-                    dir = 1
-                end
-
-                ent.xVel = ent.xVel * -ent.restitution
-
-                ent.msg:publish("touched", ent, colEnt, dir, 0)
-            end
+        if ent.monitorOnly or ent[ENTITY_POINTCOL] then
+            goto continue
         end
+        if bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) == 0 then
+            goto continue
+        end
+
+        local oldX, oldY = ent[ENTITY_OLDX], ent[ENTITY_OLDY]
+        local colX, _, colW, _, colEnt =
+            Collision.gameCollision(ent.x, ent.y, oldX, oldY,
+                                    ent.width, ent.height, self._getCol)
+        if colX then
+            local dir
+            if ent.xVel > 0 then
+                ent.x = colX - ent.width
+                dir = -1
+            else
+                ent.x = colX + colW
+                dir = 1
+            end
+
+            ent.xVel = ent.xVel * -ent.restitution
+
+            ent.msg:publish("touched", ent, colEnt, dir, 0)
+        end
+
+        ::continue::
     end
 
     -- first, move all Y
@@ -632,25 +648,72 @@ function World:_moveEntities()
 
     -- then, perform Y collision
     for _, ent in ipairs(colEnts) do
-        local oldX, oldY = ent.__g_oldX, ent.__g_oldY
-        if not ent.monitorOnly and bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) ~= 0 then
-            local _, colY, _, colH, colEnt =
-                Collision.gameCollision(ent.x, ent.y, oldX, oldY,
-                                        ent.width, ent.height, self._getCol)
-            if colY then
-                local dir
-                if ent.yVel > 0 then
-                    ent.y = colY - ent.height
-                    dir = -1
-                else
-                    ent.y = colY + colH
-                    dir = 1
-                end
-    
-                ent.yVel = ent.yVel * -ent.restitution
-                ent.msg:publish("touched", ent, colEnt, 0, dir)
-            end
+        if ent.monitorOnly or ent[ENTITY_POINTCOL] then
+            goto continue
         end
+        if bit.band(ent.colMask, Consts.COLGROUP_DEFAULT) == 0 then
+            goto continue
+        end
+
+        local oldX, oldY = ent[ENTITY_OLDX], ent[ENTITY_OLDY]
+        local _, colY, _, colH, colEnt =
+            Collision.gameCollision(ent.x, ent.y, oldX, oldY,
+                                    ent.width, ent.height, self._getCol)
+        if colY then
+            local dir
+            if ent.yVel > 0 then
+                ent.y = colY - ent.height
+                dir = -1
+            else
+                ent.y = colY + colH
+                dir = 1
+            end
+
+            ent.yVel = ent.yVel * -ent.restitution
+            ent.msg:publish("touched", ent, colEnt, 0, dir)
+        end
+
+        ::continue::
+    end
+
+    -- point objects are handled specially, instead using continuous collision
+    -- detection achieved via raycasts
+    for _, ent in ipairs(colEnts) do
+        if not ent[ENTITY_POINTCOL] then
+            goto continue
+        end
+
+        local oldX, oldY = ent[ENTITY_OLDX], ent[ENTITY_OLDY]
+        local oldTx = math.floor(oldX / TILE_SIZE)
+        local oldTy = math.floor(oldY / TILE_SIZE)
+        if self:isCol(oldTx, oldTy) then
+            goto continue
+        end
+
+        local dx = ent.x - oldX
+        local dy = ent.y - oldY
+        local rd, rnx, rny =
+            self:raycast(oldX, oldY, dx, dy, Consts.COLGROUP_DEFAULT)
+        
+        if rd then
+            dx, dy = math.normalize(dx, dy)
+            local hitX = oldX + dx * rd
+            local hitY = oldY + dy * rd
+            ent.x = hitX + rnx * 0.001
+            ent.y = hitY + rny * 0.001
+
+            print("hit", rnx, rny)
+
+            -- reflect:
+            -- v' = v - (1+R)(v ⋅ n)
+            local dot = (ent.xVel * rnx + ent.yVel * rny) * (ent.restitution + 1.0)
+            ent.xVel = ent.xVel - dot * rnx
+            ent.yVel = ent.yVel - dot * rny
+
+            ent.msg:publish("touched", ent, nil, rnx, rny)
+        end
+
+        ::continue::
     end
 end
 
@@ -670,25 +733,81 @@ function World:_entityCollisions()
             table.append_inplace(ent1._prevTouching, ent1._touching)
             table.clear(ent1._touching)
 
-            for _, ent2 in ipairs(colEnts) do
-                if ent1 == ent2 then
-                    goto continue
-                end
-                if bit.band(ent1.colMask, ent2.colGroup) == 0 then
-                    goto continue
-                end
+            local oldX1 = ent1[ENTITY_OLDX]
+            local oldY1 = ent1[ENTITY_OLDY]
 
-                local did_collide = Collision.rectRectCollision(
-                    ent1.x, ent1.y, ent1.width, ent1.height,
-                    ent2.x, ent2.y, ent2.width, ent2.height)
-                if did_collide then
-                    local key = Util.upair2u(ent1.id, ent2.id)
-                    if not contacts[key] then
-                        contacts[key] = { ent1, ent2 }
+            if ent1[ENTITY_POINTCOL] then
+                for _, ent2 in ipairs(colEnts) do
+                    if ent1 == ent2 then
+                        goto continue
                     end
-                end
+                    if bit.band(ent1.colMask, ent2.colGroup) == 0 then
+                        goto continue
+                    end
 
-                ::continue::
+                    -- calculate AABB containing both the object's old and new
+                    -- position
+                    local minX, minY
+                    local maxX, maxY
+                    local dx = ent1.x - oldX1
+                    local dy = ent1.y - oldY1
+
+                    if dx > 0 then
+                        minX, maxX = oldX1, ent1.x
+                    else
+                        minX, maxX = ent1.x, oldX1
+                    end
+
+                    if dy > 0 then
+                        minY, maxY = oldY1, ent1.y
+                    else
+                        minY, maxY = ent1.y, oldY1
+                    end
+
+                    -- optimization pass: ent2 cannot be colliding with ent1 if
+                    -- ent2 is not within this AABB
+                    local aabb_collide = Collision.rectRectCollision(
+                        minX, minY, maxX, maxY,
+                        ent2.x, ent2.y, ent2.width, ent2.height)
+                    if not aabb_collide then
+                        goto continue
+                    end
+                    
+                    -- calculate line intersection
+                    local cd, cnx, cny = Collision.rayRectIntersection(
+                        oldX1, oldY1, dx, dy,
+                        ent2.x, ent2.y, ent2.width, ent2.height)
+                    
+                    if cd and cd * cd < dx * dx + dy * dy then
+                        local key = Util.upair2u(ent1.id, ent2.id)
+                        if not contacts[key] then
+                            contacts[key] = { ent1, ent2 }
+                        end
+                    end
+
+                    ::continue::
+                end
+            else
+                for _, ent2 in ipairs(colEnts) do
+                    if ent1 == ent2 then
+                        goto continue
+                    end
+                    if bit.band(ent1.colMask, ent2.colGroup) == 0 then
+                        goto continue
+                    end
+
+                    local did_collide = Collision.rectRectCollision(
+                        ent1.x, ent1.y, ent1.width, ent1.height,
+                        ent2.x, ent2.y, ent2.width, ent2.height)
+                    if did_collide then
+                        local key = Util.upair2u(ent1.id, ent2.id)
+                        if not contacts[key] then
+                            contacts[key] = { ent1, ent2 }
+                        end
+                    end
+
+                    ::continue::
+                end
             end
         else
             ent1._touching = nil

@@ -69,12 +69,23 @@ function love.load(args)
 end
 
 ---@diagnostic disable-next-line duplicate-set-field
-function love.keypressed(key)
-    Sceneman.dispatch("keypressed", key)
+function love.keypressed(key, _, isrepeat)
+    if Debug.console.isEnabled() then
+        Debug.console.keyPressed(key)
+    else
+        if isrepeat then return end
+        Sceneman.dispatch("keypressed", key)
+    end
 
     -- toggle debug mode when f1 is pressed
     if key == "f1" then
         Debug.enabled = not Debug.enabled
+    end
+
+    if Debug.enabled then
+        if key == "f2" then
+            Debug.console.setEnabled(not Debug.console.isEnabled())
+        end
     end
 
     -- capture a screenshot of the window when f12 is pressed. the resolution of
@@ -96,7 +107,11 @@ end
 
 ---@diagnostic disable-next-line duplicate-set-field
 function love.textinput(...)
-    Sceneman.dispatch("textinput", ...)
+    if Debug.console.isEnabled() then
+        Debug.console.textInput(...)
+    else
+        Sceneman.dispatch("textinput", ...)
+    end
 end
 
 ---@diagnostic disable-next-line duplicate-set-field
@@ -111,7 +126,9 @@ function love.update(dt)
     Jprof.pop()
     anl_mem:add_sample(collectgarbage("count"))
 
-    Input.update()
+    if not Debug.console.isEnabled() then
+        Input.update()
+    end
 
     Debug.draw.enabled = Debug.enabled
 
@@ -185,6 +202,7 @@ function love.draw()
 
         Sceneman.draw()
         Debug.draw:flush()
+        Debug.console.draw()
 
         Lg.setCanvas()
     end

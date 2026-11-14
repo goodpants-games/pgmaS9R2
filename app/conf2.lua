@@ -88,4 +88,6 @@ else
     }
 end
 
+-- debug stuff --
 require("dbgdraw")
+Debug.console = require("console")

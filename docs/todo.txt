@@ -24,3 +24,7 @@ invisible for 5 seconds or shooting two bullets instead of one
 
 === coding ===
 - export.sh: ignore dotfiles
+- maid enemy: patrols but freezes in place upon sight and doesn't attack. when
+  you knife it it bounces off (because of the plate they're holding) and then
+  they lose the maid outfit i guess idfk. maybe also the food items drop too.
+  then it becomes a regular enemy lul, including the ability to Kill You.

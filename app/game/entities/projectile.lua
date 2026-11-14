@@ -38,10 +38,12 @@ function Projectile:_pickupFocusChanged(v)
 end
 
 function Projectile:_touched(oent, nx, ny)
-    if oent and oent:hasTag("enemy") then
-        oent:publish("hit", self.xVel, self.yVel)
-        self.entAttachedTo = oent
-        self:_enterAttachedMode()
+    if oent then
+        if oent:hasTag("enemy") then
+            oent:publish("hit", self.xVel, self.yVel)
+            self.entAttachedTo = oent
+            self:_enterAttachedMode()
+        end
     else
         self.bouncesLeft = self.bouncesLeft - 1
         if self.bouncesLeft <= 0 then
@@ -61,9 +63,11 @@ function Projectile:_pickUp(ent)
 end
 
 function Projectile:_enterAttachedMode()
-    self.renderSx = math.sign2(self.xVel)
-    self.sprite.cel = 2
-    self.renderAngle = 0
+    if self.entAttachedTo then
+        self.renderSx = math.sign2(self.xVel)
+        self.sprite.cel = 2
+        self.renderAngle = 0
+    end
     
     self.xVel = 0.0
     self.yVel = 0.0

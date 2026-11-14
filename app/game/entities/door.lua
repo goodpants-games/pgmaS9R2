@@ -49,8 +49,15 @@ function Door:loadProperties(id, props)
     self.closed = props.closed
     self.closeAfterEntry = closeAfterEntry
     self.direction = direction
-    self:_setAnim(true)
-    self.render.sprite:stop()
+
+    if self.closeAfterEntry then
+        self.collision = true
+        self.touchMonitor = true
+        self.msg:subscribe("touchEnded", self._touchEnded)
+
+        self.render.sprite = Resmgr.newSprite("/res/sprites/door2.json")
+        self.render.sprite.alignment = "topleft"
+    end
 
     if self.direction == "vertical" then
         self.render.ox = -11
@@ -64,16 +71,8 @@ function Door:loadProperties(id, props)
         self.height = 16
     end
 
-    print("close after entry:", self.closeAfterEntry)
-
-    if self.closeAfterEntry then
-        self.collision = true
-        self.touchMonitor = true
-        self.msg:subscribe("touchEnded", self._touchEnded)
-
-        self.render.sprite = Resmgr.newSprite("/res/sprites/door2.json")
-        self.render.sprite.alignment = "topleft"
-    end
+    self:_setAnim(true)
+    self.render.sprite:stop()
 end
 
 function Door:_setCollision(colId)
@@ -90,7 +89,6 @@ function Door:_setCollision(colId)
 end
 
 function Door:_added()
-    print("direction is ", self.direction)
     self:_setCollision(self.closed and 1 or 0)
 end
 

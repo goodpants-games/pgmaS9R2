@@ -1,6 +1,7 @@
-local RectRenderer = require("game.util").RectRenderer
-local centeredRect = require("game.util").centeredRect
-local Const = require("game.consts")
+local centeredRect   = require("game.util").centeredRect
+
+local Const  = require "game.consts"
+local Resmgr = require "game.resmgr"
 
 ---@class game.entities.Projectile: game.Entity
 local Projectile = batteries.class {
@@ -23,6 +24,10 @@ function Projectile:new(x, y)
     ---@type game.Entity?
     self.entAttachedTo = nil
     self.hasPickupFocus = false
+
+    self.sprite = Resmgr.newSprite("/res/sprites/knife.json")
+    self.renderAngle = 0.0
+    self.renderSx = 1.0
 
     self.msg:subscribe("touched", self._touched)
     self.msg:subscribe("interactFocusChanged", self._pickupFocusChanged)
@@ -56,8 +61,12 @@ function Projectile:_pickUp(ent)
 end
 
 function Projectile:_enterAttachedMode()
-    self.xVel = 0
-    self.yVel = 0
+    self.renderSx = math.sign2(self.xVel)
+    self.sprite.cel = 2
+    self.renderAngle = 0
+    
+    self.xVel = 0.0
+    self.yVel = 0.0
     self.isAttached = true
     self.alwaysDrawOverTilemap = true
 
@@ -71,19 +80,22 @@ function Projectile:postUpdate()
     if ent then
         self.x, self.y = ent:getCenterPos()
     end
+
+    if self.xVel ~= 0 or self.yVel ~= 0 then
+        self.renderAngle = math.atan2(self.yVel, self.xVel)
+    end
 end
 
 function Projectile:render()
-    local cx = self.x + self.width / 2
-    local cy = self.y + self.height / 2
+    local cx, cy = self:getCenterPos()
 
     if self.hasPickupFocus then
-        Lg.setColor(1, 1, 0)
-    else
         Lg.setColor(0, 0, 0)
+    else
+        Lg.setColor(1, 1, 1)
     end
     
-    Lg.circle("fill", cx, cy, 2)
+    self.sprite:draw(cx, cy, self.renderAngle, self.renderSx, 1.0)
 end
 
 return Projectile

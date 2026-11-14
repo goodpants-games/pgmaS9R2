@@ -306,7 +306,12 @@ function EnemyAI:beginKillerSearch(myX, myY, victimX, victimY, bulletDx, bulletD
     end
 end
 
-function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
+---@param myX number
+---@param myY number
+---@param lastKnownX number
+---@param lastKnownY number
+---@param maxDepth integer
+function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY, maxDepth)
     local lastKnownTx = math.floor(lastKnownX / TILE_SIZE)
     local lastKnownTy = math.floor(lastKnownY / TILE_SIZE)
 
@@ -347,11 +352,11 @@ function EnemyAI:beginChaseSearch(myX, myY, lastKnownX, lastKnownY)
             iter = 0
         end
 
-        -- if self.mapAwareness[y+1][x+1] == 3 then
-        --     return false
-        -- end
+        if self.mapAwareness[y+1][x+1] == 3 then
+            return false
+        end
 
-        if depth > 20 then
+        if depth > maxDepth then
             return false
         end
         self.mapAwareness[y+1][x+1] = 2
@@ -401,6 +406,7 @@ end
 ---@field beginMove fun(ent:game.Entity, x:number, y:number)
 ---@field endMove fun(ent:game.Entity)
 ---@field isCurrentlyMoving fun(ent:game.Entity):boolean
+---@field expand boolean
 
 ---Coroutine proceure to pathfind.
 ---
@@ -496,6 +502,17 @@ function EnemyAI:searchCoroutine(ent, behavior)
     local world = ent.world
     local sightCoro
 
+    local expandTimer = 0
+    local expandQueue ---@type table
+    local expandQueueLen = 0
+    local expandCount = 0
+    local expandCheckTimes ---@type table
+
+    if behavior.expand then
+        expandQueue = {}
+        expandCheckTimes = {}
+    end
+
     local pathfindParams = {
         coroutineLimit = 20,
         cost = function(_,_, tx, ty)
@@ -524,6 +541,63 @@ function EnemyAI:searchCoroutine(ent, behavior)
             if sightCoro then
                 if not coroutine.sresume(sightCoro) then
                     sightCoro = nil
+                end
+            end
+
+            if behavior.expand and expandCount < 20 then
+                expandTimer = expandTimer + 1
+                if expandTimer == 8 then
+                    expandCount = expandCount + 1
+                    expandTimer = 0
+
+                    local awareness = self.mapAwareness
+                    local pair2u = Util.pair2u
+                    for y=2, world.mapHeight - 1 do
+                        for x=2, world.mapWidth - 1 do
+                            if awareness[y][x] == 2 then
+                                if awareness[y][x-1] ~= 2 then
+                                    expandQueue[expandQueueLen+1] = x-1
+                                    expandQueue[expandQueueLen+2] = y
+                                    expandQueueLen = expandQueueLen + 2
+                                end
+                                
+                                if awareness[y][x+1] ~= 2 then
+                                    expandQueue[expandQueueLen+1] = x+1
+                                    expandQueue[expandQueueLen+2] = y
+                                    expandQueueLen = expandQueueLen + 2
+                                end
+
+                                if awareness[y-1][x] ~= 2 then
+                                    expandQueue[expandQueueLen+1] = x
+                                    expandQueue[expandQueueLen+2] = y-1
+                                    expandQueueLen = expandQueueLen + 2
+                                end
+
+                                if awareness[y+1][x] ~= 2 then
+                                    expandQueue[expandQueueLen+1] = x
+                                    expandQueue[expandQueueLen+2] = y+1
+                                    expandQueueLen = expandQueueLen + 2
+                                end
+                            end
+                        end
+                    end
+
+                    for i=expandQueueLen, 1, -2 do
+                        local x, y = expandQueue[i-1], expandQueue[i]
+                        expandQueue[i] = nil
+                        expandQueue[i-1] = nil
+
+                        local k = pair2u(x, y)
+                        local checkCount = expandCheckTimes[k] or 0
+                        if checkCount < 1 then
+                            checkCount = checkCount + 1
+                            expandCheckTimes[k] = checkCount
+                            if awareness[y][x] ~= 0 then
+                                awareness[y][x] = 2
+                            end
+                        end
+                    end
+                    expandQueueLen = 0
                 end
             end
         end,

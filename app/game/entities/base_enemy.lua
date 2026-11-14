@@ -431,10 +431,11 @@ function Enemy:_sightRoutine()
     self.ai = EnemyAi(self)
     self.ai:initMapAwareness()
     self.ai.yield = coroutine.yield
-    self.ai:beginChaseSearch(cx, cy, playerCx, playerCy)
+    self.ai:beginChaseSearch(cx, cy, playerCx, playerCy, 10)
 
     self.aiTask = coroutine.create(function()
         local searchBehavior = {
+            expand = true,
             beginMove = self._beginMove,
             isCurrentlyMoving = self._isCurrentlyMoving,
             endMove = self._endMove,

@@ -154,7 +154,7 @@ return {
           name = "",
           type = "basic_enemy",
           shape = "rectangle",
-          x = 280,
+          x = 272,
           y = 176,
           width = 16,
           height = 16,
@@ -163,8 +163,8 @@ return {
           gid = 274,
           visible = true,
           properties = {
-            ["direction"] = "down",
-            ["path"] = { id = 35 }
+            ["direction"] = "up",
+            ["path"] = { id = 0 }
           }
         },
         {
@@ -433,26 +433,6 @@ return {
             ["closed"] = true,
             ["direction"] = "vertical"
           }
-        },
-        {
-          id = 35,
-          name = "",
-          type = "npc_path",
-          shape = "polygon",
-          x = 288,
-          y = 168,
-          width = 0,
-          height = 0,
-          rotation = 0,
-          opacity = 1,
-          visible = true,
-          polygon = {
-            { x = 0, y = 0 },
-            { x = 56, y = 0 },
-            { x = 56, y = 40 },
-            { x = 0, y = 40 }
-          },
-          properties = {}
         },
         {
           id = 39,

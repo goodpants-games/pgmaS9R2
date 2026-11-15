@@ -174,11 +174,7 @@ end
 
 function Player:render()
     Lg.push()
-    if self.dead then
-        Lg.setColor(0.5, 0.5, 0.5)
-    else
-        Lg.setColor(1, 1, 1)
-    end
+    Lg.setColor(1, 1, 1)
 
     Lg.translate(self.renderOx, self.renderOy)
     self.renderSprite:draw(math.round(self.x), math.round(self.y))

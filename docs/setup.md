@@ -22,12 +22,11 @@ Store). **IMPORTANT!** When setting up the installation, make sure to check the
 "Add python.exe to PATH" option.
 
 ### LÖVE
-Provided in the tools folder is a ZIP of a custom patch[^1] of LÖVE 11.5. First,
-create a folder named "love" in the project root directory (next to CREDITS.txt
-and LICENSE). Place the unzipped contents of love_l52.zip inside the
-aforementioned "love" folder, ensuring that there are no subfolders. **It is
-important that it is done exactly this way**. This is because the game launcher
-helper script (described later) will look for this file.
+Provided in the tools folder is a ZIP of a custom patch[^1] of LÖVE 11.5. Unzip
+this folder into a a new folder named `love` placed in the project root
+directory (need to CREDITS.txt and LICENSE). Ensure there are no subfolders.
+**It is important that it is done exactly this way**. This is because the game
+launcher helper script (described later) will look for this file.
 
 You may also download LOVE from their website: https://love2d.org/. However, I
 already have a helper script in this repo to run LOVE given that you followed
@@ -60,9 +59,9 @@ There are two ways to open PowerShell with the session's current directory set
 to the project root:
 1. Open the project folder in File Explorer. Click on an empty spot in the
    location bar to begin typing into it. Type `powershell` and press ENTER.
-2. Press WIN+R and type in `powershell` to open a new PowerShell window with the
-   current directory set to your user folder. Then, to properly set the current
-   directory, type:
+2. OR, Press WIN+R and type in `powershell` to open a new PowerShell window with
+   the current directory set to your user folder. Then, to properly set the
+   current directory, type:
    ```powershell
    cd 'C:\Path\To\Project\Dir'
    ```
@@ -101,7 +100,7 @@ To add the Aseprite folder to this variable:
    path, and then press ENTER.
 5. Press "OK" for each window until every window has been closed.
 
-### 2. Set a session environment variable
+### OR 2. Set a session environment variable
 In your PowerShell session, type out this command, replacing the given path with
 your path to aseprite.exe:
 ```powershell

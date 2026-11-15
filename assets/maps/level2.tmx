@@ -55,9 +55,10 @@
     <property name="path" type="object" value="11"/>
    </properties>
   </object>
-  <object id="9" template="../.templates/keycard_reader.tx" x="432" y="304">
+  <object id="9" template="../.templates/keycard_reader.tx" x="384" y="208">
    <properties>
     <property name="auth" type="int" value="0"/>
+    <property name="direction" value="right"/>
     <property name="target" type="object" value="6"/>
    </properties>
   </object>

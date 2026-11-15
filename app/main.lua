@@ -50,10 +50,17 @@ function love.load(args)
     love.keyboard.setTextInput(false)
 
     -- parse comamnd-line arguments
+    local initLevel
+
     if Debug.enabled then
         local argi = 1
         while argi <= #args do
             local arg = args[argi]
+            if arg == "--level" then
+                argi = argi + 1
+                initLevel = args[argi]
+            end
+
             argi = argi + 1
         end
     end
@@ -65,7 +72,7 @@ function love.load(args)
 
     Input.init()
     Lg.setFont(fontres.monogram)
-    Sceneman.switchScene("entry")
+    Sceneman.switchScene("game", initLevel)
 end
 
 ---@diagnostic disable-next-line duplicate-set-field

@@ -9,12 +9,12 @@ local function loadMap(mapName)
     self.world:reset(("/res/maps/%s.lua"):format(mapName))
 end
 
-function scene.load()
+function scene.load(initLevel)
     self = {}
     Lg.setBackgroundColor(0.5, 0.5, 0.5)
 
     self.world = World()
-    loadMap(gameProgression.levels[1])
+    loadMap(initLevel or gameProgression.levels[1])
     Mark_perf_heavy_frame()
 
     self.darken = 0.0

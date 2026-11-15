@@ -197,7 +197,7 @@ return {
           type = "tutorial",
           shape = "rectangle",
           x = 448,
-          y = 688,
+          y = 672,
           width = 16,
           height = 16,
           rotation = 0,

@@ -44,7 +44,7 @@
     <property name="id" value="checkpoint"/>
    </properties>
   </object>
-  <object id="26" type="tutorial" x="448" y="688" width="16" height="16">
+  <object id="26" type="tutorial" x="448" y="672" width="16" height="16">
    <properties>
     <property name="id" value="extend_aim_view"/>
    </properties>

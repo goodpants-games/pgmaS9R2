@@ -19,7 +19,7 @@ function Checkpoint:new(x, y)
     self.collision = true
     self.colGroup = Const.COLGROUP_INTERACT_AREA
 
-    self.msg:subscribe("interact", self._interact)
+    self.msg:subscribe("interactFocusChanged", self._interactFocusChanged)
 end
 
 ---@param txt string
@@ -32,11 +32,16 @@ function Checkpoint:_popupText(txt)
     self.world:addEntity(ent)
 end
 
-function Checkpoint:_interact(ent)
-    if ent.equippedItem then return end
+function Checkpoint:_interactFocusChanged(focus)
+    if self.world:getCheckpointId() == self.tiledId then
+        return
+    end
     
-    self:_popupText("Checkpoint saved!")
-    self.world:saveCheckpoint()
+    if focus then
+        self.world.player:dropItem()    
+        self:_popupText("Checkpoint saved!")
+        self.world:saveCheckpoint(self)
+    end
 end
 
 return Checkpoint

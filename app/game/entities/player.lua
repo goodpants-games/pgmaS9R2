@@ -341,11 +341,7 @@ end
 
 function Player:_emptyInteract()
     if self.equippedItem then
-        local w, h = self.equippedItem.width, self.equippedItem.height
-        self.equippedItem.x = math.round(self:getCenterX() - w / 2)
-        self.equippedItem.y = math.round(self:getCenterY() - h / 2)
-        self.world:addEntity(self.equippedItem)
-        self.equippedItem = nil
+        self:dropItem()
     elseif self.isDisguised then
         self:_removeDisguise()
     end
@@ -361,6 +357,16 @@ function Player:_removeDisguise()
     end
 
     return ent
+end
+
+function Player:dropItem()
+    if self.equippedItem then
+        local w, h = self.equippedItem.width, self.equippedItem.height
+        self.equippedItem.x = math.round(self:getCenterX() - w / 2)
+        self.equippedItem.y = math.round(self:getCenterY() - h / 2)
+        self.world:addEntity(self.equippedItem)
+        self.equippedItem = nil
+    end
 end
 
 ---@param hitVx number

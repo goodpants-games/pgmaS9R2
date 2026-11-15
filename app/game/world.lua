@@ -411,13 +411,20 @@ function World:reset(newMap)
     end)
 end
 
-function World:saveCheckpoint()
+---@return integer?
+function World:getCheckpointId()
+    return self._checkpointData and self._checkpointData.checkpointId
+end
+
+---@param checkpointEnt game.Entity
+function World:saveCheckpoint(checkpointEnt)
     local entData = {} -- entity data
     local removed = {} -- tiled-instantiated objects that got removed
 
     self._checkpointData = {
         ents = entData,
-        removed = removed
+        removed = removed,
+        checkpointId = checkpointEnt.tiledId
     }
 
     -- fill entity data

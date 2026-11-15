@@ -44,12 +44,12 @@
     <property name="id" value="checkpoint"/>
    </properties>
   </object>
-  <object id="26" type="tutorial" x="448" y="672" width="16" height="16">
+  <object id="26" type="tutorial" x="544" y="592" width="16" height="16">
    <properties>
-    <property name="id" value="extend_aim_view"/>
+    <property name="id" value="extend_aim_view2"/>
    </properties>
   </object>
-  <object id="34" type="tutorial" x="544" y="496" width="16" height="16">
+  <object id="34" type="tutorial" x="544" y="512" width="16" height="16">
    <properties>
     <property name="id" value="extend_aim_view"/>
    </properties>
@@ -126,7 +126,7 @@
   <object id="22" type="npc_path" x="352" y="624">
    <polyline points="32,0 144,0"/>
   </object>
-  <object id="24" template="../.templates/lazy_enemy.tx" x="488" y="512"/>
+  <object id="24" template="../.templates/lazy_enemy.tx" x="488" y="544"/>
   <object id="30" template="../.templates/lazy_enemy.tx" x="488" y="368">
    <properties>
     <property name="path" type="object" value="31"/>

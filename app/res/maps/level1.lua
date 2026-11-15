@@ -196,15 +196,15 @@ return {
           name = "",
           type = "tutorial",
           shape = "rectangle",
-          x = 448,
-          y = 672,
+          x = 544,
+          y = 592,
           width = 16,
           height = 16,
           rotation = 0,
           opacity = 1,
           visible = true,
           properties = {
-            ["id"] = "extend_aim_view"
+            ["id"] = "extend_aim_view2"
           }
         },
         {
@@ -213,7 +213,7 @@ return {
           type = "tutorial",
           shape = "rectangle",
           x = 544,
-          y = 496,
+          y = 512,
           width = 16,
           height = 16,
           rotation = 0,
@@ -522,7 +522,7 @@ return {
           type = "lazy_enemy",
           shape = "rectangle",
           x = 488,
-          y = 512,
+          y = 544,
           width = 16,
           height = 16,
           rotation = 0,

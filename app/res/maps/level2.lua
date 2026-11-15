@@ -249,8 +249,8 @@ return {
           name = "",
           type = "keycard_reader",
           shape = "rectangle",
-          x = 432,
-          y = 304,
+          x = 384,
+          y = 208,
           width = 16,
           height = 16,
           rotation = 0,
@@ -259,7 +259,7 @@ return {
           visible = true,
           properties = {
             ["auth"] = 0,
-            ["direction"] = "down",
+            ["direction"] = "right",
             ["target"] = { id = 6 }
           }
         },

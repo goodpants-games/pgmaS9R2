@@ -3,6 +3,7 @@ import os
 import subprocess
 import shutil
 import sys
+import argparse
 
 ASEPRITE = os.environ.get('ASEPRITE', 'aseprite')
 TILED = os.environ.get('TILED', 'tiled')
@@ -28,12 +29,15 @@ artifacts: list[str] = []
 ignored_artifacts: list[str] = []
 dry_run: bool = False
 always_update: bool = False
+skip_extensions: list[str] = [] # list of extensions to skip
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, *kwargs)
 
 
 def needs_update(src_path: str, dst_path: str) -> bool:
+    if os.path.splitext(src_path)[1] in skip_extensions:
+        return False
     if always_update: return True
 
     # first, determine if out_path is out of date
@@ -245,13 +249,23 @@ def update_gitignore() -> bool:
 
 
 def main():
-    global dry_run, always_update
-    
-    for i in range(1, len(sys.argv)):
-        if sys.argv[i] == '--dry-run':
-            dry_run = True
-        if sys.argv[i] == '--always-update' or sys.argv[i] == '-a':
-            always_update = True
+    global dry_run, always_update, skip_extensions
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dry-run',
+                        action='store_true',
+                        help="don't do anything. print what would've been done to the standard output.")
+    parser.add_argument('-a', '--always-update',
+                        action='store_true',
+                        help="always update every file.")
+    parser.add_argument('--skip', metavar='EXTENSIONS',
+                        help="comma-separated list of extensions (with dot) to skip.")
+
+    args = parser.parse_args()
+    dry_run = args.dry_run
+    always_update = args.always_update
+    if args.skip:
+        skip_extensions = [x.strip() for x in args.skip.split(',')]
     
     s = False
     while True:

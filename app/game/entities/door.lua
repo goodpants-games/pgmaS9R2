@@ -121,6 +121,7 @@ function Door:activate()
     end
 
     self:_setAnim()
+    self.world.sndmgr:play("door", self)
 end
 
 function Door:update()

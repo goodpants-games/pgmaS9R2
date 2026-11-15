@@ -31,6 +31,8 @@ function Projectile:new(x, y)
     self.renderAngle = 0.0
     self.renderSx = 1.0
 
+    self.hitSndPitch = 1.0
+
     self.msg:subscribe("touched", self._touched)
     self.msg:subscribe("interactFocusChanged", self._pickupFocusChanged)
 end
@@ -69,12 +71,18 @@ function Projectile:_touched(oent, nx, ny)
                 -- self.xVel = self.xVel - dot * normX
                 -- self.yVel = self.yVel - dot * normY
             end
-            
+
             self.bouncesLeft = self.bouncesLeft - 1
             if self.bouncesLeft <= 0 then
                 self:_enterAttachedMode()
+                local snd = self.world.sndmgr:play("knife_stuck", self)
+                snd.src:setPitch(self.hitSndPitch)
                 
                 -- self:remove()
+            else
+                local snd = self.world.sndmgr:play("knife_hit", self)
+                snd.src:setPitch(self.hitSndPitch)
+                self.hitSndPitch = self.hitSndPitch + 0.05
             end
         end
     end

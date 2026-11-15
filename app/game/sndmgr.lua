@@ -4,7 +4,7 @@ local SoundManager = batteries.class {
     name = "game.SoundManager"
 }
 
-local MAX_SIMULTANEOUS_SOURCES = 8
+local MAX_SIMULTANEOUS_SOURCES = 16
 
 ---@class game.Sound
 ---@field package _mgr game.SoundManager

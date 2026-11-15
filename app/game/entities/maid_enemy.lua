@@ -110,6 +110,10 @@ function MaidEnemy:_hit(hitVx, hitVy)
         disguise:launch(-hitVx, -hitVy)
         self.world:addEntity(disguise)
     end
+
+    local snd = self.world.sndmgr:play("plate_hit", self)
+    snd.src:setVolume(3.0)
+    self.world.sndmgr:play("plate_crash", self)
 end
 
 function MaidEnemy:loadPersistentData(data)

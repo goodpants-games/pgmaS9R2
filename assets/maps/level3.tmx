@@ -24,7 +24,7 @@
   </data>
  </layer>
  <objectgroup id="4" name="Objects">
-  <object id="1" template="../.templates/player.tx" x="1168" y="416"/>
+  <object id="1" template="../.templates/player.tx" x="72" y="504"/>
   <object id="2" template="../.templates/maid_enemy.tx" x="200" y="392">
    <properties>
     <property name="path" type="object" value="3"/>

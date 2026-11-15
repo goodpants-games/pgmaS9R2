@@ -254,6 +254,7 @@ function Player:_weaponUpdate()
     else
         if self.fireCharge > FIRE_CHARGE_MIN then
             -- fire!!!!
+            self.world.sndmgr:play("knife_throw")
             local proj = world:newEntity("projectile", self.x + self.width/2, self.y + self.height/2)
             if proj then
                 proj.xVel = self._fireDirX * 10
@@ -385,6 +386,9 @@ end
 function Player:_hit(hitVx, hitVy)
     hitVx, hitVy = math.normalize(hitVx, hitVy)
     if self.godMode then return end
+
+    -- local snd = self.world.sndmgr:play("player_collapse")
+    -- snd.src:setVolume(0.4)
 
     -- Die . Now.
     self.dead = true

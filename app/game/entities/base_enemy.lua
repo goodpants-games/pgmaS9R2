@@ -408,6 +408,7 @@ function Enemy:_sightRoutine()
 
     if self.aiBehavior.shootPlayer then
         self.world:addEntity(self.gunSight)
+        self.world.sndmgr:play("enemy_ready_weapon", self)
     end
 
     local cx, cy
@@ -437,7 +438,7 @@ function Enemy:_sightRoutine()
         if self.aiBehavior.shootPlayer then
             self.animState = "aim"
         end
-        
+
         coroutine.yield()
 
         if self.aiBehavior.shootPlayer then

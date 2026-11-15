@@ -129,6 +129,5 @@ SOFTWARE.
                          ==== SOUND ATTRIBUTIONS ====
                          ============================
 
-Gun shot.wav by hannagreen
-   https://freesound.org/s/254772/
-   License: Attribution NonCommercial 4.0
+- Various sounds sourced from Plazma Burst 2: https://www.plazmaburst2.com/
+- Various sounds CC0 sourced from Freesound

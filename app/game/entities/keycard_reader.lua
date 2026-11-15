@@ -97,14 +97,17 @@ function KeycardReader:_interact(plr)
 
         if not card then
             self:_popupText("AUTH REQUIRED")
+            self.world.sndmgr:play("keycard_denied", self)
             return
         end
         if card.auth ~= self.auth then
             self:_popupText("AUTH FAILED")
+            self.world.sndmgr:play("keycard_denied", self)
             return
         end
     end
 
+    self.world.sndmgr:play("keycard_ok", self)
     for _, target in ipairs(self.targets) do
         target:activate()
     end

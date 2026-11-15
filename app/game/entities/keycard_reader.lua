@@ -22,6 +22,7 @@ function KeycardReader:new(x, y)
     self.render.sprite.alignment = "topleft"
     self.render.ox = -1
     self.render.oy = -7
+    self.spriteCel = 0
 
     ---@type game.entities.Door[]
     self.targets = {}
@@ -78,7 +79,7 @@ function KeycardReader:loadProperties(id, props, entLookup)
     end
 
     local color = (self.auth or -1) + 1
-    self.render.sprite.cel = color * 3 + frameOfs + 1
+    self.spriteCel = color*6 + frameOfs*2 + 1
 end
 
 ---@param status boolean
@@ -107,6 +108,10 @@ function KeycardReader:_interact(plr)
     for _, target in ipairs(self.targets) do
         target:activate()
     end
+end
+
+function KeycardReader:update()
+    self.render.sprite.cel = self.spriteCel + (self.hasFocus and 1 or 0)
 end
 
 ---@param txt string

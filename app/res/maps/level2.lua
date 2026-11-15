@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 6,
-  nextobjectid = 43,
+  nextobjectid = 45,
   properties = {},
   tilesets = {
     {
@@ -257,7 +257,7 @@ return {
           gid = 276,
           visible = true,
           properties = {
-            ["close_after_entry"] = true,
+            ["close_after_entry"] = false,
             ["closed"] = true,
             ["direction"] = "vertical"
           }
@@ -536,7 +536,7 @@ return {
           gid = 276,
           visible = true,
           properties = {
-            ["close_after_entry"] = true,
+            ["close_after_entry"] = false,
             ["closed"] = true,
             ["direction"] = "vertical"
           }
@@ -597,30 +597,31 @@ return {
           }
         },
         {
-          id = 33,
-          name = "",
-          type = "basic_enemy",
-          shape = "rectangle",
-          x = 464,
-          y = 464,
-          width = 16,
-          height = 16,
-          rotation = 0,
-          opacity = 1,
-          gid = 274,
-          visible = true,
-          properties = {
-            ["direction"] = "up",
-            ["path"] = { id = 0 }
-          }
-        },
-        {
           id = 34,
           name = "",
           type = "door",
           shape = "rectangle",
           x = 96,
           y = 432,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 276,
+          visible = true,
+          properties = {
+            ["close_after_entry"] = false,
+            ["closed"] = true,
+            ["direction"] = "horizontal"
+          }
+        },
+        {
+          id = 44,
+          name = "",
+          type = "door",
+          shape = "rectangle",
+          x = 96,
+          y = 512,
           width = 16,
           height = 16,
           rotation = 0,
@@ -669,6 +670,25 @@ return {
             ["auth"] = 2,
             ["direction"] = "down",
             ["target"] = { id = 34 }
+          }
+        },
+        {
+          id = 43,
+          name = "",
+          type = "keycard_reader",
+          shape = "rectangle",
+          x = 80,
+          y = 512,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          gid = 277,
+          visible = true,
+          properties = {
+            ["auth"] = 2,
+            ["direction"] = "down",
+            ["target"] = { id = 44 }
           }
         },
         {

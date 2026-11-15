@@ -29,7 +29,7 @@ function Player:new(x, y)
     self.colMask = bit.bor(Const.COLGROUP_DEFAULT, Const.COLGROUP_INTERACT_AREA)
     self.renderSprite = self.squidSprite
     self.renderOx = 6
-    self.renderOy = -4
+    self.renderOy = 4
 
     self.cancelFire = false
     self.canInteract = true
@@ -155,8 +155,8 @@ function Player:postUpdate()
     end
 
     if self.equippedItem then
-        self.equippedItem.x = self.x
-        self.equippedItem.y = self.y
+        self.equippedItem.x = self.x + 2
+        self.equippedItem.y = self.y - 6
     end
 end
 

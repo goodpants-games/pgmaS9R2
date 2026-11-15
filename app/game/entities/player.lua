@@ -327,7 +327,6 @@ function Player:_animationUpdate(lastAnimState)
     else
         self.dirAnim:setDirection(spr, self.faceDir)
         if self.animState ~= lastAnimState then
-            print("Player change to", self.animState)
             self.dirAnim:play(spr, self.animState)
         end
     end

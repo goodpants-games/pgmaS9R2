@@ -50,6 +50,7 @@ function DirAnim:setDirection(sprite, angle)
     self.direction = dir
 
     if self.curAnim then
+        local timeAccum = sprite._timeAccum ---@diagnostic disable-line
         local af = sprite:getAnimFrame()
         local fullAnimName = self.curAnim .. "_" .. self.direction
         local s = pcall(sprite.play, sprite, fullAnimName)
@@ -59,6 +60,7 @@ function DirAnim:setDirection(sprite, angle)
 
         if af then
             sprite.cel = sprite.cel + af - 1
+            sprite._timeAccum = timeAccum ---@diagnostic disable-line
         end
     end
 end

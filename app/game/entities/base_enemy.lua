@@ -433,6 +433,11 @@ function Enemy:_sightRoutine()
             self.gunSight:updateSight(cx, cy, playerDx, playerDy)
         end
         self.faceDir = math.atan2(playerDy, playerDx)
+
+        if self.aiBehavior.shootPlayer then
+            self.animState = "aim"
+        end
+        
         coroutine.yield()
 
         if self.aiBehavior.shootPlayer then
@@ -627,7 +632,7 @@ function Enemy:_updateAnimation(lastAnimState)
     local spr = self.render.sprite
     if not spr then return end
 
-    if self.animState == "dead" then
+    if self.animState == "dead" or self.animState == "aim" then
         self.dirAnim:setOctoDir(spr, self.animState, self.faceDir) 
     else
         self.dirAnim:setDirection(spr, self.faceDir)

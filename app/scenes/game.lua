@@ -92,6 +92,7 @@ function scene.load(initLevel)
                 return
             end
 
+            self.mapName = mapName
             self.world:reset(path)
         end
     })

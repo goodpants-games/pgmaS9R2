@@ -3,7 +3,7 @@ local gameProgression = {}
 gameProgression.levels = {
     "level1",
     "level2",
-    "test3",
+    "level3",
 }
 
 return gameProgression

@@ -5,6 +5,7 @@ local Collision = require("game.collision")
 local Util = require("game.util")
 local EnemyConductor = require("game.enemy_conductor")
 local Camera = require("game.camera")
+local SoundManager = require("game.sndmgr")
 
 local TILE_SIZE = Consts.TILE_SIZE
 local BUTTON_INPUTS = {"left", "right", "down", "up", "fire", "interact", "camSwitch"}
@@ -72,6 +73,7 @@ function World:new()
     end
 
     self.msg = batteries.pubsub()
+    self.sndmgr = SoundManager()
 
     ---@private
     self._checkpointData = nil ---@type table?
@@ -106,6 +108,10 @@ function World:update()
     self.camY = math.round(self.camera.y) - App.scrH / 2
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
+
+    self.sndmgr.listenerX = self.camera.x
+    self.sndmgr.listenerY = self.camera.y
+    self.sndmgr:update()
 
     for _, ent in ipairs(self.entities) do
         if ent.postUpdate then

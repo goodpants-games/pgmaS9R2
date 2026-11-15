@@ -142,6 +142,8 @@ function Enemy:_hit(hitVx, hitVy)
 
     self.persistentData = true
     self.world.enemyConductor:handleEnemyDeath(self, hitVx, hitVy)
+
+    self.world.sndmgr:play("enemy_kill", self)
 end
 
 function Enemy:_beginMove(x, y)
@@ -436,6 +438,8 @@ function Enemy:_sightRoutine()
         if self.aiBehavior.shootPlayer then
             self.fireTimer = self.fireTimer + 1
             if self.fireTimer == self.fireWait then
+                local snd = self.world.sndmgr:play("enemy_shot", self)
+                snd.src:setVolume(2.0)
                 player:publish("hit", playerDx, playerDy)
             end
         end

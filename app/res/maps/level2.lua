@@ -308,7 +308,7 @@ return {
           name = "",
           type = "checkpoint",
           shape = "rectangle",
-          x = 304,
+          x = 312,
           y = 272,
           width = 16,
           height = 16,

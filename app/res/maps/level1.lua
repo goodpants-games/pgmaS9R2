@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 6,
-  nextobjectid = 34,
+  nextobjectid = 35,
   properties = {},
   tilesets = {
     {
@@ -198,6 +198,22 @@ return {
           shape = "rectangle",
           x = 448,
           y = 672,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          opacity = 1,
+          visible = true,
+          properties = {
+            ["id"] = "extend_aim_view"
+          }
+        },
+        {
+          id = 34,
+          name = "",
+          type = "tutorial",
+          shape = "rectangle",
+          x = 544,
+          y = 496,
           width = 16,
           height = 16,
           rotation = 0,
@@ -495,7 +511,7 @@ return {
           opacity = 1,
           visible = true,
           polyline = {
-            { x = 0, y = 0 },
+            { x = 32, y = 0 },
             { x = 144, y = 0 }
           },
           properties = {}

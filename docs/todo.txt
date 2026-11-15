@@ -27,8 +27,8 @@ invisible for 5 seconds or shooting two bullets instead of one
 - faking where the knife came from , like thinking it came from the opposite
   direction
 
-level 2: lietrally dumbify everything
-   make player do luring thing in part 3 at  next leve 
+- level 3: properly introduce "Luring" enemies out
+- make player hitbox smaller?
 
 
 === coding ===

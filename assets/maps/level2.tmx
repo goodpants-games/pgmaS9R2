@@ -72,7 +72,7 @@
   <object id="11" type="npc_path" x="536" y="328">
    <polyline points="40,-8 0,32 -64,32"/>
   </object>
-  <object id="12" template="../.templates/checkpoint.tx" x="304" y="272"/>
+  <object id="12" template="../.templates/checkpoint.tx" x="312" y="272"/>
   <object id="13" template="../.templates/keycard_reader.tx" x="304" y="224">
    <properties>
     <property name="auth" type="int" value="-1"/>

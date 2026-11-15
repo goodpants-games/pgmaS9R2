@@ -9,7 +9,6 @@ local Checkpoint = batteries.class {
 
 function Checkpoint:new(x, y)
     self:super(Util.centeredRect(x, y, 16, 16))
-    self:addTag("interactable")
 
     self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/checkpoint_pad.json"))
     self.render.ox = 8
@@ -17,9 +16,12 @@ function Checkpoint:new(x, y)
     self.zIndex = -100
 
     self.collision = true
-    self.colGroup = Const.COLGROUP_INTERACT_AREA
+    self.touchMonitor = true
+    self.monitorOnly = true
+    self.colGroup = 0
+    self.colMask = Const.COLGROUP_PLAYER
 
-    self.msg:subscribe("interactFocusChanged", self._interactFocusChanged)
+    self.msg:subscribe("touched", self._touched)
 end
 
 ---@param txt string
@@ -32,16 +34,20 @@ function Checkpoint:_popupText(txt)
     self.world:addEntity(ent)
 end
 
-function Checkpoint:_interactFocusChanged(focus)
+---@param plr game.Entity
+function Checkpoint:_touched(plr)
+    if not plr:hasTag("player") then
+        return 
+    end
+    ---@cast plr game.entities.Player
+    
     if self.world:getCheckpointId() == self.tiledId then
         return
     end
     
-    if focus then
-        self.world.player:dropItem()    
-        self:_popupText("Checkpoint saved!")
-        self.world:saveCheckpoint(self)
-    end
+    plr:prepareForCheckpoint(self)
+    self:_popupText("Checkpoint saved!")
+    self.world:saveCheckpoint(self)
 end
 
 return Checkpoint

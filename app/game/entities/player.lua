@@ -365,6 +365,22 @@ function Player:dropItem()
     end
 end
 
+function Player:prepareForCheckpoint(checkpoint)
+    self:dropItem()
+
+    local strayBullets = self.world:findEntitiesWithTag("strayPlayerBullet")
+    for _, bullet in ipairs(strayBullets) do
+        self.ammo = self.ammo + 1
+        bullet:remove()
+    end
+
+    local disguise = self.world:findEntitiesWithTag("disguisePickup")[1]
+    if disguise then
+        disguise.x = checkpoint:getCenterX() - disguise.width / 2
+        disguise.y = checkpoint:getCenterY() - disguise.height / 2
+    end
+end
+
 ---@param hitVx number
 ---@param hitVy number
 function Player:_hit(hitVx, hitVy)
@@ -421,10 +437,9 @@ end
 
 function Player:savePersistentData(data)
     Player.__super.savePersistentData(self, data)
-    local strayBulletCount = #self.world:findEntitiesWithTag("strayPlayerBullet")
 
     data.x, data.y = self.x, self.y
-    data.ammo = self.ammo + strayBulletCount
+    data.ammo = self.ammo
     data.isDisguised = self.isDisguised
 end
 

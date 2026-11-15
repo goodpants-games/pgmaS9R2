@@ -536,7 +536,7 @@ return {
           gid = 276,
           visible = true,
           properties = {
-            ["close_after_entry"] = false,
+            ["close_after_entry"] = true,
             ["closed"] = true,
             ["direction"] = "vertical"
           }

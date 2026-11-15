@@ -131,6 +131,7 @@
   <object id="26" template="../.templates/checkpoint.tx" x="336" y="448"/>
   <object id="27" template="../.templates/door.tx" x="384" y="448">
    <properties>
+    <property name="close_after_entry" type="bool" value="true"/>
     <property name="direction" value="vertical"/>
    </properties>
   </object>

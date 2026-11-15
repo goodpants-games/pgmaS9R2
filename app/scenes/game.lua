@@ -58,11 +58,12 @@ function scene.load(initLevel)
     Debug.console.addCommand({
         name = "spawn",
         help = "<object name>",
-        func = function(term_env, itemName)
+        func = function(term_env, itemName, ...)
             local plr = self.world.player
             if not plr then return end
 
-            local ent = self.world:newEntity(itemName, plr:getCenterPos())
+            local spawnX, spawnY = plr:getCenterPos()
+            local ent = self.world:newEntity(itemName, spawnX, spawnY, ...)
             if ent then
                 self.world:addEntity(ent)
             else

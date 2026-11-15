@@ -6,11 +6,11 @@ local Keycard = batteries.class {
     extends = require("game.entities.base_pickup")
 }
 
-function Keycard:new(x, y)
+function Keycard:new(x, y, auth)
     self:super(Util.centeredRect(x, y, 12, 12))
     self:addTag("keycard")
 
-    self.auth = 0
+    self.auth = auth or 0
 
     self.restitution = 0.5
 

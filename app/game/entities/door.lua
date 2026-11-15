@@ -20,6 +20,7 @@ function Door:new(x, y)
     self.render.sprite.alignment = "topleft"
     self.closed = true
     self.closeAfterEntry = false
+    self.closeTimer = 0
 
     ---@type string?
     self.direction = nil
@@ -116,12 +117,20 @@ function Door:activate()
         self:_setCollision(1)
     else
         self:_setCollision(0)
+        self.closeTimer = 240
     end
 
     self:_setAnim()
 end
 
 function Door:update()
+    if self.closeAfterEntry and not self.closed and self.closeTimer > 0 then
+        self.closeTimer = self.closeTimer - 1
+        if self.closeTimer == 0 then
+            self:activate()
+        end
+    end
+    
     self.render.sprite:update(App.tickLength)
 end
 

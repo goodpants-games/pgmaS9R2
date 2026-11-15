@@ -665,6 +665,7 @@ function Enemy:loadPersistentData(data)
                 self.gunSight = nil
             end
 
+            self:publish("died")
             self:removeTag("enemy")
         end
     end

@@ -676,7 +676,10 @@ function World:_loadMapObjects()
         if ent.loadProperties then
             ent:loadProperties(obj.id, obj.properties, entLookup)
         end
+    end
 
+    for _, objData in ipairs(objects) do
+        local obj, ent = objData.obj, objData.ent
         if ent.persistentData and cpData[obj.id] then
             local data = cpData[obj.id]
             if not softassert(data._typeName == ent.typeName, "mismatched class name") then
@@ -685,7 +688,6 @@ function World:_loadMapObjects()
 
             ent:loadPersistentData(data)
         end
-
         ::continue::
     end
 

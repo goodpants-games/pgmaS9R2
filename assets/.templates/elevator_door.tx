@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="../tilesets/entity_types.tsx"/>
+ <object type="elevator_door" gid="12" width="16" height="16">
+  <properties>
+   <property name="auto_open" type="bool" value="false"/>
+  </properties>
+ </object>
+</template>

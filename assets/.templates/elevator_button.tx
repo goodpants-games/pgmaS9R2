@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="../tilesets/entity_types.tsx"/>
+ <object type="elevator_button" gid="13" width="16" height="16">
+  <properties>
+   <property name="clear_level" type="bool" value="false"/>
+   <property name="target" type="object" value="0"/>
+  </properties>
+ </object>
+</template>

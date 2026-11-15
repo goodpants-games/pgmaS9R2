@@ -42,6 +42,7 @@
  <tile id="81" type="wall"/>
  <tile id="82" type="wall"/>
  <tile id="83" type="wall"/>
+ <tile id="90" type="wall"/>
  <tile id="97" type="wall"/>
  <tile id="98" type="wall"/>
  <tile id="99" type="wall"/>

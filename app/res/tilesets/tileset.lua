@@ -193,6 +193,10 @@ return {
       type = "wall"
     },
     {
+      id = 90,
+      type = "wall"
+    },
+    {
       id = 97,
       type = "wall"
     },

@@ -57,7 +57,9 @@ function DirAnim:setDirection(sprite, angle)
             warn("could not play animation", fullAnimName)
         end
 
-        sprite.cel = sprite.cel + af - 1
+        if af then
+            sprite.cel = sprite.cel + af - 1
+        end
     end
 end
 

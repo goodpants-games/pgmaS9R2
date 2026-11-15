@@ -7,6 +7,10 @@
 - player could have items that give them useful temporary effects, such as becoming
 invisible for 5 seconds or shooting two bullets instead of one
 
+- pits you can't walk across. then maybe there's like an enemy across the pit
+  that will shoot you if you don't shoot at it. but once you shoot the enemy
+  you can't get the bullet back?
+
 
 === level design ideas ===
 - maybe you have to sometimes lure enemies to a specific place
@@ -20,6 +24,8 @@ invisible for 5 seconds or shooting two bullets instead of one
   temporarily to shoot someone and also if an enemy sees the disguise then they
   take it away? (or maybe seeing the disguise on the ground makes it ineffective
   for the rest of the level no that's kind of punishing is it?)
+- faking where the knife came from , like thinking it came from the opposite
+  direction
 
 
 === coding ===

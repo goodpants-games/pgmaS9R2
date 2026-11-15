@@ -132,7 +132,7 @@ function Enemy:_hit(hitVx, hitVy)
     self.faceDir = math.atan2(hitVy, hitVx)
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
-    self.zIndex = -10
+    -- self.zIndex = -10
 
     self.gunSight:remove()
     self.gunSight = nil
@@ -681,7 +681,7 @@ function Enemy:loadPersistentData(data)
 
         if self.dead then
             self.msg:unsubscribe("hit", self._hit)
-            self.zIndex = -10
+            -- self.zIndex = -10
 
             if self.gunSight then
                 self.gunSight:remove()

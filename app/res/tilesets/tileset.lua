@@ -157,6 +157,22 @@ return {
       type = "top"
     },
     {
+      id = 58,
+      type = "wall"
+    },
+    {
+      id = 59,
+      type = "wall"
+    },
+    {
+      id = 60,
+      type = "wall"
+    },
+    {
+      id = 61,
+      type = "wall"
+    },
+    {
       id = 62,
       type = "wall"
     },

@@ -33,6 +33,10 @@
  <tile id="47" type="top"/>
  <tile id="54" type="top"/>
  <tile id="55" type="top"/>
+ <tile id="58" type="wall"/>
+ <tile id="59" type="wall"/>
+ <tile id="60" type="wall"/>
+ <tile id="61" type="wall"/>
  <tile id="62" type="wall"/>
  <tile id="63" type="wall"/>
  <tile id="81" type="wall"/>

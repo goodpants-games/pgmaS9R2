@@ -345,7 +345,7 @@ function Enemy:update()
                         local dist = math.length(sightDx, sightDy)
                         if dist > 16*8 then
                             timerSpeed = 1 / 12
-                        elseif dist > 16*1 then
+                        elseif dist > 16*2 then
                             timerSpeed = 1 / 8
                         end
                     end

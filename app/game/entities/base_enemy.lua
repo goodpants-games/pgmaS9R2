@@ -621,41 +621,18 @@ function Enemy:_patrolRoutine()
     end
 end
 
-local DIRECTIONS = {"r", "d", "l", "u"}
-
----@param ang number
----@param dirCount integer
-local function getAngleInt(ang, dirCount)
-    ang = math.normalise_angle(ang - math.pi) + math.pi
-    return math.round(ang / math.tau * dirCount) % dirCount
-end
-
 ---@param lastAnimState string?
 function Enemy:_updateAnimation(lastAnimState)
     if type(self.render) ~= "table" then return end
     local spr = self.render.sprite
     if not spr then return end
 
-    if self.animState == "dead" then        
-        local angInt = getAngleInt(-self.faceDir + math.pi/2, 8)
-        local celStart = spr.res.animations.dead.from
-        if spr.curAnim then
-            spr:stop()
-        end
-
-        spr.cel = celStart + angInt
+    if self.animState == "dead" then
+        self.dirAnim:setOctoDir(spr, self.animState, self.faceDir) 
     else
-        local angInt = getAngleInt(self.faceDir, 4)
-        local s = pcall(self.dirAnim.setDirection, self.dirAnim, spr, DIRECTIONS[angInt+1])
-        if not s then
-            warn("could not play animation")
-        end
-
+        self.dirAnim:setDirection(spr, self.faceDir)
         if self.animState ~= lastAnimState then
-            local s = pcall(self.dirAnim.play, self.dirAnim, spr, self.animState)
-            if not s then
-                warn("could not play animation...")
-            end
+            self.dirAnim:play(spr, self.animState)
         end
     end
 

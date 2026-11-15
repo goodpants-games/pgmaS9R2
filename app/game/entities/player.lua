@@ -5,6 +5,7 @@ local bool2int       = require("game.util").bool2int
 local newEntity      = require("game.util").newEntity
 local drawEntity     = require("game.util").drawEntity
 local Const = require("game.consts")
+local DirAnim = require("game.util.dir_anim")
 
 local FIRE_CHARGE_MIN = 40
 local ANGLE_SNAP = 0.00001
@@ -22,7 +23,10 @@ function Player:new(x, y)
     self.squidSprite.alignment = "center"
     self.mutantSprite = Resmgr.newSprite("/res/sprites/mutant_player.json")
     self.mutantSprite.alignment = "center"
-    
+    self.animState = nil ---@type string?
+    self.dirAnim = DirAnim()
+    self.faceDir = 0.0
+
     self.collision = true
     self.touchMonitor = true
     self.colGroup = Const.COLGROUP_PLAYER
@@ -77,9 +81,14 @@ function Player:update()
     local world = softassert(self.world)
     if not world then return end
 
+    local lastAnimState = self.animState
+    self.animState = "idle"
+
     if self.dead then
         self.xVel = self.xVel * 0.9
         self.yVel = self.yVel * 0.9
+        self.animState = "death"
+        self:_animationUpdate(lastAnimState)
         return
     end
 
@@ -107,8 +116,10 @@ function Player:update()
                        - bool2int(world:isInputDown("left"))
         local inputY = bool2int(world:isInputDown("down"))
                        - bool2int(world:isInputDown("up"))
-        if inputX ~= 0 and inputY ~= 0 then
+        if inputX ~= 0 or inputY ~= 0 then
             inputX, inputY = math.normalize(inputX, inputY)
+            self.animState = "walk"
+            self.faceDir = math.atan2(inputY, inputX)
         end
 
         self.xVel = inputX * self.moveSpeed
@@ -120,6 +131,7 @@ function Player:update()
 
     self:_weaponUpdate()
     self:_interactUpdate()
+    self:_animationUpdate(lastAnimState)
 end
 
 function Player:postUpdate()
@@ -150,7 +162,7 @@ function Player:postUpdate()
         fireDx = math.cos(fireAng)
         fireDy = math.sin(fireAng)
         self._fireDirX, self._fireDirY = fireDx, fireDy
-
+        self.faceDir = fireAng
         self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
     end
 
@@ -228,6 +240,7 @@ function Player:_weaponUpdate()
             self.gunSight.visible = false
             self.cancelFire = true
         else
+            self.animState = "aim"
             self.fireCharge = self.fireCharge + 1
             self.gunSight.visible = world.curFrame % 3 == 0
 
@@ -308,6 +321,24 @@ function Player:_interactUpdate()
     end
 end
 
+---@param lastAnimState string?
+function Player:_animationUpdate(lastAnimState)
+    local spr = self.renderSprite
+    if not spr then return end
+
+    if self.animState == "death" or self.animState == "aim" then
+        self.dirAnim:setOctoDir(spr, self.animState, self.faceDir)
+    else
+        self.dirAnim:setDirection(spr, self.faceDir)
+        if self.animState ~= lastAnimState then
+            print("Player change to", self.animState)
+            self.dirAnim:play(spr, self.animState)
+        end
+    end
+
+    spr:update(App.tickLength)
+end
+
 function Player:_emptyInteract()
     if self.equippedItem then
         local w, h = self.equippedItem.width, self.equippedItem.height
@@ -345,6 +376,7 @@ function Player:_hit(hitVx, hitVy)
     -- self.faceDir = math.atan2(hitVy, hitVx)
     self.xVel = hitVx * 3
     self.yVel = hitVy * 3
+    self.faceDir = math.atan2(hitVy, hitVx)
     self.zIndex = -10
 
     self.gunSight:remove()

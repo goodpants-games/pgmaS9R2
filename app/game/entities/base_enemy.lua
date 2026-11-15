@@ -235,7 +235,7 @@ function Enemy:_killerSearch(myOrigX, myOrigY, victimOrigX, victimOrigY, hitVx, 
     self.ai:release()
     self.ai = nil
 
-    for _=1, 240 do
+    for _=1, 120 do
         coroutine.yield()
     end
 
@@ -508,7 +508,7 @@ function Enemy:_beginChase(playerCx, playerCy)
         self.ai:release()
         self.ai = nil
 
-        for _=1, 240 do
+        for _=1, 120 do
             coroutine.yield()
         end
 

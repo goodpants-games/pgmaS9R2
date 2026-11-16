@@ -37,7 +37,7 @@ function ElevatorDoor:loadProperties(id, props)
     if autoOpen == nil then return end
 
     if autoOpen then
-        self.autoOpenTimer = 30
+        self.autoOpenTimer = 4
     end
 end
 

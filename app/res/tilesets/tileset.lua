@@ -181,6 +181,14 @@ return {
       type = "wall"
     },
     {
+      id = 78,
+      type = "top"
+    },
+    {
+      id = 79,
+      type = "top"
+    },
+    {
       id = 81,
       type = "wall"
     },
@@ -194,6 +202,14 @@ return {
     },
     {
       id = 90,
+      type = "wall"
+    },
+    {
+      id = 94,
+      type = "wall"
+    },
+    {
+      id = 95,
       type = "wall"
     },
     {

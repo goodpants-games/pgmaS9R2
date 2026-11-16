@@ -39,10 +39,14 @@
  <tile id="61" type="wall"/>
  <tile id="62" type="wall"/>
  <tile id="63" type="wall"/>
+ <tile id="78" type="top"/>
+ <tile id="79" type="top"/>
  <tile id="81" type="wall"/>
  <tile id="82" type="wall"/>
  <tile id="83" type="wall"/>
  <tile id="90" type="wall"/>
+ <tile id="94" type="wall"/>
+ <tile id="95" type="wall"/>
  <tile id="97" type="wall"/>
  <tile id="98" type="wall"/>
  <tile id="99" type="wall"/>

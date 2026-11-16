@@ -77,6 +77,11 @@ function World:new()
 
     ---@private
     self._checkpointData = nil ---@type table?
+
+    self.music = love.audio.newSource("/res/music/game.ogg", "stream")
+    self.music:setVolume(0.05)
+    self.music:play()
+    self.music:setLooping(true)
 end
 
 function World:update()
@@ -236,7 +241,8 @@ function World:rawUpdate(dt)
 end
 
 function World:release()
-    
+    self.music:stop()
+    self.music:release()
 end
 
 ---@param entType string

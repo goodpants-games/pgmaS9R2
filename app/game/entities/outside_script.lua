@@ -4,6 +4,11 @@ local OutsideScript = batteries.class {
 
 function OutsideScript:new()
     self:super(0, 0, 0, 0)
+    self.msg:subscribe("addedToWorld", self._added)
+end
+
+function OutsideScript:_added()
+    self.world.music:stop()
 end
 
 function OutsideScript:update()

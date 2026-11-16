@@ -106,6 +106,15 @@ function World:update()
 
     self.camX = math.round(self.camera.x) - App.scrW / 2
     self.camY = math.round(self.camera.y) - App.scrH / 2
+    local camMinX = 0
+    local camMinY = 0
+    local camMaxX = self.mapWidth * 16 - App.scrW
+    local camMaxY = self.mapHeight * 16 - App.scrH
+    if self.map.properties.clamp_camera then
+        self.camX = math.clamp(self.camX, camMinX, camMaxX)
+        self.camY = math.clamp(self.camY, camMinY, camMaxY)
+    end
+
     self.mouseX = App.mouseX + self.camX
     self.mouseY = App.mouseY + self.camY
 

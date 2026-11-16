@@ -192,4 +192,22 @@ function scene.transitionToNextLevel()
     end)
 end
 
+function scene.transitionToGameEnd()
+    if self.transitionCoro then
+        return
+    end
+
+    self.transitionCoro = coroutine.create(function()
+        local yield = coroutine.yield
+
+        for i=1, 240 do
+            self.darken = (i-1) / 240
+            yield()
+        end
+        self.darken = 1.0
+
+        Sceneman.switchScene("game_end")
+    end)
+end
+
 return scene

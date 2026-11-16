@@ -11,6 +11,7 @@ invisible for 5 seconds or shooting two bullets instead of one
   that will shoot you if you don't shoot at it. but once you shoot the enemy
   you can't get the bullet back?
 
+- enemy shows ... above head when they see a dead body while idle
 
 === level design ideas ===
 - maybe you have to sometimes lure enemies to a specific place
@@ -30,12 +31,18 @@ invisible for 5 seconds or shooting two bullets instead of one
 - level 3: properly introduce "Luring" enemies out
 - make player hitbox smaller?
 
-
 === coding ===
 - export.sh: ignore dotfiles
-- maid enemy: patrols but freezes in place upon sight and doesn't attack. when
-  you knife it it bounces off (because of the plate they're holding) and then
-  they lose the maid outfit i guess idfk. maybe also the food items drop too.
-  then it becomes a regular enemy lul, including the ability to Kill You.
 - sprite.lua: update it so the :play function doesn't error when animation is
   not found. instead it simply returns a boolean indicating success.
+- make it so enemies actually pathfind to the dead bodies
+- make it so enemies pathfind back to home (idk why they aren't doing this i
+  thought i already made them do that)
+- why sometimes enemies retrace reflection path incorrectly? What the fuck.
+  then this appears as the enemy not investigating the death.
+
+
+the xquid escaped area 51.
+i don't know where it went
+afterwards. i assume it lived
+happily ever after. yayyyy

@@ -28,9 +28,15 @@ function scene.load()
     self.objects = {}
     self.music = love.audio.newSource("/res/music/guess_of_descension.ogg", "stream")
     self.music:play()
-    self.logo = Lg.newImage("/res/title.png")
+    self.gameLogo = Lg.newImage("/res/title.png")
+    self.teamLogo = Lg.newImage("/res/graphics/firebeetle.png")
+    self.pgmaLogo = Lg.newImage("/res/graphics/pgma_logo.png")
+    self.presentsImg = Lg.newImage("/res/graphics/presents.png")
+    self.curImage = nil
+    self.imageOpacity = 0.0
     self.timer = 0
     self.showSkipText = true
+    Mark_perf_heavy_frame()
 
     local function rand()
         return love.math.random() * 2.0 - 1.0
@@ -54,10 +60,55 @@ function scene.load()
             print("wai....")
             wait()
         end
-        self.timer = 6
+        self.timer = 0
         
         while self.music:tell() < 12.314 - 4/60 - 0.4 do
-           wait() 
+            if self.timer == 60 then
+                self.curImage = self.pgmaLogo
+                self.imageOpacity = 0.0
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity + 1/60
+                    wait()
+                end
+                for _=1, 60 do wait() end
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity - 1/60
+                    wait()
+                end
+                self.curImage = nil
+            end
+
+            if self.timer == 300 then
+                self.curImage = self.teamLogo
+                self.imageOpacity = 0.0
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity + 1/60
+                    wait()
+                end
+                for _=1, 60 do wait() end
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity - 1/60
+                    wait()
+                end
+                self.curImage = nil
+            end
+
+            if self.timer == 540 then
+                self.curImage = self.presentsImg
+                self.imageOpacity = 0.0
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity + 1/60
+                    wait()
+                end
+                for _=1, 60 do wait() end
+                for _=1, 60 do
+                    self.imageOpacity = self.imageOpacity - 1/60
+                    wait()
+                end
+                self.curImage = nil
+            end
+
+            wait() 
         end
 
         local rock = addObject("rock")
@@ -107,10 +158,11 @@ function scene.load()
             Lg.setColor(0, 0, 0)
             Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
 
-            local logoDrawX = (App.scrW - self.logo:getWidth()) / 2
-            local logoDrawY = (App.scrH - self.logo:getHeight()) / 2
+            local logo = self.gameLogo
+            local logoDrawX = (App.scrW - logo:getWidth()) / 2
+            local logoDrawY = (App.scrH - logo:getHeight()) / 2
             Lg.setColor(1, 1, 1)
-            Lg.draw(self.logo, math.round(logoDrawX), math.round(logoDrawY))
+            Lg.draw(logo, math.round(logoDrawX), math.round(logoDrawY))
         end
 
         for _=1, 240 do wait() end
@@ -130,7 +182,10 @@ function scene.unload()
     self.sprRes:release()
     self.music:stop()
     self.music:release()
-    self.logo:release()
+    self.gameLogo:release()
+    self.teamLogo:release()
+    self.pgmaLogo:release()
+    self.presentsImg:release()
     self = nil
 end
 
@@ -161,6 +216,12 @@ function scene.draw()
     for _, obj in ipairs(self.objects) do
         Lg.setColor(1, 1, 1)
         obj.spr:draw(obj.x, obj.y, obj.rotation)
+    end
+
+    if self.curImage and self.imageOpacity > 0 then
+        local a = self.imageOpacity
+        Lg.setColor(a, a, a, a)
+        Lg.draw(self.curImage, 0, 0)
     end
 
     if self.drawCallback then

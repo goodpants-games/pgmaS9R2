@@ -14,7 +14,7 @@ function BasicEnemy:new(x, y)
     self.render = Util.SpriteRenderer(Resmgr.newSprite("/res/sprites/enemy2.json"))
     self.render.sprite.alignment = "center"
     self.render.ox = 6
-    self.render.oy = 8
+    self.render.oy = 4
 end
 
 return BasicEnemy

@@ -103,11 +103,23 @@ function scene._pause()
     self.paused = true
     self.world.sndmgr:pause()
     self.menu:resetCursor()
+
+    self._musicVolume = self.world.music:getVolume()
+    local s = self.world.music:setFilter({
+        type = "lowpass",
+        volume = 0.5,
+        highgain = 0.01,
+    })
+    if not s then
+        self.world.music:setVolume(self._musicVolume * 0.2)
+    end
 end
 
 function scene._unpause()
     self.paused = false
     self.world.sndmgr:resume()
+    self.world.music:setFilter()
+    self.world.music:setVolume(self._musicVolume)
 end
 
 function scene.draw()

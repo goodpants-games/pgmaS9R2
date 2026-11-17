@@ -56,6 +56,7 @@ function Player:new(x, y)
     self._fireDirY = 0.0
 
     self.godMode = false
+    self.chargeSound = nil ---@type game.Sound
 
     self.persistentData = true
 
@@ -67,6 +68,9 @@ end
 function Player:_addedToWorld()
     self.world.player = self
     self.world:addEntity(self.gunSight)
+
+    self.chargeSound = self.world.sndmgr:newSound("charge_aim")
+    self.chargeSound.src:setVolume(0.4)
 end
 
 function Player:_removingFromWorld()
@@ -75,6 +79,8 @@ function Player:_removingFromWorld()
     end
 
     self.gunSight:remove()
+    self.chargeSound:release()
+    self.chargeSound = nil
 end
 
 function Player:update()
@@ -132,6 +138,18 @@ function Player:update()
     self:_weaponUpdate()
     self:_interactUpdate()
     self:_animationUpdate(lastAnimState)
+
+    if self.chargeSound then
+        if self.fireCharge > 0 then
+            local t = math.clamp01(self.fireCharge / FIRE_CHARGE_MIN)
+            self.chargeSound.src:setPitch(math.lerp(0.5, 1.0, t))
+            if not self.chargeSound.src:isPlaying() then
+                self.chargeSound.src:play()
+            end
+        else
+            self.chargeSound.src:stop()
+        end
+    end
 end
 
 function Player:postUpdate()

@@ -214,13 +214,17 @@ function Util.recordSpriteDraw(cmdList, sprite, drawX, drawY)
     drawX, drawY = Lg.transformPoint(drawX, drawY)
     local celData = sprite.res.cels[sprite.cel]
 
-    local alignment = sprite.alignment or sprite.res.alignment or Sprite.fallbackAlignment
-    if alignment == "center" then
-    elseif alignment == "topleft" then
-        drawX = drawX + celData.cx
-        drawY = drawY + celData.cy
+    local align = sprite.alignment or sprite.res.alignment or Sprite.fallbackAlignment
+    local _, _, frameW, frameH = celData.quad:getViewport()
+
+    if align == "topleft" then
+        drawX = drawX - celData.ox + frameW / 2.0
+        drawY = drawY - celData.oy + frameH / 2.0
+    elseif align == "center" then
+        drawX = drawX - celData.cx + frameW / 2.0
+        drawY = drawY - celData.cy + frameH / 2.0
     else
-        error("invalid sprite alignment")
+        error(("invalid sprite alignment '%s'. expected: 'center', 'topleft"):format(tostring(align)))
     end
 
     if drawX < -32 or drawX > App.scrW + 32 then

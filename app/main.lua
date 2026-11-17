@@ -72,7 +72,12 @@ function love.load(args)
 
     Input.init()
     Lg.setFont(fontres.monogram)
-    Sceneman.switchScene("game_intro", initLevel)
+
+    if initLevel then
+        Sceneman.switchScene("game", initLevel)
+    else
+        Sceneman.switchScene("game_intro")
+    end
 end
 
 ---@diagnostic disable-next-line duplicate-set-field

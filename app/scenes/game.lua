@@ -1,6 +1,8 @@
 local scene = Sceneman.scene()
 local World = require("game.world")
+local Input = require("input")
 local gameProgression = require("game.progression")
+local Menu = require("menu")
 
 local self
 
@@ -18,7 +20,152 @@ function scene.load(initLevel)
     Mark_perf_heavy_frame()
 
     self.darken = 0.0
+    self.paused = false
+    self.hitPause = false
 
+    self.menu = Menu()
+    local pausedLabel = self.menu:addLabel("Paused")
+    pausedLabel.scale = 2.0
+    self.menu:addButton("resume", "Resume")
+    self.menu:addButton("respawn", "Respawn")
+    self.menu:addButton("restart", "Restart")
+
+    scene._debugSetup()
+end
+
+function scene.unload()
+    scene._debugRelease()
+
+    self.world:release()
+    self = nil
+end
+
+---@diagnostic disable-next-line
+function scene.rawUpdate(dt)
+    self.world:rawUpdate(dt)
+    if self.paused then
+        self.menu:rawUpdate(dt)
+    end
+
+    if Input.players[1]:pressed("pause") then
+        self.hitPause = true
+    end
+end
+
+function scene.update()
+    if not self.paused then
+        self.world:update()
+
+        if self.transitionCoro then
+            if not coroutine.sresume(self.transitionCoro) then
+                self.transitionCoro = nil
+            end
+        end
+    else
+        local signal = self.menu:update()
+        if signal then
+            print("menu:", signal)
+            if signal == "resume" then
+                scene._unpause()     
+            elseif signal == "respawn" then
+                self.world:reset()
+                scene._unpause()
+            elseif signal == "restart" then
+                self.world:clearSaveData()
+                self.world:reset()
+                scene._unpause()
+            end
+        end
+    end
+
+    if self.hitPause and not self.transitionCoro then
+        self.hitPause = false
+        if self.paused then
+            scene._unpause()
+        else
+            scene._pause()
+        end
+    end
+end
+
+function scene._pause()
+    self.paused = true
+    self.world.sndmgr:pause()
+    self.menu:resetCursor()
+end
+
+function scene._unpause()
+    self.paused = false
+    self.world.sndmgr:resume()
+end
+
+function scene.draw()
+    self.world:draw()
+
+    Lg.push("all")
+    Lg.setBlendMode("multiply", "premultiplied")
+    local mul = 1.0 - self.darken
+    Lg.setColor(mul, mul, mul, 1)
+    Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
+
+    if self.paused then
+        Lg.setColor(0.3, 0.3, 0.4, 1.0)
+        Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
+    end
+
+    Lg.pop()
+
+    if self.paused then
+        self.menu:draw(math.round(App.scrH/2))
+    end
+end
+
+function scene.transitionToNextLevel()
+    if self.transitionCoro then
+        return
+    end
+
+    self.transitionCoro = coroutine.create(function()
+        local yield = coroutine.yield
+
+        for i=1, 60 do
+            self.darken = (i-1) / 60
+            yield()
+        end
+        self.darken = 1.0
+
+        local idx = table.index_of(gameProgression.levels, self.mapName)
+        loadMap(gameProgression.levels[idx + 1])
+        Mark_perf_heavy_frame()
+        yield()
+
+        for i=1, 60 do
+            self.darken = 1.0 - (i / 60)
+            yield()
+        end
+        self.darken = 0.0
+    end)
+end
+
+function scene.transitionToGameEnd()
+    if self.transitionCoro then
+        return
+    end
+
+    self.transitionCoro = coroutine.create(function()
+        local yield = coroutine.yield
+
+        for i=1, 240 do
+            self.darken = (i-1) / 240
+            yield()
+        end
+        self.darken = 1.0
+
+        Sceneman.switchScene("game_end")
+    end)
+end
+
+function scene._debugSetup()
     Debug.console.setVariable("world", self.world)
 
     Debug.console.addCommand({
@@ -123,7 +270,7 @@ function scene.load(initLevel)
     })
 end
 
-function scene.unload()
+function scene._debugRelease()
     Debug.console.setVariable("world", nil)
     Debug.console.removeCommand("godmode")
     Debug.console.removeCommand("noclip")
@@ -133,81 +280,7 @@ function scene.unload()
     Debug.console.removeCommand("rewind")
     Debug.console.removeCommand("reload")
     Debug.console.removeCommand("next_level")
-    
-    self.world:release()
-    self = nil
 end
 
----@diagnostic disable-next-line
-function scene.rawUpdate(dt)
-    self.world:rawUpdate(dt)
-end
-
-function scene.update()
-    self.world:update()
-
-    if self.transitionCoro then
-        if not coroutine.sresume(self.transitionCoro) then
-            self.transitionCoro = nil
-        end
-    end
-end
-
-function scene.draw()
-    self.world:draw()
-
-    Lg.push("all")
-    Lg.setBlendMode("multiply", "premultiplied")
-    local mul = 1.0 - self.darken
-    Lg.setColor(mul, mul, mul, 10)
-    Lg.rectangle("fill", 0, 0, App.scrW, App.scrH)
-
-    Lg.pop()
-end
-
-function scene.transitionToNextLevel()
-    if self.transitionCoro then
-        return
-    end
-
-    self.transitionCoro = coroutine.create(function()
-        local yield = coroutine.yield
-
-        for i=1, 60 do
-            self.darken = (i-1) / 60
-            yield()
-        end
-        self.darken = 1.0
-
-        local idx = table.index_of(gameProgression.levels, self.mapName)
-        loadMap(gameProgression.levels[idx + 1])
-        Mark_perf_heavy_frame()
-        yield()
-
-        for i=1, 60 do
-            self.darken = 1.0 - (i / 60)
-            yield()
-        end
-        self.darken = 0.0
-    end)
-end
-
-function scene.transitionToGameEnd()
-    if self.transitionCoro then
-        return
-    end
-
-    self.transitionCoro = coroutine.create(function()
-        local yield = coroutine.yield
-
-        for i=1, 240 do
-            self.darken = (i-1) / 240
-            yield()
-        end
-        self.darken = 1.0
-
-        Sceneman.switchScene("game_end")
-    end)
-end
 
 return scene

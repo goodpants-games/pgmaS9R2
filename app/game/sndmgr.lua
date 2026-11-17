@@ -79,6 +79,11 @@ function SoundManager:new()
 
     ---@private
     self._overlap_exclude = {}
+
+    ---@private
+    self._pausedSounds = nil ---@type game.Sound[]?
+    ---@private
+    self._isPaused = false
 end
 
 function SoundManager:release()
@@ -100,6 +105,33 @@ end
 function SoundManager:stopAll()
     for _, snd in ipairs(self._active) do
         snd.src:stop()
+    end
+end
+
+function SoundManager:pause()
+    if self._isPaused then return end
+    self._isPaused = true
+
+    local paused = {}
+    self._pausedSounds = paused
+
+    for _, snd in ipairs(self._active) do
+        if snd.src:isPlaying() then
+            snd.src:pause()
+            table.insert(paused, snd)
+        end
+    end
+end
+
+function SoundManager:resume()
+    if not self._isPaused then return end
+    self._isPaused = false
+
+    if self._pausedSounds then
+        for _, snd in ipairs(self._pausedSounds) do
+            snd.src:play()
+        end
+        self._pausedSounds = nil
     end
 end
 
@@ -163,6 +195,8 @@ function SoundManager:playNoOverlap(snd_name, ent)
 end
 
 function SoundManager:update()
+    if self._isPaused then return end
+    
     table.clear(self._overlap_exclude)
 
     love.audio.setPosition(self.listenerX, 70.0, self.listenerY)

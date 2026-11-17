@@ -173,21 +173,17 @@ function Menu:draw(centerY)
         totalHeight = totalHeight + lineHeight * item.scale
     end
 
-    local drawY = centerY - totalHeight / 2.0
+    local drawY = math.round(centerY - totalHeight / 2.0)
     Lg.setFont(FontRes.monogram)
     for i, item in ipairs(self.items) do
-        local textWidth = self.font:getWidth(item.text) * item.scale
-        -- local drawX = math.round( (App.scrW - textWidth) / 2.0 )
-
         if self.selectedItem == i then
             Lg.setColor(unpack(self._selectedColor))
-            Lg.rectangle("fill", centerX - 30.0, drawY + 4, 60.0, 10)
+            Lg.rectangle("fill", centerX - 30.0, drawY + 2, 60.0, 11)
             Lg.setColor(0.0, 0.0, 0.0)
         else
             Lg.setColor(item.colR, item.colG, item.colB)
         end
 
-        -- Lg.print(item.text, drawX, drawY, 0, item.scale, item.scale)
         self:_drawCenteredText(item.text, drawY, item.scale)
         drawY = drawY + lineHeight * item.scale
     end

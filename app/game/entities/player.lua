@@ -1,12 +1,14 @@
-local Resmgr         = require("game.resmgr")
-local SpriteRenderer = require("game.util").SpriteRenderer
-local centeredRect   = require("game.util").centeredRect
-local bool2int       = require("game.util").bool2int
-local newEntity      = require("game.util").newEntity
-local drawEntity     = require("game.util").drawEntity
-local Input          = require("input")
-local Const = require("game.consts")
-local DirAnim = require("game.util.dir_anim")
+local Resmgr           = require("game.resmgr")
+local SpriteRenderer   = require("game.util").SpriteRenderer
+local centeredRect     = require("game.util").centeredRect
+local bool2int         = require("game.util").bool2int
+local newEntity        = require("game.util").newEntity
+local drawEntity       = require("game.util").drawEntity
+local recordSpriteDraw = require("game.util").recordSpriteDraw
+local recordEntityDraw = require("game.util").recordEntityDraw
+local Input            = require("input")
+local Const            = require("game.consts")
+local DirAnim          = require("game.util.dir_anim")
 
 local FIRE_CHARGE_MIN = 40
 local ANGLE_SNAP = 0.00001
@@ -231,6 +233,19 @@ function Player:render()
         Lg.rectangle("line", math.round(self.x), math.round(self.y),
                      math.round(self.width), math.round(self.height))
     end
+end
+
+function Player:recordDraw(cmdList)
+    Lg.push()
+
+    Lg.translate(self.renderOx, self.renderOy)
+    recordSpriteDraw(cmdList, self.renderSprite, math.round(self.x), math.round(self.y))
+
+    if self.equippedItem then
+        recordEntityDraw(self.equippedItem, cmdList, self.alwaysDrawOverTilemap)
+    end
+
+    Lg.pop()
 end
 
 function Player:equipDisguise()

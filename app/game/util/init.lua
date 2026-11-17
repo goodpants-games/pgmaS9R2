@@ -1,3 +1,5 @@
+local Sprite = require("sprite")
+
 local Util = {}
 
 ------------------------------ RectRenderer ------------------------------------
@@ -44,6 +46,11 @@ function SpriteRenderer:draw(ent)
     if Debug.enabled then
         Lg.rectangle("line", math.round(ent.x), math.round(ent.y), math.round(ent.width), math.round(ent.height))
     end
+end
+
+function SpriteRenderer:recordDraw(ent, cmdList)
+    local drawX, drawY = math.round(ent.x) + self.ox, math.round(ent.y) + self.oy
+    Util.recordSpriteDraw(cmdList, self.sprite, drawX, drawY)
 end
 
 ------------------------------ entity construction -----------------------------
@@ -170,6 +177,78 @@ function Util.drawEntity(ent, overTilemapFilter)
 
         Lg.pop()
     end
+end
+
+---@param ent game.Entity
+---@param cmdList any[]
+---@param overTilemapFilter boolean
+function Util.recordEntityDraw(ent, cmdList, overTilemapFilter)
+    if not ent.visible then return end
+    if ent.alwaysDrawOverTilemap ~= overTilemapFilter then return end
+
+    Lg.push()
+    Lg.translate(0, math.round(-ent.zOffset))
+
+    if ent.recordDraw then
+        ent:recordDraw(cmdList)
+    elseif ent.render then
+        local render = ent.render
+        assert(type(render) == "table", "recordDraw: render field is not a table")
+        render:recordDraw(ent, cmdList)
+    else
+        warn(("entity '%s' had no method of recording"):format(ent.typeName))
+    end
+
+    Lg.pop()
+end
+
+---@param cmdList any[]
+---@param sprite pklove.Sprite
+---@param drawX number
+---@param drawY number
+function Util.recordSpriteDraw(cmdList, sprite, drawX, drawY)
+    local costumeName = ("spr %s %i"):format(
+        assert(sprite.res.name, "SpriteResource is not named"),
+        sprite.cel)
+    
+    drawX, drawY = Lg.transformPoint(drawX, drawY)
+    local celData = sprite.res.cels[sprite.cel]
+
+    local alignment = sprite.alignment or sprite.res.alignment or Sprite.fallbackAlignment
+    if alignment == "center" then
+        drawX = drawX + celData.cx
+        drawY = drawY + celData.cy
+    elseif alignment == "topleft" then
+        drawX = drawX + celData.ox
+        drawY = drawY + celData.oy
+    else
+        error("invalid sprite alignment")
+    end
+
+    if drawX < -32 or drawX > App.scrW + 32 then
+        return
+    end
+    if drawY < -32 or drawY > App.scrH + 32 then
+        return
+    end
+
+    drawX, drawY = Util.convertToScratchCoords(drawX, drawY)
+    
+    table.insert(cmdList, "goto")
+    table.insert(cmdList, drawX)
+    table.insert(cmdList, drawY)
+    table.insert(cmdList, "costume")
+    table.insert(cmdList, costumeName)
+    table.insert(cmdList, "stamp")
+end
+
+---@param x number
+---@param y number
+---@return number x, number y
+function Util.convertToScratchCoords(x, y)
+    x = x - App.scrW/2.0
+    y = App.scrH/2.0 - y
+    return x, y
 end
 
 function Util.centeredRect(x, y, w, h)

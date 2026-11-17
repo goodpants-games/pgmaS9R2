@@ -78,6 +78,13 @@ function World:new()
     ---@private
     self._checkpointData = nil ---@type table?
 
+    ---@private
+    self._isRecording = false
+    ---@private
+    self._recordingData = nil ---@type any[]?
+    ---@private
+    self._recordTimeAccum = 0 -- used to record every other frame for 30fps
+
     self.music = love.audio.newSource("/res/music/game.ogg", "stream")
     self.music:setVolume(0.2)
     self.music:play()
@@ -158,6 +165,13 @@ function World:update()
         end
     end
 
+    if self._isRecording then
+        if self._recordTimeAccum == 0 then
+            self:_recordFrame()
+        end
+        self._recordTimeAccum = (self._recordTimeAccum + 1) % 2
+    end
+
     self.curFrame = self.curFrame + 1
     for _, btn in ipairs(BUTTON_INPUTS) do
         self.buttonInputs[2][btn] = self.buttonInputs[1][btn]
@@ -229,6 +243,76 @@ function World:draw()
 
     -- draw UI
     self.camera:drawUI()
+end
+
+---@param cmdList any[]
+---@param layerIndex integer
+function World:_recordTilemapDraw(cmdList, layerIndex)
+    local drawX, drawY = Util.convertToScratchCoords(Lg.transformPoint(0, 0))
+    table.insert(cmdList, "goto")
+    table.insert(cmdList, drawX)
+    table.insert(cmdList, drawY)
+    table.insert(cmdList, "stamp_map")
+    table.insert(cmdList, layerIndex)
+end
+
+function World:_recordFrame()
+    local cmdList = assert(self._recordingData)
+
+    -- draw world
+    Lg.push()
+    Lg.translate(-math.round(self.camX), -math.round(self.camY))
+
+    self:_recordTilemapDraw(cmdList, 1)
+    for _, ent in ipairs(self._renderOrder) do
+        Util.recordEntityDraw(ent, cmdList, false)
+    end
+    
+    self:_recordTilemapDraw(cmdList, 2)
+    for _, ent in ipairs(self._renderOrder) do
+        Util.recordEntityDraw(ent, cmdList, true)
+    end
+
+    table.insert(cmdList, "present")
+
+    Lg.pop()
+end
+
+---@param mapName string
+function World:beginRecording(mapName)
+    if self._isRecording then
+        error("call to beginRecording but is still recording!!!")
+    end
+
+    self._isRecording = true
+    local cmdList = {}
+    self._recordingData = cmdList
+
+    table.insert(cmdList, mapName)
+end
+
+---@param fileName string
+function World:endRecording(fileName)
+    if not self._isRecording then
+        error("call to endRecording but is not recording!!!")
+    end
+
+    local cmdList = assert(self._recordingData)
+    self._isRecording = false
+    self._recordingData = nil
+
+    table.insert(cmdList, "end")
+
+    local file = assert( io.open(fileName, "w") )
+    for _, entry in ipairs(cmdList) do
+        file:write(entry, "\n")
+    end
+    file:close()
+end
+
+---@return boolean
+function World:isRecording()
+    return self._isRecording
 end
 
 ---@param dt number

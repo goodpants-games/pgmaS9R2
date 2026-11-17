@@ -64,6 +64,13 @@ function scene.rawUpdate(dt)
     end
 end
 
+function scene.keypressed(key)
+    if key == "f3" and self.world:isRecording() then
+        self.world:endRecording(self.recordFileName)
+        self.recordFileName = nil
+    end
+end
+
 function scene.update()
     if not self.paused then
         self.world:update()
@@ -137,6 +144,11 @@ function scene.draw()
     end
 
     Lg.pop()
+
+    if self.world:isRecording() then
+        Lg.setColor(1, 0, 0)
+        Lg.circle("fill", 12, 12, 4, 4)
+    end
 
     if self.paused then
         self.menu:draw(math.round(App.scrH/2))
@@ -297,6 +309,21 @@ function scene._debugSetup()
             scene.transitionToNextLevel()
         end
     })
+
+    Debug.console.addCommand({
+        name = "record",
+        help = "<file name>",
+        func = function(term, fileName)
+            if self.world:isRecording() then
+                term.print("error: is already recording")
+                return
+            end
+
+            self.world:beginRecording(self.mapName)
+            self.recordFileName = fileName
+            term.print("press F3 to end recording")
+        end
+    })
 end
 
 function scene._debugRelease()
@@ -309,6 +336,7 @@ function scene._debugRelease()
     Debug.console.removeCommand("rewind")
     Debug.console.removeCommand("reload")
     Debug.console.removeCommand("next_level")
+    Debug.console.removeCommand("record")
 end
 
 

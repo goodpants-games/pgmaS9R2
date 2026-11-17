@@ -225,7 +225,7 @@
 local JSON = require("json")
 
 local module = {}
-module._version = "0.2.1"
+module._version = "0.2.1m"
 
 ---@alias pklove.SpriteAlignment "topleft"|"center"
 
@@ -266,6 +266,7 @@ module.pixelSnapping = 1
 
 ---@class pklove.SpriteResource
 ---@field _refs {[pklove.Sprite]: boolean}
+---@field name string?
 ---@field atlas love.Image
 ---@field cels {quad: love.Quad, cx: number, cy: number, ox: number, oy: number, duration: number}[]
 ---@field animations {[string]:{from: integer, to: integer, loopCount: integer, loopPoint: integer}}
@@ -340,6 +341,13 @@ end
 ---@return pklove.SpriteResource
 function module.loadResourceFromMemory(data, atlas)
     local resource = setmetatable({}, SpriteResource)
+
+    if data.meta.image then
+        local name = data.meta.image:match("^(.*)%..+$")
+        if name then
+            resource.name = name
+        end
+    end
     
     -- used for release call
     resource._refs = setmetatable({}, {

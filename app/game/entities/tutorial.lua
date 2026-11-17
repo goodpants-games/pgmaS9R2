@@ -77,6 +77,8 @@ function Tutorial:loadProperties(id, props, entLookup)
     end
 end
 
+function Tutorial:recordDraw() end
+
 function Tutorial:update()
     if self._updateFunc then
         self._updateFunc()

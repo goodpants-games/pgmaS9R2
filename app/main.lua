@@ -72,6 +72,7 @@ function love.load(args)
 
     Input.init()
     Lg.setFont(fontres.monogram)
+    love.mouse.setVisible(false)
 
     if initLevel then
         Sceneman.switchScene("game", initLevel)

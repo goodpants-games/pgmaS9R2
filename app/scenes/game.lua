@@ -30,6 +30,8 @@ function scene.load(initLevel)
     self.menu:addButton("respawn", "Respawn")
     self.menu:addButton("restart", "Restart")
 
+    self.imgMouseCursor = Lg.newImage("/res/graphics/mouse_cursor.png")
+
     scene._debugSetup()
 end
 
@@ -37,6 +39,7 @@ function scene.unload()
     scene._debugRelease()
 
     self.world:release()
+    self.imgMouseCursor:release()
     self = nil
 end
 
@@ -117,6 +120,12 @@ function scene.draw()
 
     if self.paused then
         self.menu:draw(math.round(App.scrH/2))
+    elseif Input.players[1]:getActiveDevice() == "kbm" then
+        -- draw mouse cursor
+        local mouseX = math.round(App.mouseX)
+        local mouseY = math.round(App.mouseY)
+        Lg.setColor(1, 1, 1)
+        Lg.draw(self.imgMouseCursor, mouseX - 4, mouseY - 4)
     end
 end
 

@@ -157,11 +157,6 @@ function Camera:drawUI()
 
         self.uiIcons:draw(x, y)
     end
-
-    -- draw mouse cursor
-    Lg.setColor(1, 1, 1)
-    Lg.setLineWidth(1.0)
-    Lg.rectangle("line", App.mouseX - 4, App.mouseY - 4, 8, 8)
 end
 
 --------------------------------------------------------------------------------

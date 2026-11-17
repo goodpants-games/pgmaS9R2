@@ -50,4 +50,14 @@ function Checkpoint:_touched(plr)
     self.world:saveCheckpoint(self)
 end
 
+function Checkpoint:update()
+    if not self.tiledId then return end
+
+    if self.tiledId == self.world:getCheckpointId() then
+        self.render.sprite.cel = 3
+    else
+        self.render.sprite.cel = 1
+    end
+end
+
 return Checkpoint

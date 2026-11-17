@@ -160,7 +160,7 @@ function Player:_getAimDirection()
     local fireAng ---@type number
     local device = Input.players[1]
 
-    if device:getActiveDevice() == "joy" then
+    if Input.isJoystick(1) then
         local joystick = device.config.joystick
         fireDx = joystick:getGamepadAxis("rightx")
         fireDy = joystick:getGamepadAxis("righty")

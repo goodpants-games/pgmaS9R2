@@ -70,4 +70,24 @@ function Input.update()
     end
 end
 
+---@param slot integer
+---@return boolean
+function Input.isKeyboard(slot)
+    local dev = Input.players[1]:getActiveDevice()
+    return dev == "kbm" or dev == "none"
+end
+
+---@param slot integer
+---@return boolean
+function Input.isJoystick(slot)
+    local dev = Input.players[1]:getActiveDevice()
+    return dev == "joy"
+end
+
+---@param slot integer
+---@return love.Joystick?
+function Input.getJoystick(slot)
+    return Input.players[slot].config.joystick
+end
+
 return Input

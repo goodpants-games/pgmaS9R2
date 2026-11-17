@@ -121,15 +121,14 @@ function Camera:_updateCamera()
         targetOy = focusY
         approachSpeed = 0.05
     else
-        local device = Input.players[1]
-        if device:getActiveDevice() == "kbm" then
+        if Input.isKeyboard(1) then
             local mouseOfsX = math.round(App.mouseX) - (App.scrW / 2)
             local mouseOfsY = math.round(App.mouseY) - (App.scrH / 2)
 
             targetOx = mouseOfsX / 4
             targetOy = mouseOfsY / 4
         else
-            local joy = device.config.joystick
+            local joy = assert( Input.getJoystick(1) )
             targetOx = joy:getGamepadAxis("rightx") * 30.0
             targetOy = joy:getGamepadAxis("righty") * 30.0
         end

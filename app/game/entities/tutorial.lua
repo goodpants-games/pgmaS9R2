@@ -57,6 +57,23 @@ function Tutorial:loadProperties(id, props, entLookup)
             end
             lastDisguised = player.isDisguised
         end
+    
+    elseif animName == "aim" then
+        self.msg:subscribe_once("addedToWorld", function()
+            local plr = assert(self.world.player)
+            local lastAmmoCount = plr.ammo
+            self._updateFunc = function()
+                if plr.ammo ~= lastAmmoCount then
+                    lastAmmoCount = plr.ammo
+    
+                    if plr.ammo == 0 then
+                        self.render.sprite:play("knife_grab")
+                    else
+                        self.render.sprite:play("aim")
+                    end
+                end
+            end
+        end)
     end
 end
 

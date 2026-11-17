@@ -133,7 +133,7 @@ return {
           type = "tutorial",
           shape = "rectangle",
           x = 288,
-          y = 144,
+          y = 176,
           width = 16,
           height = 16,
           rotation = 0,
@@ -141,22 +141,6 @@ return {
           visible = true,
           properties = {
             ["id"] = "aim"
-          }
-        },
-        {
-          id = 5,
-          name = "",
-          type = "tutorial",
-          shape = "rectangle",
-          x = 288,
-          y = 240,
-          width = 16,
-          height = 16,
-          rotation = 0,
-          opacity = 1,
-          visible = true,
-          properties = {
-            ["id"] = "knife_grab"
           }
         },
         {

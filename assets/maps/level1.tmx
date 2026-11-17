@@ -24,14 +24,9 @@
     <property name="id" value="move"/>
    </properties>
   </object>
-  <object id="4" type="tutorial" x="288" y="144" width="16" height="16">
+  <object id="4" type="tutorial" x="288" y="176" width="16" height="16">
    <properties>
     <property name="id" value="aim"/>
-   </properties>
-  </object>
-  <object id="5" type="tutorial" x="288" y="240" width="16" height="16">
-   <properties>
-    <property name="id" value="knife_grab"/>
    </properties>
   </object>
   <object id="17" type="tutorial" x="176" y="304" width="16" height="16">

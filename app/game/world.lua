@@ -248,12 +248,11 @@ end
 ---@param cmdList any[]
 ---@param layerIndex integer
 function World:_recordTilemapDraw(cmdList, layerIndex)
-    local drawX, drawY = Util.convertToScratchCoords(Lg.transformPoint(0, 0))
-    table.insert(cmdList, "goto")
-    table.insert(cmdList, drawX)
-    table.insert(cmdList, drawY)
+    local drawX, drawY = Lg.transformPoint(0, 0)
     table.insert(cmdList, "stamp_map")
     table.insert(cmdList, layerIndex)
+    table.insert(cmdList, drawX)
+    table.insert(cmdList, drawY)
 end
 
 function World:_recordFrame()

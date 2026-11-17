@@ -52,6 +52,7 @@ function love.load(args)
     -- parse comamnd-line arguments
     local initLevel
     local gfxExport = false
+    local mapExport = false
 
     if Debug.enabled then
         local argi = 1
@@ -63,6 +64,10 @@ function love.load(args)
 
             elseif arg == "--gfx-export" then
                 gfxExport = true
+
+            elseif arg == "--map-export" then
+                mapExport = true
+            
             end
 
             argi = argi + 1
@@ -78,8 +83,15 @@ function love.load(args)
     Lg.setFont(fontres.monogram)
     love.mouse.setVisible(false)
 
-    if gfxExport then
-        require("gfx_export")("ignore/gfx_export")
+    if gfxExport or mapExport then
+        local export = require("gfx_export")
+        if gfxExport then
+            export.gfx("ignore/gfx_export")
+        end
+        if mapExport then
+            export.map("ignore/map_export")
+        end
+
         love.event.quit()
         return
     end

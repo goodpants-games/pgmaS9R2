@@ -51,6 +51,7 @@ function love.load(args)
 
     -- parse comamnd-line arguments
     local initLevel
+    local gfxExport = false
 
     if Debug.enabled then
         local argi = 1
@@ -59,6 +60,9 @@ function love.load(args)
             if arg == "--level" then
                 argi = argi + 1
                 initLevel = args[argi]
+
+            elseif arg == "--gfx-export" then
+                gfxExport = true
             end
 
             argi = argi + 1
@@ -73,6 +77,12 @@ function love.load(args)
     Input.init()
     Lg.setFont(fontres.monogram)
     love.mouse.setVisible(false)
+
+    if gfxExport then
+        require("gfx_export")("ignore/gfx_export")
+        love.event.quit()
+        return
+    end
 
     if initLevel then
         Sceneman.switchScene("game", initLevel)

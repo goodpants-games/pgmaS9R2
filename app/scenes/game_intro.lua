@@ -27,6 +27,7 @@ function scene.load()
     self.sprRes = Sprite.loadResource("/res/intro_stuff.json")
     self.objects = {}
     self.music = love.audio.newSource("/res/music/guess_of_descension.ogg", "stream")
+    self.music:setVolume(0.5)
     self.music:play()
     self.gameLogo = Lg.newImage("/res/title.png")
     self.teamLogo = Lg.newImage("/res/graphics/firebeetle.png")

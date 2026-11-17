@@ -79,7 +79,7 @@ function World:new()
     self._checkpointData = nil ---@type table?
 
     self.music = love.audio.newSource("/res/music/game.ogg", "stream")
-    self.music:setVolume(0.05)
+    self.music:setVolume(0.2)
     self.music:play()
     self.music:setLooping(true)
 end

@@ -121,7 +121,7 @@ end
 function SoundManager:newSound(snd_name)
     local source = self:loadSource(snd_name)
     local source_clone = source:clone()
-    source_clone:setAttenuationDistances(100.0 / 16, 320.0 / 16)
+    source_clone:setAttenuationDistances(80.0, 320.0)
 
     ---@type game.Sound
     local sound = Sound(self, source_clone)
@@ -165,7 +165,7 @@ end
 function SoundManager:update()
     table.clear(self._overlap_exclude)
 
-    love.audio.setPosition(self.listenerX, 90.0, self.listenerY)
+    love.audio.setPosition(self.listenerX, 70.0, self.listenerY)
     -- love.audio.setOrientation(
     --     0, 0, 1,
     --     0, 1, 0

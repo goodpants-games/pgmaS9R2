@@ -295,7 +295,13 @@ function Player:_weaponUpdate()
         else
             self.animState = "aim"
             self.fireCharge = self.fireCharge + 1
-            self.gunSight.visible = world.curFrame % 3 == 0
+            self.gunSight.visible = true
+            if world.curFrame % 6 < 3 then
+                self.gunSight.a = 0.0
+            else
+                self.gunSight.a = 0.8
+            end
+            -- self.gunSight.visible = world.curFrame % 3 == 0
 
             -- update color of sight to indicate charge time
             local t = math.min(1.0, self.fireCharge / FIRE_CHARGE_MIN)

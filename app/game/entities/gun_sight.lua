@@ -13,9 +13,10 @@ function GunSight:new(x, y)
 
     self.maxLength = 1000
     self.maxBounces = 4
-    self.r = 1
-    self.g = 1
-    self.b = 1
+    self.r = 1.0
+    self.g = 1.0
+    self.b = 1.0
+    self.a = 1.0
 
     ---@type number[]
     self.lines = {}
@@ -81,7 +82,7 @@ end
 
 function GunSight:render()
     if self.lines[1] then
-        Lg.setColor(self.r, self.g, self.b)
+        Lg.setColor(self.r, self.g, self.b, self.a)
         Lg.setLineWidth(1.0)
         Lg.setLineJoin("none")
         Lg.line(self.lines)

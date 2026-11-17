@@ -319,6 +319,8 @@ function scene._debugSetup()
                 return
             end
 
+            fileName = fileName or "ignore/recording.txt"
+
             self.world:beginRecording(self.mapName)
             self.recordFileName = fileName
             term.print("press F3 to end recording")

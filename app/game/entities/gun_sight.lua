@@ -1,4 +1,5 @@
 local const = require("game.consts")
+local Util = require("game.util")
 
 ---@class game.entities.GunSight: game.Entity
 local GunSight = batteries.class {
@@ -87,6 +88,32 @@ function GunSight:render()
         Lg.setLineJoin("none")
         Lg.line(self.lines)
     end
+end
+
+function GunSight:recordDraw(cmdList)
+    local rgbInt = batteries.colour.pack_rgb(self.r, self.g, self.b)
+    local colorString = ("#%x"):format(rgbInt)
+
+    table.insert(cmdList, "pen_color")
+    table.insert(cmdList, colorString)
+    table.insert(cmdList, "pen_transparency")
+    table.insert(cmdList, (1.0 - self.a) * 100.0)
+
+    local polyline = self.lines
+    for i=1, #polyline, 2 do
+        local x, y = Lg.transformPoint(polyline[i], polyline[i+1])
+        x, y = Util.convertToScratchCoords(x, y)
+        
+        table.insert(cmdList, "goto")
+        table.insert(cmdList, x)
+        table.insert(cmdList, y)
+
+        if i == 1 then
+            table.insert(cmdList, "pen_down")
+        end
+    end
+
+    table.insert(cmdList, "pen_up")
 end
 
 return GunSight

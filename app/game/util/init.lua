@@ -216,11 +216,9 @@ function Util.recordSpriteDraw(cmdList, sprite, drawX, drawY)
 
     local alignment = sprite.alignment or sprite.res.alignment or Sprite.fallbackAlignment
     if alignment == "center" then
+    elseif alignment == "topleft" then
         drawX = drawX + celData.cx
         drawY = drawY + celData.cy
-    elseif alignment == "topleft" then
-        drawX = drawX + celData.ox
-        drawY = drawY + celData.oy
     else
         error("invalid sprite alignment")
     end
@@ -248,7 +246,7 @@ end
 function Util.convertToScratchCoords(x, y)
     x = x - App.scrW/2.0
     y = App.scrH/2.0 - y
-    return x, y
+    return math.round(x), math.round(y)
 end
 
 function Util.centeredRect(x, y, w, h)

@@ -287,6 +287,7 @@ function World:beginRecording(mapName)
     self._isRecording = true
     local cmdList = {}
     self._recordingData = cmdList
+    self._recordTimeAccum = 0
 
     table.insert(cmdList, mapName)
 end
@@ -304,8 +305,11 @@ function World:endRecording(fileName)
     table.insert(cmdList, "end")
 
     local file = assert( io.open(fileName, "w") )
-    for _, entry in ipairs(cmdList) do
-        file:write(entry, "\n")
+    for i, entry in ipairs(cmdList) do
+        if i ~= 1 then
+            file:write("\n")
+        end
+        file:write(entry)
     end
     file:close()
 end

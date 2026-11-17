@@ -1,4 +1,5 @@
-local centeredRect   = require("game.util").centeredRect
+local centeredRect     = require("game.util").centeredRect
+local recordSpriteDraw = require("game.util").recordSpriteDraw
 
 local Const  = require "game.consts"
 local Resmgr = require "game.resmgr"
@@ -134,6 +135,17 @@ function Projectile:render()
     end
     
     self.sprite:draw(cx, cy, self.renderAngle, self.renderSx, 1.0)
+end
+
+function Projectile:recordDraw(cmdList)
+    local cx, cy = self:getCenterPos()
+
+    local scratchRot = self.renderAngle + math.pi/2
+    table.insert(cmdList, "rotation")
+    table.insert(cmdList, math.deg(math.normalise_angle(scratchRot)))
+    recordSpriteDraw(cmdList, self.sprite, cx, cy)
+    table.insert(cmdList, "rotation")
+    table.insert(cmdList, 90)
 end
 
 return Projectile

@@ -36,4 +36,6 @@ function TextPopup:render()
     Lg.print(self.text, self.x + textOx, self.y)
 end
 
+function TextPopup:recordDraw() end
+
 return TextPopup

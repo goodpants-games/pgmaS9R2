@@ -24,11 +24,20 @@ function scene.load(initLevel)
     self.hitPause = false
 
     self.menu = Menu()
-    local pausedLabel = self.menu:addLabel("Paused")
-    pausedLabel.scale = 2.0
-    self.menu:addButton("resume", "Resume")
-    self.menu:addButton("respawn", "Respawn")
-    self.menu:addButton("restart", "Restart")
+    do
+        local pausedLabel = self.menu:addLabel("Paused")
+        pausedLabel.scale = 2.0
+    end
+
+    self.menu:addButton("resume", "Resume", {
+        hint = "Resume the game."
+    })
+    self.menu:addButton("respawn", "Respawn", {
+        hint = "Respawn at the last checkpoint."
+    })
+    self.menu:addButton("restart", "Restart", {
+        hint = "Restart from the beginning of the level."
+    })
 
     self.imgMouseCursor = Lg.newImage("/res/graphics/mouse_cursor.png")
 
@@ -67,7 +76,6 @@ function scene.update()
     else
         local signal = self.menu:update()
         if signal then
-            print("menu:", signal)
             if signal == "resume" then
                 scene._unpause()     
             elseif signal == "respawn" then

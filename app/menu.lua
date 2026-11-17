@@ -10,9 +10,10 @@ local Menu = batteries.class()
 ---| "label"
 
 ---@class Menu.Item
+---@field kind Menu.ItemKind
 ---@field text string
 ---@field signal string?
----@field kind Menu.ItemKind
+---@field hint string?
 ---@field colR number
 ---@field colG number
 ---@field colB number
@@ -49,17 +50,25 @@ function Menu:_initItem(kind, text)
 end
 
 ---@param text string
-function Menu:addLabel(text)
+---@param extraData table?
+function Menu:addLabel(text, extraData)
     local item = self:_initItem("label", text)
+    if extraData then
+        table.shallow_overlay(item, extraData)
+    end
     table.insert(self.items, item)
     return item
 end
 
 ---@param signal string
 ---@param text string?
-function Menu:addButton(signal, text)
+---@param extraData table?
+function Menu:addButton(signal, text, extraData)
     local item = self:_initItem("button", text or signal)
     item.signal = signal
+    if extraData then
+        table.shallow_overlay(item, extraData)
+    end
     table.insert(self.items, item)
     return item
 end
@@ -147,6 +156,14 @@ function Menu:update()
     return returnValue
 end
 
+---@param text string
+---@param ypos number
+---@param scale number?
+function Menu:_drawCenteredText(text, ypos, scale)
+    scale = scale or 1.0
+    Lg.printf(text, 8, ypos, (App.scrW - 16) / scale, "center", 0, scale, scale)
+end
+
 ---@param centerY number
 function Menu:draw(centerY)
     local centerX = App.scrW / 2.0
@@ -160,7 +177,7 @@ function Menu:draw(centerY)
     Lg.setFont(FontRes.monogram)
     for i, item in ipairs(self.items) do
         local textWidth = self.font:getWidth(item.text) * item.scale
-        local drawX = math.round( (App.scrW - textWidth) / 2.0 )
+        -- local drawX = math.round( (App.scrW - textWidth) / 2.0 )
 
         if self.selectedItem == i then
             Lg.setColor(unpack(self._selectedColor))
@@ -169,10 +186,16 @@ function Menu:draw(centerY)
         else
             Lg.setColor(item.colR, item.colG, item.colB)
         end
-    
 
-        Lg.print(item.text, drawX, drawY, 0, item.scale, item.scale)
+        -- Lg.print(item.text, drawX, drawY, 0, item.scale, item.scale)
+        self:_drawCenteredText(item.text, drawY, item.scale)
         drawY = drawY + lineHeight * item.scale
+    end
+
+    local hint = self.items[self.selectedItem].hint
+    if hint then
+        Lg.setColor(0.5, 0.5, 0.5)
+        self:_drawCenteredText(hint, App.scrH - 32)
     end
 end
 

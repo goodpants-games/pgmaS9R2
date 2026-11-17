@@ -9,10 +9,13 @@ local base_controls = {
     right = {'axis:leftx+', 'button:dpright'},
     up = {'axis:lefty-', 'button:dpup'},
     down = {'axis:lefty+', 'button:dpdown'},
+    move = {"left", "right", "up", "down"},
 
-    fire = {"mouse:1",--[["button:a"]]},
+    fire = {"mouse:1", "axis:triggerright+"},
     interact = {"key:e", "button:a"},
-    camSwitch = {"key:q", "button:lb"}
+    camSwitch = {"key:q", "axis:triggerleft+"},
+
+    uiConfirm = {"key:space", "button:a"}
 }
 
 local function get_new_baton_config()

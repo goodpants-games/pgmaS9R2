@@ -1,5 +1,6 @@
 local Const = require("game.consts")
 local Resmgr = require("game.resmgr")
+local Input = require("input")
 
 ---@class game.Camera: batteries.Class
 ---@overload fun(world:game.World):game.Camera
@@ -120,11 +121,18 @@ function Camera:_updateCamera()
         targetOy = focusY
         approachSpeed = 0.05
     else
-        local mouseOfsX = math.round(App.mouseX) - (App.scrW / 2)
-        local mouseOfsY = math.round(App.mouseY) - (App.scrH / 2)
+        local device = Input.players[1]
+        if device:getActiveDevice() == "kbm" then
+            local mouseOfsX = math.round(App.mouseX) - (App.scrW / 2)
+            local mouseOfsY = math.round(App.mouseY) - (App.scrH / 2)
 
-        targetOx = mouseOfsX / 4
-        targetOy = mouseOfsY / 4
+            targetOx = mouseOfsX / 4
+            targetOy = mouseOfsY / 4
+        else
+            local joy = device.config.joystick
+            targetOx = joy:getGamepadAxis("rightx") * 30.0
+            targetOy = joy:getGamepadAxis("righty") * 30.0
+        end
     end
 
     self.offsetX = self.offsetX + (targetOx - self.offsetX) * approachSpeed

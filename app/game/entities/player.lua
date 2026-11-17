@@ -4,6 +4,7 @@ local centeredRect   = require("game.util").centeredRect
 local bool2int       = require("game.util").bool2int
 local newEntity      = require("game.util").newEntity
 local drawEntity     = require("game.util").drawEntity
+local Input          = require("input")
 local Const = require("game.consts")
 local DirAnim = require("game.util.dir_anim")
 
@@ -118,10 +119,7 @@ function Player:update()
     end
 
     if canMove then
-        local inputX = bool2int(world:isInputDown("right"))
-                       - bool2int(world:isInputDown("left"))
-        local inputY = bool2int(world:isInputDown("down"))
-                       - bool2int(world:isInputDown("up"))
+        local inputX, inputY = Input.players[1]:get("move")
         if inputX ~= 0 or inputY ~= 0 then
             inputX, inputY = math.normalize(inputX, inputY)
             self.animState = "walk"
@@ -152,6 +150,42 @@ function Player:update()
     end
 end
 
+---@return number?
+function Player:_getAimDirection()
+    local world = self.world
+
+    -- update sights. this is in post-update so that the mouse position reading
+    -- doesn't lag behind the camera update.
+    local fireDx, fireDy ---@type number, number
+    local fireAng ---@type number
+    local device = Input.players[1]
+
+    if device:getActiveDevice() == "joy" then
+        local joystick = device.config.joystick
+        fireDx = joystick:getGamepadAxis("rightx")
+        fireDy = joystick:getGamepadAxis("righty")
+
+        local deadzone = device.config.deadzone
+        if math.length(fireDx, fireDy) < deadzone then
+            fireDx = 0.0
+            fireDy = 0.0
+        end
+    else
+        local mouseX = world.camX + App.mouseX
+        local mouseY = world.camY + App.mouseY
+        fireDx = mouseX - (world.camX + App.scrW / 2)
+        fireDy = mouseY - (world.camY + App.scrH / 2)
+    end
+
+    if fireDx * fireDx + fireDy * fireDy == 0 then
+        return nil
+    end
+
+    fireAng = math.atan2(fireDy, fireDx)
+    fireAng = math.round(fireAng / ANGLE_SNAP) * ANGLE_SNAP
+    return fireAng
+end
+
 function Player:postUpdate()
     local world = softassert(self.world)
     if not world then return end
@@ -163,22 +197,12 @@ function Player:postUpdate()
     if self.fireCharge > 0 then
         -- update sights. this is in post-update so that the mouse position reading
         -- doesn't lag behind the camera update.
-        -- local mouseX = world.camX + App.mouseX
-        -- local mouseY = world.camY + App.mouseY
-        local mouseX = world.camX + App.mouseX
-        local mouseY = world.camY + App.mouseY
-    
-        local fireDx = mouseX - (world.camX + App.scrW / 2)
-        local fireDy = mouseY - (world.camY + App.scrH / 2)
-        if fireDx * fireDx + fireDy * fireDy == 0 then
-            fireDx, fireDy = 1, 0
-        end
-
-        local fireAng = math.atan2(fireDy, fireDx)
+        local fireAng = self:_getAimDirection() or 0.0
         fireAng = math.round(fireAng / ANGLE_SNAP) * ANGLE_SNAP
 
-        fireDx = math.cos(fireAng)
-        fireDy = math.sin(fireAng)
+        local fireDx = math.cos(fireAng)
+        local fireDy = math.sin(fireAng)
+
         self._fireDirX, self._fireDirY = fireDx, fireDy
         self.faceDir = fireAng
         self.gunSight:updateSight(centerX, centerY, fireDx, fireDy)
@@ -242,14 +266,29 @@ function Player:_weaponUpdate()
         return
     end
 
-    if world:isInputReleased("fire") then
+    local isKeyboard = Input.players[1]:getActiveDevice() == "kbm"
+    local isAiming = false
+    local wantsCancel = false
+    if isKeyboard then
+        isAiming = world:isInputDown("fire")
+        wantsCancel = world:isInputPressed("interact")
+    else
+        local aimDir = self:_getAimDirection()
+        isAiming = (not not aimDir) and world:isInputDown("fire")
+        if (not aimDir) and self.fireCharge > 0 then
+            wantsCancel = not aimDir
+            isAiming = true
+        end
+    end
+
+    if world:isInputReleased("fire") or not isKeyboard then
         self.cancelFire = false
     end
 
-    if world:isInputDown("fire") and not self.cancelFire then
+    if not self.cancelFire and isAiming then
         self.canInteract = false
 
-        if world:isInputPressed("interact") then
+        if wantsCancel then
             self.fireCharge = 0
             self.gunSight.visible = false
             self.cancelFire = true
@@ -286,6 +325,8 @@ function Player:_weaponUpdate()
         self.fireCharge = 0
         self.gunSight.visible = false
     end
+
+    self._lastAimDir = aimDir
 end
 
 function Player:_interactUpdate()

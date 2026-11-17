@@ -1,5 +1,6 @@
 local Sprite = require("sprite")
 local Fontres = require("fontres")
+local Input = require("input")
 
 local scene = Sceneman.scene()
 local self
@@ -190,10 +191,9 @@ function scene.unload()
     self = nil
 end
 
-function scene.keypressed(k)
-    if k == "space" then
+function scene.rawUpdate(dt)
+    if Input.players[1]:pressed("uiConfirm") then
         Sceneman.switchScene("game")
-        print("Skip..")
     end
 end
 

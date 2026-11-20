@@ -131,6 +131,16 @@ function love.textinput(...)
 end
 
 ---@diagnostic disable-next-line duplicate-set-field
+function love.joystickadded(joystick)
+    Input.addJoystick(joystick)
+end
+
+---@diagnostic disable-next-line duplicate-set-field
+function love.joystickremoved(joystick)
+    Input.removeJoystick(joystick)
+end
+
+---@diagnostic disable-next-line duplicate-set-field
 function love.update(dt)
     Jprof.push("frame")
     local start = love.timer.getTime()

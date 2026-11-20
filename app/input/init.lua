@@ -47,7 +47,6 @@ function Input.init()
         pairs = {
             move = {'left', 'right', 'up', 'down'}
         },
-        joystick = love.joystick.getJoysticks()[1],
     }
 end
 
@@ -68,6 +67,16 @@ function Input.update()
     for _, p in pairs(Input.players) do
         p:update()
     end
+end
+
+---@param joystick love.Joystick
+function Input.addJoystick(joystick)
+    Input.players[1].config.joystick = joystick
+end
+
+---@param joystick love.Joystick
+function Input.removeJoystick(joystick)
+    Input.players[1].config.joystick = nil
 end
 
 ---@param slot integer
